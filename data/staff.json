@@ -1,0 +1,4 @@
+[
+  { "id": "junior_keeper", "name": "Junior Keeper", "role": "Keeper", "icon": "🧑‍🌾", "cost": 500, "salary": 50, "keeperSlots": 5, "cleanerSlots": 0, "description": "A junior zookeeper.", "effects": { "animalHappiness": 2, "cleanExhibits": 2, "maxStaff": 10 } },
+  { "id": "janitor", "name": "Janitor", "role": "Cleaner", "icon": "🧹", "cost": 400, "salary": 40, "keeperSlots": 0, "cleanerSlots": 10, "description": "Keeps the zoo clean.", "effects": { "cleanExhibits": 5, "cleanPark": 3, "maxStaff": 15 } }
+]

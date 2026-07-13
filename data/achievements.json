@@ -1,0 +1,3 @@
+[
+  { "id": "first_animal", "name": "First Animal", "icon": "🐾", "desc": "Buy your first animal.", "check": { "type": "totalAnimals", "value": 1 } }
+]

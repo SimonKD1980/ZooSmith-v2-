@@ -1,0 +1,3 @@
+[
+  { "id": "reptile_house", "name": "Reptile House", "emoji": "🦎", "cost": 10000, "buildDays": 15, "maxExhibits": 4, "description": "A heated house.", "allowedCategories": ["Reptiles"], "unlockResearch": null }
+]

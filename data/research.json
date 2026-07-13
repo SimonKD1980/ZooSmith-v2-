@@ -1,0 +1,4 @@
+[
+  { "id": "basic_farm", "name": "Basic Farm Animals", "icon": "🌾", "tier": "basic", "cost": 1000, "days": 5, "desc": "Unlock basic farm animals.", "requires": null, "unlocks": ["goat"] },
+  { "id": "big_cats", "name": "Big Cats", "icon": "🦁", "tier": "advanced", "cost": 5000, "days": 10, "desc": "Unlock big cats.", "requires": "basic_farm", "unlocks": ["lion"] }
+]
