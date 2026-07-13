@@ -1,73 +1,77 @@
 // --- Master Daily Cycle ---
 function advanceDay() {
-  // 1. Check for active events (Placeholder)
-  // if (state.activeEvent) return; 
+  try {
+    // 1. Check for active events (Placeholder)
+    // if (state.activeEvent) return; 
 
-  // 2. Feed animals
-  consumeDailyFood();
-  
-  // 3. Process health and deaths
-  processAnimalHealth();
-  
-  // 4 & 5. Income (Visitors & Animals)
-  processDayIncome();
-  processAnimalIncome();
-  
-  // 6. Facility upkeep
-  processUpkeep();
-  
-  // 7. Maintenance and build timers
-  processDailyMaintenance();
-  
-  // 8. Fence degradation
-  processFenceDegradation();
-  
-  // 9. Cleanliness (from staff.js)
-  processExhibitCleanliness();
-  
-  // 10. Age animals & old-age deaths
-  processAging();
-  
-  // 11. Breeding attempts
-  getAllExhibits().forEach(({ exhibit }) => tryBreeding(exhibit));
-  
-  // 12. Process pregnancies
-  processPregnancies();
-  
-  // 13. Progress research
-  progressResearch();
-  
-  // 14. Advance date
-  advanceDate();
-  
-  // 15. Monthly report
-  if (state.day === 1 && state.month !== 1) { // Triggered on the 1st of new months
-     generateMonthlyReport();
+    // 2. Feed animals
+    consumeDailyFood();
+    
+    // 3. Process health and deaths
+    processAnimalHealth();
+    
+    // 4 & 5. Income (Visitors & Animals)
+    processDayIncome();
+    processAnimalIncome();
+    
+    // 6. Facility upkeep
+    processUpkeep();
+    
+    // 7. Maintenance and build timers
+    processDailyMaintenance();
+    
+    // 8. Fence degradation
+    processFenceDegradation();
+    
+    // 9. Cleanliness (from staff.js)
+    processExhibitCleanliness();
+    
+    // 10. Age animals & old-age deaths
+    processAging();
+    
+    // 11. Breeding attempts
+    getAllExhibits().forEach(({ exhibit }) => tryBreeding(exhibit));
+    
+    // 12. Process pregnancies
+    processPregnancies();
+    
+    // 13. Progress research
+    progressResearch();
+    
+    // 14. Advance date
+    advanceDate();
+    
+    // 15. Monthly report
+    if (state.day === 1 && state.month !== 1) {
+       generateMonthlyReport();
+    }
+    
+    // 16. Achievements
+    checkAchievements();
+    
+    // 17. Zoo Rating
+    calculateZooRating();
+    
+    // 18. Save game
+    if (typeof saveGame === 'function') saveGame();
+    
+    // 19. Leaderboard
+    if (typeof submitToLeaderboard === 'function') submitToLeaderboard();
+
+    // Decay death penalty slightly each day
+    state.recentDeathPenalty = Math.max(0, (state.recentDeathPenalty || 0) - 2);
+    state.daysSinceNewAnimal = (state.daysSinceNewAnimal || 0) + 1;
+
+    // Refresh UI
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof renderExhibits === 'function') renderExhibits();
+    if (typeof renderHouses === 'function') renderHouses();
+    
+    console.log("Day advanced successfully!");
+  } catch (error) {
+    console.error("Error in advanceDay():", error);
+    showToast("Error advancing day. Check console for details.", "error");
   }
-  
-  // 16. Achievements
-  checkAchievements();
-  
-  // 17. Zoo Rating
-  calculateZooRating();
-  
-  // 18. Save game
-  if (typeof saveGame === 'function') saveGame();
-  
-  // 19. Leaderboard
-  if (typeof submitToLeaderboard === 'function') submitToLeaderboard();
-  
-  // 20. Random events (Disabled per GDD)
-  // triggerRandomEvent();
-
-  // Decay death penalty slightly each day
-  state.recentDeathPenalty = Math.max(0, (state.recentDeathPenalty || 0) - 2);
-  state.daysSinceNewAnimal = (state.daysSinceNewAnimal || 0) + 1;
-
-  // Refresh UI
-  if (typeof updateUI === 'function') updateUI();
-  if (typeof renderExhibits === 'function') renderExhibits();
-  if (typeof renderHouses === 'function') renderHouses();
 }
 
 // --- Daily Sub-Processes ---
@@ -77,7 +81,7 @@ function consumeDailyFood() {
     if (!baseAnimal) return;
 
     let foodNeeded = 1;
-    if (animal.isPregnant) foodNeeded = 2; // Pregnant animals eat double
+    if (animal.isPregnant) foodNeeded = 2;
 
     const diet = baseAnimal.diet;
     let foodType = null;
@@ -92,7 +96,6 @@ function consumeDailyFood() {
     } else {
       animal.wasHungry = true;
       if (foodType && state.food[foodType] < foodNeeded) {
-         // Deplete whatever is left
          state.food[foodType] = 0;
       }
     }
@@ -101,15 +104,14 @@ function consumeDailyFood() {
 
 function processUpkeep() {
   let upkeep = 0;
-  upkeep += getAllExhibits().length * 5; // $5 per exhibit
-  upkeep += Object.keys(state.houses).length * 10; // $10 per house
+  upkeep += getAllExhibits().length * 5;
+  upkeep += Object.keys(state.houses).length * 10;
   
   state.money -= upkeep;
   state.monthlyIncomeTracker -= upkeep;
 }
 
 function processDailyMaintenance() {
-  // Decrease build timers
   getAllExhibits().forEach(({ exhibit }) => {
     if (exhibit.buildDaysRemaining > 0) {
       exhibit.buildDaysRemaining--;
@@ -126,7 +128,6 @@ function processDailyMaintenance() {
         showToast(`🏗️ ${house.name} is now open!`, "success");
       }
     }
-    // Also decrement exhibits inside houses
     if (house.exhibits) {
        Object.values(house.exhibits).forEach(ex => {
           if (ex.buildDaysRemaining > 0) ex.buildDaysRemaining--;
@@ -134,7 +135,6 @@ function processDailyMaintenance() {
     }
   }
 
-  // Amenity maintenance
   let amenityMaintenance = 0;
   for (const [id, count] of Object.entries(state.amenities)) {
     const amenityData = data.amenities[id];
@@ -151,7 +151,6 @@ function processAging() {
   getAllAnimals().forEach(animal => {
     animal.age = (animal.age || 0) + 1;
     
-    // Old age death chance
     if (animal.age > 600) {
       const deathChance = ((animal.age - 600) / 400) * 0.01;
       if (Math.random() < deathChance) {
@@ -201,41 +200,91 @@ function generateMonthlyReport() {
     month: state.month,
     year: state.year,
     income: state.monthlyIncomeTracker,
-    visitors: state.dailyVisitors * 30, // Rough estimate
+    visitors: state.dailyVisitors * 30,
     animals: getAllAnimals().length,
     rating: state.zooRating
   };
   
   state.monthlyReports.push(report);
-  state.monthlyIncomeTracker = 0; // Reset tracker
+  state.monthlyIncomeTracker = 0;
   
   if (typeof renderReports === 'function') renderReports();
   showMonthlyReportModal(report);
 }
 
-// --- Zoo Rating & Achievements ---
+// --- FIXED: processDayIncome with proper variable scoping ---
+function processDayIncome() {
+  const visitors = generateVisitors();
+  state.dailyVisitors = visitors;
+  calculateGuestHappiness();
+
+  const ticketRevenue = visitors * state.ticketPrice;
+  state.money += ticketRevenue;
+  state.monthlyIncomeTracker += ticketRevenue;
+
+  let amenityRevenue = 0;
+  let foodRevenue = 0;
+  let giftRevenue = 0;
+  
+  if (visitors > 0) {
+    const foodStands = (state.amenities.food_stand || 0) + (state.amenities.cafe || 0);
+    const giftShops = state.amenities.gift_shop || 0;
+    
+    const foodBuyers = Math.min(visitors * 0.5, foodStands * 50);
+    foodRevenue = foodBuyers * 5;
+    amenityRevenue += foodRevenue;
+    
+    const giftBuyers = Math.min(visitors * 0.2, giftShops * 30);
+    giftRevenue = giftBuyers * 10;
+    amenityRevenue += giftRevenue;
+  }
+  
+  state.money += amenityRevenue;
+  state.monthlyIncomeTracker += amenityRevenue;
+  state.visitorSpending = { food: foodRevenue, gifts: giftRevenue, total: amenityRevenue };
+
+  let staffCost = 0;
+  state.hiredStaff.forEach(instance => {
+    const staffData = data.staff.find(s => s.id === instance.typeId);
+    if (staffData) staffCost += staffData.salary || 0;
+  });
+  state.money -= staffCost;
+  state.monthlyIncomeTracker -= staffCost;
+
+  if (visitors > 0) {
+    addTicker(`${visitors} visitors enjoyed your zoo today! Earned $${ticketRevenue + amenityRevenue}.`);
+  } else {
+    addTicker("No visitors today. Build more exhibits and amenities!");
+  }
+}
+
+function processAnimalIncome() {
+  let totalIncome = 0;
+  getAllAnimals().forEach(animal => {
+    const baseAnimal = data.animals.find(a => a.id === animal.id);
+    if (baseAnimal) {
+      const income = (baseAnimal.dailyIncome || 0) * getIncomeMultiplier(animal.age);
+      totalIncome += income;
+    }
+  });
+  
+  state.money += totalIncome;
+  state.monthlyIncomeTracker += totalIncome;
+}
+
 function calculateZooRating() {
   const allAnimals = getAllAnimals();
   const allExhibits = getAllExhibits();
   
-  // 1. Animal Variety (20%)
   const uniqueSpecies = new Set(allAnimals.map(a => a.id)).size;
   const varietyScore = Math.min(100, uniqueSpecies * 10);
   
-  // 2. Animal Health (20%)
   const avgHealth = allAnimals.length > 0 ? allAnimals.reduce((sum, a) => sum + (a.health || 100), 0) / allAnimals.length : 0;
-  
-  // 3. Visitor Satisfaction (15%)
   const satisfactionScore = state.visitorSatisfaction || 0;
-  
-  // 4. Cleanliness (10%)
   const avgCleanliness = allExhibits.length > 0 ? allExhibits.reduce((sum, {exhibit}) => sum + (exhibit.cleanliness || 100), 0) / allExhibits.length : 100;
-  
-  // 5. Death Score (25%)
   const deathPenalty = Math.min(100, state.recentDeathPenalty || 0);
   const deathScore = 100 - deathPenalty;
   
-  // 6. Amenities (10%)
   const amenityScore = Math.min(100, 
     ((state.amenities.restroom || 0) + (state.amenities.toilet || 0)) * 20 + 
     (state.amenities.bin || 0) * 5 + 
@@ -248,7 +297,6 @@ function calculateZooRating() {
   const oldRating = state.zooRating;
   state.zooRating = Math.round(Math.max(0, Math.min(100, rating)));
   
-  // Tier up bonus
   const oldTier = Object.keys(ZOO_RATING_TIERS).find(t => oldRating >= ZOO_RATING_TIERS[t].min && oldRating <= ZOO_RATING_TIERS[t].max);
   const newTier = Object.keys(ZOO_RATING_TIERS).find(t => state.zooRating >= ZOO_RATING_TIERS[t].min && state.zooRating <= ZOO_RATING_TIERS[t].max);
   
@@ -265,7 +313,7 @@ function checkAchievements() {
   if (!data.achievements) return;
   
   data.achievements.forEach(ach => {
-    if (state.achievements[ach.id]) return; // Already unlocked
+    if (state.achievements[ach.id]) return;
     
     let unlocked = false;
     const check = ach.check;
@@ -297,8 +345,6 @@ function checkAchievements() {
   });
 }
 
-// --- Placeholder for Monthly Report Modal ---
 function showMonthlyReportModal(report) {
-  // This will be fully implemented in modals.js
   showToast(`📊 Month ${report.month} Report: Earned $${report.income}`, 'info');
 }
