@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>ZooSmith V0.7.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div id="ticker">Welcome to your zoo...</div>
+    <div class="header-main">
+      <div class="zoo-name-display" onclick="openManageZoosModal()">
+        🏞️ <span id="zooNameDisplay">My Zoo</span> ✏️
+      </div>
+      <div class="stats-bar">
+        <span class="stat-pill money">💰 $<span id="money">10,000</span></span>
+        <span class="stat-pill date">📅 Y<span id="year">1</span> M<span id="month">1</span> D<span id="day">1</span></span>
+        <span class="stat-pill rating" id="ratingBadge" onclick="showRatingBreakdown()">
+          ⭐ <span id="zooRating">0</span>% <span id="zooRatingTier">(Struggling)</span>
+        </span>
+      </div>
+    </div>
+    <button id="settingsBtn" onclick="openSettingsModal()">⚙️</button>
+  </header>
+
+  <!-- NAVIGATION -->
+  <nav class="nav">
+    <button class="active" onclick="showSection('shop', event)">🛒 Shop</button>
+    <button onclick="showSection('exhibits', event)">🏞 Exhibits</button>
+    <button onclick="showSection('houses', event)">🏠 Houses</button>
+    <button onclick="showSection('staff', event)">👷 Staff</button>
+    <button onclick="showSection('supplies', event)">🍽 Supplies</button>
+    <button onclick="showSection('amenities', event)">🏪 Amenities</button>
+    <button onclick="showSection('facilities', event)">🏗 Facilities</button>
+    <button onclick="showSection('research', event)">🔬 Research</button>
+    <button onclick="showSection('visitors', event)">👥 Visitors</button>
+    <button onclick="showSection('reports', event)">📊 Reports</button>
+    <button onclick="showSection('map', event)">🗺️ Zoo Map</button>
+    <button onclick="showSection('achievements', event)">🏆 Achievements</button>
+    <button onclick="showSection('leaderboard', event)">🏆 Leaderboard</button>
+  </nav>
+
+  <!-- FLOATING ACTION BUTTONS -->
+  <button id="buildExhibitBtn" class="fab-build" onclick="openBuildModal()">🏗️</button>
+  <button id="endDayBtn" class="fab-end-day">⏭ End Day</button>
+
+  <!-- MAIN CONTENT SECTIONS -->
+  <main>
+    <section id="shop" class="section active"></section>
+    <section id="exhibits" class="section"></section>
+    <section id="houses" class="section"></section>
+    <section id="staff" class="section"></section>
+    <section id="supplies" class="section"></section>
+    <section id="amenities" class="section"></section>
+    <section id="facilities" class="section"></section>
+    <section id="research" class="section"></section>
+    <section id="visitors" class="section"></section>
+    <section id="reports" class="section"></section>
+    <section id="map" class="section"></section>
+    <section id="achievements" class="section"></section>
+    <section id="leaderboard" class="section"></section>
+  </main>
+
+  <!-- MODALS -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <h3>Settings</h3>
+      <div id="settingsContent"></div>
+      <button onclick="closeSettingsModal()">Close</button>
+    </div>
+  </div>
+
+  <div id="buyModal" class="modal">
+    <div class="modal-content">
+      <h3>Select Exhibit</h3>
+      <select id="exhibitSelect"></select>
+      <select id="genderSelect">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+      <button id="confirmBuyBtn">Confirm</button>
+      <button onclick="closeBuyModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div id="animalInfoModal" class="modal">
+    <div class="modal-content">
+      <h3>Animal Info</h3>
+      <div id="animalInfoContent"></div>
+      <button onclick="closeAnimalInfo()">Close</button>
+    </div>
+  </div>
+
+  <div id="buildModal" class="modal">
+    <div class="modal-content">
+      <h3>Build Exhibit</h3>
+      <div id="buildContent"></div>
+      <button onclick="closeBuildModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div id="eventModal" class="modal">
+    <div class="modal-content">
+      <h3>Event</h3>
+      <div id="eventContent"></div>
+    </div>
+  </div>
+
+  <div id="upgradeModal" class="modal">
+    <div class="modal-content">
+      <h3>Upgrades</h3>
+      <div id="upgradeContent"></div>
+      <button onclick="closeUpgradeModal()">Close</button>
+    </div>
+  </div>
+
+  <div id="assignStaffModal" class="modal">
+    <div class="modal-content">
+      <h3>Assign Staff</h3>
+      <div id="assignStaffContent"></div>
+      <button onclick="closeAssignStaffModal()">Close</button>
+    </div>
+  </div>
+
+  <div id="ratingModal" class="modal">
+    <div class="modal-content">
+      <h3>Zoo Rating Breakdown</h3>
+      <div id="ratingContent"></div>
+      <button onclick="closeRatingModal()">Close</button>
+    </div>
+  </div>
+
+  <div id="manageZoosModal" class="modal">
+    <div class="modal-content">
+      <h3>Manage Zoos</h3>
+      <div id="manageZoosContent"></div>
+      <button onclick="closeManageZoosModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- OVERLAYS -->
+  <div id="tutorialOverlay"></div>
+  <div id="toast-container"></div>
+
+    <!-- FIREBASE MODULE (Separate Script Tag) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, orderBy, limit }
+      from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.firebasestorage.app",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.firebaseDB = db;
+    window.firebaseModules = { doc, setDoc, getDoc, getDocs, collection, query, orderBy, limit };
+  </script>
+
+  <!-- MAIN SCRIPTS (NOT MODULES, LOADED IN DEPENDENCY ORDER) -->
+  <script src="js/constants.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/data-loader.js"></script>
+  <script src="js/staff.js"></script>
+  <script src="js/animals.js"></script>
+  <script src="js/exhibits.js"></script>
+  <script src="js/visitors.js"></script>
+  <script src="js/daily-cycle.js"></script>
+  <script src="js/ui-renderers.js"></script>
+  <script src="js/modals.js"></script>
+  <script src="js/save-load.js"></script>
+  <script src="js/tutorial.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/init.js"></script>
+</body>
+</html>
