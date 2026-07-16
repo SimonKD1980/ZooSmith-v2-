@@ -3,7 +3,7 @@ import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
 import { FOOD_TYPES, getDietFoodType, getLifeStage, shouldDieOfOldAge } from '../constants.js';
-import { getStaffEffects, isKeepersUnderstaffed } from './StaffSystem.js'; // ← ADD THIS
+import { getStaffEffects, isKeepersUnderstaffed } from './StaffSystem.js';
 
 export function processWildlife() {
     // Order matters! Food → Health → Breeding → Pregnancy → Aging
@@ -22,7 +22,25 @@ function consumeDailyFood() {
     const consumption = { hay: 0, meat: 0, produce: 0 };
     const allAnimals = getAllAnimals();
 
-    // Calculate total consumption needed
+    // 🔥 CRITICAL FIX: If understaffed, NO food is consumed, but animals go hungry
+    if (isKeepersUnderstaffed()) {
+        allAnimals.forEach(animal => {
+            animal.wasHungry = true;
+            const foodIcon = FOOD_TYPES[getDietFoodType(animal.diet)]?.icon || '🍖';
+            if (!hungryAnimals.includes(`${foodIcon} ${animal.name}`)) {
+                hungryAnimals.push(`${foodIcon} ${animal.name}`);
+            }
+        });
+        
+        if (hungryAnimals.length > 0) {
+            eventBus.emit('ANIMALS_HUNGRY', { animals: hungryAnimals });
+        }
+        
+        // Return early: zero consumption
+        return { consumption, hungryAnimals }; 
+    }
+
+    // Calculate total consumption needed (only runs if adequately staffed)
     allAnimals.forEach(animal => {
         const baseAmount = animal.foodAmount || 1;
         const amount = animal.isPregnant ? baseAmount * 2 : baseAmount;
@@ -43,8 +61,9 @@ function consumeDailyFood() {
             allAnimals.forEach(animal => {
                 if (getDietFoodType(animal.diet) === foodType) {
                     animal.wasHungry = true;
-                    if (!hungryAnimals.includes(animal.name)) {
-                        hungryAnimals.push(`${FOOD_TYPES[foodType].icon} ${animal.name}`);
+                    const foodIcon = FOOD_TYPES[foodType]?.icon || '🍖';
+                    if (!hungryAnimals.includes(`${foodIcon} ${animal.name}`)) {
+                        hungryAnimals.push(`${foodIcon} ${animal.name}`);
                     }
                 }
             });
@@ -296,10 +315,10 @@ function getExhibitHappiness(exhibit) {
         const health = animal.health ?? 100;
         happiness += (health - 50) * 0.4; // -20 to +20 based on health
 
-        // Hunger
+        // Hunger (clears the flag after using it)
         if (animal.wasHungry) {
             happiness -= 30;
-            delete animal.wasHungry; // Clear flag after using it
+            delete animal.wasHungry; 
         }
 
         // Cleanliness
