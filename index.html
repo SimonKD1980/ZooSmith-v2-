@@ -12,22 +12,21 @@
         button:hover { background: #16a34a; }
         #log { margin-top: 20px; background: #000; padding: 15px; border-radius: 8px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9rem; }
     </style>
-</head><body>
+</head>
+<body>
     <div class="header">
         <div class="stat">💰 $<span id="money">10,000</span></div>
         <div class="stat">📅 Day <span id="day">1</span></div>
         <div class="stat">⭐ <span id="rating">50</span>%</div>
         <div class="stat">😊 <span id="satisfaction">80</span>%</div>
     </div>
-    
+
     <button id="endDayBtn">⏭ End Day</button>
-    
-    <!-- Exhibit Status Panel -->
+
+    <div id="foodStatus" style="margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 8px;"></div>
     <div id="exhibitStatus" style="margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 8px;"></div>
-    
-    <!-- NEW: Visitor Status Panel -->
     <div id="visitorStatus" style="margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 8px;"></div>
-    
+
     <div id="log"></div>
 
     <script type="module" src="./js/main.js"></script>
