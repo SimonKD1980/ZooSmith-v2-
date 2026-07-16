@@ -4,6 +4,7 @@ import { eventBus } from './engine/EventBus.js';
 import { advanceDay } from './engine/Engine.js';
 import { loadAllData } from './engine/data.js';
 import { FOOD_TYPES } from './engine/constants.js';
+import { renderShop } from './ui/ShopUI.js';
 import { 
     getKeeperCapacity, 
     getKeeperDemand, 
@@ -267,7 +268,10 @@ function logMessage(msg) {
 async function init() {
     await loadAllData();
     updateUI();
-    logMessage("🦁 ZooSmith V2 Engine Initialized with Full Wildlife & Staff!");
+    renderShop(); // ← ADD THIS - Initialize the shop
+    logMessage("🦁 ZooSmith V2 Engine Initialized with Shop!");
 }
+
+init();
 
 init();
