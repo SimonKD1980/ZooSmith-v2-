@@ -2,13 +2,14 @@
 import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
-import { getStaffEffects, isKeeperRole } from './StaffSystem.js'; // ← Imported from StaffSystem
+import { getStaffEffects, isKeeperRole } from './StaffSystem.js';
 
 export function processFacilities() {
     processDailyMaintenance();
     processUpkeep();
     processFenceDegradation();
     processExhibitCleanliness();
+    processAmenityCleanliness(); // ← NEW: Janitors clean amenities
 }
 
 function processDailyMaintenance() {
@@ -109,9 +110,7 @@ function processFenceDegradation() {
 }
 
 function processExhibitCleanliness() {
-    const staffEffects = getStaffEffects();
-    const janitorCleaningPower = staffEffects.cleanExhibits || 0;
-    
+    // 🔥 CHANGED: Only keepers clean exhibits now (no janitor boost)
     for (const id in state.exhibits) {
         const exhibit = state.exhibits[id];
         if (exhibit.buildDaysRemaining > 0) continue;
@@ -120,6 +119,7 @@ function processExhibitCleanliness() {
         
         const oldCleanliness = exhibit.cleanliness;
         
+        // 1. Animals make it dirty
         let dirtAmount = 0;
         exhibit.animals.forEach(animalInstance => {
             const baseAnimal = data.animals.find(a => a.id === animalInstance.id);
@@ -129,6 +129,7 @@ function processExhibitCleanliness() {
         
         exhibit.cleanliness -= dirtAmount;
         
+        // 2. Keepers assigned to THIS exhibit clean it (+2 per keeper)
         const assignedKeepers = state.hiredStaff.filter(s =>
             s.assignments &&
             s.assignments.includes(exhibit.id) &&
@@ -137,15 +138,46 @@ function processExhibitCleanliness() {
         const keeperCleaningBonus = assignedKeepers.length * 2;
         exhibit.cleanliness += keeperCleaningBonus;
         
-        if (janitorCleaningPower > 0) {
-            exhibit.cleanliness += janitorCleaningPower;
-        }
+        // 🔥 REMOVED: Janitor cleaning boost (they now clean amenities instead)
         
         exhibit.cleanliness = Math.max(0, Math.min(100, exhibit.cleanliness));
         
         if (Math.abs(oldCleanliness - exhibit.cleanliness) > 0.1) {
             console.log(`✨ ${exhibit.name} cleanliness: ${oldCleanliness.toFixed(1)}% → ${exhibit.cleanliness.toFixed(1)}%`);
         }
+    }
+}
+
+// 🔥 NEW: Janitors clean amenities
+function processAmenityCleanliness() {
+    const staffEffects = getStaffEffects();
+    const janitorCleaningPower = staffEffects.cleanAmenities || 0;
+    
+    if (janitorCleaningPower === 0) return;
+    
+    // Initialize amenity cleanliness if not present
+    if (!state.amenityCleanliness) {
+        state.amenityCleanliness = {};
+    }
+    
+    // Clean all amenities based on janitor power
+    for (const id in state.amenities) {
+        const count = state.amenities[id] || 0;
+        if (count === 0) continue;
+        
+        if (state.amenityCleanliness[id] === undefined) {
+            state.amenityCleanliness[id] = 100;
+        }
+        
+        // Amenities get dirty based on visitor count
+        const visitorDirtyRate = (state.dailyVisitors || 0) * 0.1;
+        state.amenityCleanliness[id] -= visitorDirtyRate;
+        
+        // Janitors clean them
+        state.amenityCleanliness[id] += janitorCleaningPower;
+        
+        // Clamp between 0 and 100
+        state.amenityCleanliness[id] = Math.max(0, Math.min(100, state.amenityCleanliness[id]));
     }
 }
 
@@ -160,6 +192,3 @@ function triggerEscape(exhibit) {
         exhibitName: exhibit.name 
     });
 }
-
-// ✅ NO MORE DUPLICATE FUNCTIONS HERE! 
-// getStaffEffects and isKeeperRole are now cleanly imported from StaffSystem.js
