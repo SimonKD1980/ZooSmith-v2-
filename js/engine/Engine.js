@@ -6,8 +6,22 @@ import { processWildlife } from './systems/WildlifeSystem.js';
 import { processFacilities } from './systems/FacilitySystem.js';
 import { processVisitors } from './systems/VisitorSystem.js';
 
-// Import systems that just register event listeners
 import './systems/RatingSystem.js';
+
+export function advanceDay() {
+    console.log(`--- Advancing to Day ${state.day} ---`);
+
+    // Order matters!
+    processWildlife();    // Food, health, breeding, pregnancy, aging
+    processFacilities();  // Construction, upkeep, fences, cleanliness
+    processVisitors();    // Visitors, spending, complaints
+    processEconomy();     // Money
+
+    state.day++;
+    state.daysSinceNewAnimal++;
+
+    eventBus.emit('DAY_ADVANCED');
+}
 
 export function advanceDay() {
     console.log(`--- Advancing to Day ${state.day} ---`);
