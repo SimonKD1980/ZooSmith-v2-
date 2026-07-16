@@ -3,6 +3,7 @@ import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
 import { FOOD_TYPES, getDietFoodType, getLifeStage, shouldDieOfOldAge } from '../constants.js';
+import { getStaffEffects, isKeepersUnderstaffed } from './StaffSystem.js'; // ← ADD THIS
 
 export function processWildlife() {
     // Order matters! Food → Health → Breeding → Pregnancy → Aging
