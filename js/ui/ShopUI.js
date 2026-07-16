@@ -161,31 +161,76 @@ function openBuyModal(animal) {
     select.innerHTML = "";
     const ids = Object.keys(state.exhibits);
     let compatibleExhibits = 0;
+    let underConstruction = 0;
+    let wrongType = 0;
+    let wrongSize = 0;
+
+    console.log('🔍 DEBUG: Trying to add animal:', animal.name);
+    console.log('🔍 DEBUG: Required type:', animal.requiredExhibitType || 'terrestrial');
+    console.log('🔍 DEBUG: Required size:', animal.requiredExhibitSize || 'small');
+    console.log('🔍 DEBUG: Total exhibits:', ids.length);
 
     const requiredType = animal.requiredExhibitType || 'terrestrial';
 
     for (const id of ids) {
         const exhibit = state.exhibits[id];
-        if (exhibit.type !== requiredType) continue;
-        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) continue;
+        
+        console.log(`🔍 DEBUG: Checking exhibit "${exhibit.name}":`, {
+            buildDaysRemaining: exhibit.buildDaysRemaining,
+            type: exhibit.type,
+            size: exhibit.size
+        });
+        
+        // Check if exhibit is still under construction
+        if (exhibit.buildDaysRemaining > 0) {
+            console.log(`  ❌ Skipped: Under construction (${exhibit.buildDaysRemaining} days left)`);
+            underConstruction++;
+            continue;
+        }
+        
+        // Check exhibit type compatibility
+        if (exhibit.type !== requiredType) {
+            console.log(`  ❌ Skipped: Wrong type (has ${exhibit.type}, needs ${requiredType})`);
+            wrongType++;
+            continue;
+        }
+        
+        // Check exhibit size compatibility
+        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) {
+            console.log(`  ❌ Skipped: Wrong size (has ${exhibit.size}, needs ${animal.requiredExhibitSize || 'small'} or larger)`);
+            wrongSize++;
+            continue;
+        }
 
+        console.log(`  ✅ Compatible! Adding to dropdown`);
         const opt = document.createElement("option");
         opt.value = id;
-        const exhibitType = data.exhibitTypes[exhibit.type] || data.exhibitTypes.terrestrial || { emoji: '🏞️', name: 'Exhibit' };
-        opt.textContent = `${exhibitType.emoji} ${exhibit.name}`;
+        opt.textContent = `${exhibit.name} (${exhibit.size})`;
         select.appendChild(opt);
         compatibleExhibits++;
     }
 
+    console.log(`🔍 DEBUG: Summary - Compatible: ${compatibleExhibits}, Under construction: ${underConstruction}, Wrong type: ${wrongType}, Wrong size: ${wrongSize}`);
+
     if (compatibleExhibits === 0) {
-        alert(`No compatible exhibits! Build a ${requiredType} exhibit first.`);
+        let message = `No compatible exhibits available!\n\n`;
+        if (underConstruction > 0) {
+            message += `🚧 ${underConstruction} exhibit(s) under construction\n`;
+        }
+        if (wrongType > 0) {
+            message += `❌ ${wrongType} exhibit(s) wrong type\n`;
+        }
+        if (wrongSize > 0) {
+            message += `❌ ${wrongSize} exhibit(s) wrong size\n`;
+        }
+        message += `\nRequired: ${requiredType} exhibit, ${animal.requiredExhibitSize || 'small'} size or larger.`;
+        alert(message);
         return;
     }
 
     state.pendingAnimal = animal;
     modal.classList.add("active");
 }
-
 function exhibitSizeOk(exhibitSize, requiredSize) {
     const SIZE_RANK = { small: 1, medium: 2, large: 3 };
     return SIZE_RANK[exhibitSize] >= SIZE_RANK[requiredSize];
