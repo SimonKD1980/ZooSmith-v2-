@@ -1,0 +1,22 @@
+[
+  {
+    "id": "keeper_jr",
+    "name": "Junior Keeper",
+    "role": "keeper",
+    "keeperSlots": 2,
+    "effects": {
+      "cleanExhibits": 0,
+      "maintenanceLevel": 0
+    }
+  },
+  {
+    "id": "janitor",
+    "name": "Janitor",
+    "role": "janitor",
+    "cleanerSlots": 5,
+    "effects": {
+      "cleanExhibits": 3,
+      "maintenanceLevel": 1
+    }
+  }
+]
