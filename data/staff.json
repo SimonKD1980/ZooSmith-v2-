@@ -37,14 +37,14 @@
     "name": "Janitor",
     "icon": "🧹",
     "role": "janitor",
-    "description": "Keeps the zoo clean and tidy. Deep cleans exhibits and maintains amenities.",
+    "description": "Keeps visitor areas clean. Maintains restrooms, bins, and public spaces.",
     "cost": 300,
     "salary": 30,
     "keeperSlots": 0,
     "cleanerSlots": 5,
     "effects": {
       "cleanPark": 10,
-      "cleanExhibits": 5,
+      "cleanAmenities": 5,
       "maxStaff": 10
     }
   },
