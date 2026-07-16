@@ -1,0 +1,12 @@
+{
+  "bin": {
+    "id": "bin",
+    "name": "Trash Bin",
+    "maintenanceCost": 2
+  },
+  "restroom": {
+    "id": "restroom",
+    "name": "Restroom",
+    "maintenanceCost": 10
+  }
+}
