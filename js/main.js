@@ -20,8 +20,8 @@ function updateUI() {
     ratingEl.textContent = state.zooRating;
     satisfactionEl.textContent = state.visitorSatisfaction;
     
-    // 🔥 NEW: Update exhibit status display
     updateExhibitStatus();
+    updateVisitorStatus();
 }
 
 function updateExhibitStatus() {
@@ -57,6 +57,41 @@ function updateExhibitStatus() {
     exhibitStatusEl.innerHTML = html;
 }
 
+function updateVisitorStatus() {
+    const visitorStatusEl = document.getElementById('visitorStatus');
+    if (!visitorStatusEl) return;
+    
+    let html = '<h3 style="margin: 0 0 10px 0;">👥 Visitor Summary</h3>';
+    
+    html += `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #9ca3af;">Today's Visitors</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #3b82f6;">${state.dailyVisitors}</div>
+            </div>
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #9ca3af;">Guest Happiness</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: ${(state.guestHappiness || 50) >= 70 ? '#22c55e' : '#f59e0b'};">${state.guestHappiness || 50}%</div>
+            </div>
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #9ca3af;">Amenity Revenue</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24;">$${(state.visitorSpending?.total || 0).toLocaleString()}</div>
+            </div>
+        </div>
+    `;
+    
+    if (state.visitorComplaints && state.visitorComplaints.length > 0) {
+        html += '<div style="margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 6px;">';
+        html += '<div style="font-size: 0.8rem; color: #fca5a5; margin-bottom: 6px; font-weight: 700;">⚠️ Complaints:</div>';
+        state.visitorComplaints.forEach(c => {
+            html += `<div style="font-size: 0.85rem; color: #e5e7eb; margin-bottom: 4px;">${c.icon} ${c.text}</div>`;
+        });
+        html += '</div>';
+    }
+    
+    visitorStatusEl.innerHTML = html;
+}
+
 // --- EVENT LISTENERS ---
 eventBus.on('DAY_ADVANCED', () => {
     updateUI();
@@ -64,7 +99,7 @@ eventBus.on('DAY_ADVANCED', () => {
 });
 
 eventBus.on('ECONOMY_PROCESSED', (data) => {
-    logMessage(`💰 Economy: Net Profit $${data.profit} | Total: $${data.totalMoney}`);
+    logMessage(`💰 Economy: Visitors ${data.visitors} | Net Profit $${data.profit} | Total: $${data.totalMoney}`);
 });
 
 eventBus.on('ANIMAL_DIED', (data) => {
@@ -88,6 +123,13 @@ eventBus.on('ANIMAL_ESCAPED', (data) => {
     logMessage(`🚨 ${data.animal.name} escaped from ${data.exhibitName}!`);
 });
 
+eventBus.on('VISITORS_PROCESSED', (data) => {
+    logMessage(`👥 Visitors: ${data.visitors} | Attraction: ${data.attraction.toFixed(0)} | Spending: $${data.spending.total}`);
+    if (data.complaints.length > 0) {
+        logMessage(`⚠️ ${data.complaints.length} visitor complaint(s)`);
+    }
+});
+
 // Hook up the button
 endDayBtn.addEventListener('click', () => {
     advanceDay();
@@ -104,7 +146,7 @@ function logMessage(msg) {
 async function init() {
     await loadAllData();
     updateUI();
-    logMessage("🦁 ZooSmith V2 Engine Initialized with Facilities!");
+    logMessage("🦁 ZooSmith V2 Engine Initialized with Visitors!");
 }
 
 init();
