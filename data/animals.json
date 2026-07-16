@@ -2,6 +2,7 @@
   {
     "id": "lion",
     "name": "Lion",
+    "cost": 1000,
     "dirtiness": 3,
     "requiredExhibitSize": "medium"
   },
