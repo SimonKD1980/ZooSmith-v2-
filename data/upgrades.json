@@ -1,5 +1,0 @@
-[
-  { "id": "barn_shelter", "name": "🏠 Barn Shelter", "type": "shelter", "cost": 300, "description": "A cozy barn." },
-  { "id": "hay_bale", "name": "🌾 Hay Bale", "type": "decoration", "cost": 50, "description": "A decorative bale." },
-  { "id": "feeding_trough", "name": "🥣 Feeding Trough", "type": "facility", "cost": 150, "description": "A place to eat." }
-]
