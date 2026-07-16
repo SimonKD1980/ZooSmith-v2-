@@ -5,18 +5,22 @@ import { processEconomy } from './systems/EconomySystem.js';
 import { processWildlife } from './systems/WildlifeSystem.js';
 import { processFacilities } from './systems/FacilitySystem.js';
 import { processVisitors } from './systems/VisitorSystem.js';
+import { processStaff } from './systems/StaffSystem.js';
+
 import './systems/RatingSystem.js';
 
 export function advanceDay() {
     console.log(`--- Advancing to Day ${state.day} ---`);
-    
-    processWildlife();
-    processFacilities();
-    processVisitors();
-    processEconomy();
-    
+
+    // Order matters!
+    processStaff();       // Pay staff salaries
+    processWildlife();    // Food, health, breeding, pregnancy, aging
+    processFacilities();  // Construction, upkeep, fences, cleanliness
+    processVisitors();    // Visitors, spending, complaints
+    processEconomy();     // Money
+
     state.day++;
     state.daysSinceNewAnimal++;
-    
+
     eventBus.emit('DAY_ADVANCED');
 }
