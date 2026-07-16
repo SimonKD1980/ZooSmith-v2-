@@ -13,6 +13,16 @@ export const state = {
     unnaturalDeaths: 0,
     totalDeaths: 0,
     
+    // Visitor Data (NEW!)
+    dailyVisitors: 0,
+    guestHappiness: 50,
+    visitorSpending: { food: 0, gifts: 0, total: 0 },
+    visitorComplaints: [],
+    ticketPrice: 20,
+    ticketPriceImpact: 0,
+    ticketSatisfactionImpact: 0,
+    daysSinceNewAnimal: 0,
+    
     // Exhibits & Facilities
     exhibits: {
         'exhibit_1': {
@@ -21,8 +31,8 @@ export const state = {
             size: 'medium',
             type: 'terrestrial',
             animals: [
-                { id: 'lion', name: 'Leo', ageDays: 100, health: 100, sick: false, requiredExhibitSize: 'medium' },
-                { id: 'zebra', name: 'Stripey', ageDays: 650, health: 100, sick: false, requiredExhibitSize: 'small' }
+                { id: 'lion', name: 'Leo', ageDays: 100, health: 100, sick: false, requiredExhibitSize: 'medium', attractionValue: 15 },
+                { id: 'zebra', name: 'Stripey', ageDays: 650, health: 100, sick: false, requiredExhibitSize: 'small', attractionValue: 10 }
             ],
             upgrades: [],
             buildDaysRemaining: 0,
@@ -38,7 +48,9 @@ export const state = {
     // Amenities (counts)
     amenities: {
         bin: 2,
-        restroom: 1
+        restroom: 1,
+        bench: 1,
+        food_stand: 1
     },
     
     // Maintenance tracking
