@@ -1,5 +1,0 @@
-[
-  { "id": "bin", "name": "Bin", "icon": "🗑️", "cost": 100, "revenue": 0, "maintenanceCost": 1, "description": "A trash bin." },
-  { "id": "restroom", "name": "Restroom", "icon": "🚻", "cost": 2000, "revenue": 0, "maintenanceCost": 10, "description": "Public restroom." },
-  { "id": "food_stand", "name": "Food Stand", "icon": "🍔", "cost": 1500, "revenue": 5, "maintenanceCost": 5, "description": "Sells food." }
-]
