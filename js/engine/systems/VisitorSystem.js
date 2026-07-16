@@ -2,6 +2,7 @@
 import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
+import { getStaffEffects } from './StaffSystem.js'; // ← ADD THIS
 
 export function processVisitors() {
     // 1. Calculate attraction score
