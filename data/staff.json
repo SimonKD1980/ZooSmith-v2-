@@ -11,7 +11,7 @@
     "cleanerSlots": 0,
     "effects": {
       "animalHappiness": 5,
-      "cleanExhibits": 2,
+      "cleanExhibits": 5,
       "maxStaff": 5
     }
   },
@@ -28,7 +28,7 @@
     "effects": {
       "animalHappiness": 10,
       "breedingBonus": 0.1,
-      "cleanExhibits": 3,
+      "cleanExhibits": 10,
       "maxStaff": 3
     }
   },
