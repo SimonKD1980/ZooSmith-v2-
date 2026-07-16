@@ -256,6 +256,10 @@ eventBus.on('UNDERSTAFFED', (data) => {
     logMessage(`⚠️ UNDERSTAFFED! Keepers: ${data.keeperCapacity}/${data.keeperDemand} | Cleaners: ${data.cleanerCapacity}/${data.cleanerDemand}`);
 });
 
+eventBus.on('ANIMAL_PURCHASED', (data) => {
+    logMessage(`🎉 Purchased ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
+});
+
 // --- HELPER ---
 function logMessage(msg) {
     if (!logEl) return;
