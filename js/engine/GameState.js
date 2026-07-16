@@ -14,7 +14,7 @@ export const state = {
     totalDeaths: 0,
     bredAnimals: 0,
 
-    // Food Inventory (NEW!)
+    // Food Inventory
     food: {
         hay: 30,
         meat: 20,
@@ -66,7 +66,7 @@ export const state = {
     },
     builtEnclosures: { 'exhibit_1': true },
 
-    // Staff
+    // Staff (NEW!)
     hiredStaff: [],
 
     // Amenities
