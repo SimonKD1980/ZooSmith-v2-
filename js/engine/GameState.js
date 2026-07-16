@@ -48,7 +48,7 @@ export const state = {
     // Amenities (counts)
     amenities: {
         bin: 2,
-        restroom: 1,
+        restroom: 0,
         bench: 1,
         food_stand: 1
     },
