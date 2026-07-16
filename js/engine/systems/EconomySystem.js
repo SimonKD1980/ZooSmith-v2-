@@ -3,31 +3,47 @@ import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 
 export function processEconomy() {
+    // 🔥 SAFETY: Ensure money is valid
+    if (typeof state.money !== 'number' || isNaN(state.money)) {
+        console.warn('⚠️ Money was NaN, resetting to 0');
+        state.money = 0;
+    }
+    
     // 1. Reset daily trackers
     state.dailyReport.ticketIncome = 0;
     state.dailyReport.amenityIncome = 0;
     state.dailyReport.staffExpense = 0;
     
-    // 2. Calculate Ticket Income (NOW USES REAL VISITOR COUNT!)
+    // 2. Calculate Ticket Income
     const visitorsToday = state.dailyVisitors || 0;
     const ticketPrice = state.ticketPrice || 20;
-    const ticketIncome = visitorsToday * ticketPrice;
     
+    // 🔥 SAFETY: Ensure these are numbers
+    if (typeof visitorsToday !== 'number' || typeof ticketPrice !== 'number') {
+        console.error('❌ Invalid visitor/ticket data:', { visitorsToday, ticketPrice });
+        return;
+    }
+    
+    const ticketIncome = visitorsToday * ticketPrice;
     state.money += ticketIncome;
     state.dailyReport.ticketIncome = ticketIncome;
     state.dailyReport.amenityIncome = state.visitorSpending?.total || 0;
 
     // 3. Calculate Staff Expenses
     let staffCost = 0;
-    // Placeholder: Let's say we have 2 staff members costing $50 each
-    staffCost = 2 * 50;
+    staffCost = 2 * 50; // Placeholder
     state.money -= staffCost;
     state.dailyReport.staffExpense = staffCost;
 
-    // 4. Calculate Net Profit (NO MORE "PLUG" VARIABLES!)
+    // 4. Calculate Net Profit
     state.dailyReport.netProfit = ticketIncome + state.dailyReport.amenityIncome - staffCost;
 
-    // 5. Emit an event so other systems (or the UI) know the day finished
+    // 🔥 SAFETY: Final check before emitting
+    if (isNaN(state.money)) {
+        console.error('❌ Money became NaN after economy processing!');
+        state.money = 0;
+    }
+
     eventBus.emit('ECONOMY_PROCESSED', { 
         profit: state.dailyReport.netProfit,
         totalMoney: state.money,
