@@ -13,6 +13,7 @@ import {
 } from './engine/systems/StaffSystem.js';
 import { renderShop } from './ui/ShopUI.js';
 import { renderSupplies } from './ui/SuppliesUI.js';
+import { renderStaff } from './ui/StaffUI.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -40,11 +41,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         const section = document.getElementById(sectionId);
         if (section) section.classList.add('active');
         
-        // Render the appropriate tab (each now includes its own status panel)
+        // Render the appropriate tab
         if (sectionId === 'shop') renderShop();
         else if (sectionId === 'supplies') renderSupplies();
+        else if (sectionId === 'staff') renderStaff();
         else if (sectionId === 'exhibits') renderExhibitsTab();
-        else if (sectionId === 'staff') renderStaffTab();
         else if (sectionId === 'amenities') renderAmenitiesTab();
         else if (sectionId === 'visitors') renderVisitorsTab();
     });
@@ -67,68 +68,8 @@ function updateUI() {
 }
 
 // =====================================================================
-// TAB RENDERERS (Each includes its own status panel)
+// TAB RENDERERS (Placeholder tabs we haven't fully built yet)
 // =====================================================================
-
-function renderStaffTab() {
-    const el = document.getElementById('staff');
-    if (!el) return;
-    
-    const keeperCapacity = getKeeperCapacity();
-    const keeperDemand = getKeeperDemand();
-    const cleanerCapacity = getCleanerCapacity();
-    const cleanerDemand = getCleanerDemand();
-    const understaffed = isUnderstaffed();
-
-    let html = `
-        <div class="status-panel">
-            <h3>👷 Staff Overview</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: #9ca3af;">🧤 Keeper Slots</div>
-                    <div style="font-size: 1.5rem; font-weight: 800; color: ${keeperCapacity >= keeperDemand ? '#22c55e' : '#ef4444'};">
-                        ${keeperCapacity} / ${keeperDemand}
-                    </div>
-                    <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 4px;">
-                        ${keeperCapacity - keeperDemand >= 0 ? '✅ Adequate' : '⚠️ Need more!'}
-                    </div>
-                </div>
-                <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: #9ca3af;">🧹 Cleaner Slots</div>
-                    <div style="font-size: 1.5rem; font-weight: 800; color: ${cleanerCapacity >= cleanerDemand ? '#22c55e' : '#ef4444'};">
-                        ${cleanerCapacity} / ${cleanerDemand}
-                    </div>
-                    <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 4px;">
-                        ${cleanerCapacity - cleanerDemand >= 0 ? '✅ Adequate' : '⚠️ Need more!'}
-                    </div>
-                </div>
-                <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: #9ca3af;">💰 Daily Salaries</div>
-                    <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24;">
-                        $${state.dailyReport.staffExpense || 0}
-                    </div>
-                    <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 4px;">
-                        ${state.hiredStaff.length} staff hired
-                    </div>
-                </div>
-            </div>
-            ${understaffed ? `
-                <div style="margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 6px; text-align: center;">
-                    <div style="color: #fca5a5; font-weight: 700;">⚠️ UNDERSTAFFED</div>
-                    <div style="color: #e5e7eb; font-size: 0.85rem; margin-top: 4px;">
-                        Animals may go hungry and facilities may get dirty!
-                    </div>
-                </div>
-            ` : ''}
-        </div>
-        <div class="status-panel">
-            <h2 style="margin-bottom: 15px;">👷 Hire Staff</h2>
-            <p style="color: #9ca3af;">Coming soon! Hire keepers, cleaners, and maintenance workers.</p>
-        </div>
-    `;
-    
-    el.innerHTML = html;
-}
 
 function renderExhibitsTab() {
     const el = document.getElementById('exhibits');
@@ -288,6 +229,14 @@ eventBus.on('ANIMAL_PURCHASED', (data) => {
 eventBus.on('FOOD_PURCHASED', (data) => {
     const food = FOOD_TYPES[data.foodType];
     logMessage(`🍽️ Bought ${data.amount} ${food.name} for $${data.cost}`);
+});
+
+eventBus.on('STAFF_HIRED', (data) => {
+    logMessage(`✅ Hired ${data.staffName} for $${data.cost}`);
+});
+
+eventBus.on('STAFF_FIRED', (data) => {
+    logMessage(`❌ Fired ${data.staffName} (severance: $${data.refund})`);
 });
 
 // =====================================================================
