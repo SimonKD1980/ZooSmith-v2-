@@ -8,8 +8,8 @@ export const state = {
 
     // Zoo Data
     zooName: "My Zoo",
-    zooRating: 50,
-    visitorSatisfaction: 80,
+    zooRating: 0,
+    visitorSatisfaction: 0,
     unnaturalDeaths: 0,
     totalDeaths: 0,
     bredAnimals: 0,
@@ -23,7 +23,7 @@ export const state = {
 
     // Visitor Data
     dailyVisitors: 0,
-    guestHappiness: 50,
+    guestHappiness: 0,
     visitorSpending: { food: 0, gifts: 0, total: 0 },
     visitorComplaints: [],
     ticketPrice: 20,
@@ -71,10 +71,10 @@ export const state = {
 
     // Amenities
     amenities: {
-        bin: 2,
-        restroom: 1,
-        bench: 1,
-        food_stand: 1
+        bin: 0,
+        restroom: 0,
+        bench: 0,
+        food_stand: 0
     },
 
     // Maintenance
