@@ -28,6 +28,43 @@ export const FOOD_TYPES = {
     }
 };
 
+// 🔥 NEW: Exhibit type definitions
+export const EXHIBIT_TYPES = {
+    small: {
+        id: 'small',
+        name: 'Small Exhibit',
+        icon: '🏞️',
+        description: 'Perfect for small animals like birds, reptiles, or small mammals.',
+        cost: 500,
+        buildDays: 2,
+        size: 'small',
+        maxAnimals: 4,
+        upkeep: 5
+    },
+    medium: {
+        id: 'medium',
+        name: 'Medium Exhibit',
+        icon: '🌿',
+        description: 'Great for medium-sized animals like wolves, deer, or small big cats.',
+        cost: 1500,
+        buildDays: 4,
+        size: 'medium',
+        maxAnimals: 6,
+        upkeep: 15
+    },
+    large: {
+        id: 'large',
+        name: 'Large Exhibit',
+        icon: '🦁',
+        description: 'Spacious habitat for large animals like lions, elephants, or giraffes.',
+        cost: 4000,
+        buildDays: 7,
+        size: 'large',
+        maxAnimals: 10,
+        upkeep: 30
+    }
+};
+
 export function getDietFoodType(diet) {
     if (diet === "Herbivore") return "hay";
     if (diet === "Carnivore") return "meat";
