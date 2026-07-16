@@ -268,6 +268,25 @@ function logMessage(msg) {
     logEl.prepend(p);
 }
 
+function updateUI() {
+    // 🔥 FIX: Ensure money is always a valid number
+    if (typeof state.money !== 'number' || isNaN(state.money)) {
+        console.error('❌ state.money is invalid:', state.money);
+        state.money = 0; // Reset to 0 if corrupted
+    }
+    
+    if (moneyEl) moneyEl.textContent = state.money.toLocaleString();
+    if (dayEl) dayEl.textContent = state.day;
+    if (ratingEl) ratingEl.textContent = state.zooRating;
+    if (satisfactionEl) satisfactionEl.textContent = state.visitorSatisfaction;
+
+    updateExhibitStatus();
+    updateVisitorStatus();
+    updateFoodStatus();
+    updateStaffStatus();
+}
+
+
 // --- INIT ---
 async function init() {
     await loadAllData();
@@ -275,7 +294,5 @@ async function init() {
     renderShop(); // ← ADD THIS - Initialize the shop
     logMessage("🦁 ZooSmith V2 Engine Initialized with Shop!");
 }
-
-init();
 
 init();
