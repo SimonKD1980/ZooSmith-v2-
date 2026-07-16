@@ -14,6 +14,7 @@ import {
 import { renderShop } from './ui/ShopUI.js';
 import { renderSupplies } from './ui/SuppliesUI.js';
 import { renderStaff } from './ui/StaffUI.js';
+import { renderAmenities } from './ui/AmenitiesUI.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -34,9 +35,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const sectionId = btn.dataset.section;
         
+        // Update active button
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
+        // Update active section
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         const section = document.getElementById(sectionId);
         if (section) section.classList.add('active');
@@ -45,16 +48,17 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         if (sectionId === 'shop') renderShop();
         else if (sectionId === 'supplies') renderSupplies();
         else if (sectionId === 'staff') renderStaff();
+        else if (sectionId === 'amenities') renderAmenities();
         else if (sectionId === 'exhibits') renderExhibitsTab();
-        else if (sectionId === 'amenities') renderAmenitiesTab();
         else if (sectionId === 'visitors') renderVisitorsTab();
     });
 });
 
 // =====================================================================
-// MAIN UI UPDATE (Only updates the header now!)
+// MAIN UI UPDATE (Header only - status panels are in tabs now)
 // =====================================================================
 function updateUI() {
+    // Safety check for money
     if (typeof state.money !== 'number' || isNaN(state.money)) {
         console.error('❌ state.money is invalid:', state.money);
         state.money = 0;
@@ -68,7 +72,7 @@ function updateUI() {
 }
 
 // =====================================================================
-// TAB RENDERERS (Placeholder tabs we haven't fully built yet)
+// TAB RENDERERS
 // =====================================================================
 
 function renderExhibitsTab() {
@@ -105,12 +109,6 @@ function renderExhibitsTab() {
     html += '<div class="status-panel"><h2 style="margin-bottom: 15px;">🏞️ Manage Exhibits</h2><p style="color: #9ca3af;">Coming soon! Repair fences, buy upgrades, and move animals.</p></div>';
     
     el.innerHTML = html;
-}
-
-function renderAmenitiesTab() {
-    const el = document.getElementById('amenities');
-    if (!el) return;
-    el.innerHTML = '<div class="status-panel"><h2 style="margin-bottom: 15px;">🏪 Amenities</h2><p style="color: #9ca3af;">Coming soon! Build restrooms, food stands, and gift shops.</p></div>';
 }
 
 function renderVisitorsTab() {
@@ -239,6 +237,10 @@ eventBus.on('STAFF_FIRED', (data) => {
     logMessage(`❌ Fired ${data.staffName} (severance: $${data.refund})`);
 });
 
+eventBus.on('AMENITY_BUILT', (data) => {
+    logMessage(`🏪 Built ${data.amenityName} for $${data.cost}`);
+});
+
 // =====================================================================
 // BUTTON HANDLERS
 // =====================================================================
@@ -251,7 +253,8 @@ if (endDayBtn) {
 
 if (buildExhibitBtn) {
     buildExhibitBtn.addEventListener('click', () => {
-        document.getElementById('buildModal').classList.add('active');
+        const modal = document.getElementById('buildModal');
+        if (modal) modal.classList.add('active');
     });
 }
 
@@ -263,6 +266,7 @@ function logMessage(msg) {
     const p = document.createElement('div');
     p.textContent = msg;
     logEl.prepend(p);
+    // Keep log manageable
     while (logEl.children.length > 100) {
         logEl.removeChild(logEl.lastChild);
     }
