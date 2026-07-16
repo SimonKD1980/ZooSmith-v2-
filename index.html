@@ -29,9 +29,32 @@
     <div id="exhibitStatus" style="margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 8px;"></div>
     <div id="visitorStatus" style="margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 8px;"></div>
 
+    <div id="shop" class="section active" style="margin-top: 20px;"></div>
+    
     <div id="log"></div>
 
-    <!-- ONLY this script tag should exist -->
     <script type="module" src="./js/main.js"></script>
+
+    <div id="buyModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #334155;">
+        <h3 style="margin-top: 0; color: #e5e7eb;">Select Exhibit</h3>
+        <select id="exhibitSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px;"></select>
+        <select id="genderSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px;">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="confirmBuyAnimal()" style="flex: 1; padding: 12px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Confirm</button>
+            <button onclick="closeBuyModal()" style="flex: 1; padding: 12px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal.active {
+        display: flex !important;
+    }
+</style>
+    
 </body>
 </html>
