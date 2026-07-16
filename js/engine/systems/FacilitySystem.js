@@ -2,7 +2,7 @@
 import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
-import { getStaffEffects, isKeeperRole } from './StaffSystem.js'; // ← ADD THIS
+import { getStaffEffects, isKeeperRole } from './StaffSystem.js'; // ← Imported from StaffSystem
 
 export function processFacilities() {
     processDailyMaintenance();
@@ -161,32 +161,5 @@ function triggerEscape(exhibit) {
     });
 }
 
-// 🔥 COMPLETE HELPER FUNCTIONS
-function getStaffEffects() {
-    const effects = {
-        visitorHappiness: 0,
-        animalHappiness: 0,
-        breedingBonus: 0,
-        cleanPark: 0,
-        cleanExhibits: 0,
-        maintenanceLevel: 0
-    };
-    
-    state.hiredStaff.forEach(staffInstance => {
-        const staff = data.staff.find(s => s.id === staffInstance.typeId);
-        if (staff && staff.effects) {
-            for (const effect in staff.effects) {
-                if (effect !== 'maxStaff' && effect !== 'keeperSlots' && effect !== 'cleanerSlots' && effects[effect] !== undefined) {
-                    effects[effect] += staff.effects[effect];
-                }
-            }
-        }
-    });
-    
-    return effects;
-}
-
-function isKeeperRole(typeId) {
-    const s = data.staff.find(x => x.id === typeId);
-    return s && (s.role?.toLowerCase().includes('keeper') || s.keeperSlots);
-}
+// ✅ NO MORE DUPLICATE FUNCTIONS HERE! 
+// getStaffEffects and isKeeperRole are now cleanly imported from StaffSystem.js
