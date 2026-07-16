@@ -1,0 +1,14 @@
+[
+  {
+    "id": "lion",
+    "name": "Lion",
+    "dirtiness": 3,
+    "requiredExhibitSize": "medium"
+  },
+  {
+    "id": "zebra",
+    "name": "Zebra",
+    "dirtiness": 2,
+    "requiredExhibitSize": "small"
+  }
+]
