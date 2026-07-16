@@ -13,8 +13,6 @@
             padding: 20px; 
             min-height: 100vh;
         }
-        
-        /* Header */
         .header { 
             display: flex; 
             gap: 15px; 
@@ -36,8 +34,6 @@
             font-weight: 700;
             font-size: 1.2rem;
         }
-        
-        /* Navigation */
         .nav {
             display: flex;
             gap: 6px;
@@ -58,16 +54,8 @@
             font-size: 0.9rem;
             transition: all 0.2s;
         }
-        .nav button:hover {
-            background: #334155;
-            color: #e5e7eb;
-        }
-        .nav button.active {
-            background: #22c55e;
-            color: #000;
-        }
-        
-        /* Action Buttons */
+        .nav button:hover { background: #334155; color: #e5e7eb; }
+        .nav button.active { background: #22c55e; color: #000; }
         .action-bar {
             display: flex;
             gap: 10px;
@@ -81,31 +69,20 @@
             border: none;
             border-radius: 8px;
             font-weight: 700;
-            transition: transform 0.1s;
         }
-        .action-btn:active { transform: scale(0.97); }
         .end-day-btn { background: #22c55e; color: #000; }
         .end-day-btn:hover { background: #16a34a; }
         .build-btn { background: #3b82f6; color: #fff; }
         .build-btn:hover { background: #2563eb; }
-        
-        /* Sections */
         .section { display: none; }
         .section.active { display: block; }
-        
-        /* Status Panels */
         .status-panel {
             background: #1e293b;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
         }
-        .status-panel h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.1rem;
-        }
-        
-        /* Log */
+        .status-panel h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
         #log { 
             margin-top: 20px; 
             background: #000; 
@@ -116,12 +93,7 @@
             font-family: monospace; 
             font-size: 0.9rem;
         }
-        #log div {
-            padding: 2px 0;
-            border-bottom: 1px solid #1e293b;
-        }
-        
-        /* Modal */
+        #log div { padding: 2px 0; border-bottom: 1px solid #1e293b; }
         .modal {
             display: none;
             position: fixed;
@@ -141,10 +113,7 @@
             width: 90%;
             border: 2px solid #334155;
         }
-        .modal-content h3 {
-            margin-top: 0;
-            color: #e5e7eb;
-        }
+        .modal-content h3 { margin-top: 0; color: #e5e7eb; }
         .modal-content select {
             width: 100%;
             padding: 10px;
@@ -155,10 +124,7 @@
             border-radius: 8px;
             font-size: 1rem;
         }
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-        }
+        .modal-buttons { display: flex; gap: 10px; }
         .modal-buttons button {
             flex: 1;
             padding: 12px;
@@ -198,13 +164,7 @@
         <button id="buildExhibitBtn" class="action-btn build-btn">🏗️ Build Exhibit</button>
     </div>
 
-    <!-- Status Panels -->
-    <div id="staffStatus" class="status-panel"></div>
-    <div id="foodStatus" class="status-panel"></div>
-    <div id="exhibitStatus" class="status-panel"></div>
-    <div id="visitorStatus" class="status-panel"></div>
-
-    <!-- Tab Sections -->
+    <!-- Tab Sections (NO MORE always-visible status panels!) -->
     <div id="shop" class="section active"></div>
     <div id="exhibits" class="section"></div>
     <div id="staff" class="section"></div>
@@ -234,7 +194,7 @@
         </div>
     </div>
 
-    <!-- Build Exhibit Modal (placeholder) -->
+    <!-- Build Exhibit Modal -->
     <div id="buildModal" class="modal">
         <div class="modal-content">
             <h3>🏗️ Build New Exhibit</h3>
