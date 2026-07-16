@@ -37,9 +37,6 @@ export function processStaff() {
     }
 }
 
-// =====================================================================
-// STAFF CAPACITY CALCULATIONS
-// =====================================================================
 export function getKeeperCapacity() {
     let capacity = 0;
     state.hiredStaff.forEach(instance => {
@@ -99,16 +96,15 @@ export function isKeepersUnderstaffed() {
     return getKeeperDemand() > getKeeperCapacity();
 }
 
-// =====================================================================
-// STAFF EFFECTS (Used by other systems)
-// =====================================================================
+// 🔥 UPDATED: Added cleanAmenities to effects
 export function getStaffEffects() {
     const effects = {
         visitorHappiness: 0,
         animalHappiness: 0,
         breedingBonus: 0,
         cleanPark: 0,
-        cleanExhibits: 0,
+        cleanExhibits: 0, // ← Keepers only (assigned to specific exhibits)
+        cleanAmenities: 0, // ← NEW: Janitors clean amenities
         maintenanceLevel: 0
     };
     
@@ -129,9 +125,6 @@ export function getStaffEffects() {
     return effects;
 }
 
-// =====================================================================
-// STAFF ROLE CHECKS
-// =====================================================================
 export function isKeeperRole(typeId) {
     const s = data.staff.find(x => x.id === typeId);
     return s && (s.role?.toLowerCase().includes('keeper') || s.keeperSlots);
