@@ -15,6 +15,7 @@ import { renderShop } from './ui/ShopUI.js';
 import { renderSupplies } from './ui/SuppliesUI.js';
 import { renderStaff } from './ui/StaffUI.js';
 import { renderAmenities } from './ui/AmenitiesUI.js';
+import { renderExhibits } from './ui/ExhibitsUI.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -49,7 +50,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         else if (sectionId === 'supplies') renderSupplies();
         else if (sectionId === 'staff') renderStaff();
         else if (sectionId === 'amenities') renderAmenities();
-        else if (sectionId === 'exhibits') renderExhibitsTab();
+        else if (sectionId === 'exhibits') renderExhibits();
         else if (sectionId === 'visitors') renderVisitorsTab();
     });
 });
@@ -74,42 +75,6 @@ function updateUI() {
 // =====================================================================
 // TAB RENDERERS
 // =====================================================================
-
-function renderExhibitsTab() {
-    const el = document.getElementById('exhibits');
-    if (!el) return;
-    
-    let html = '<div class="status-panel"><h3>🏞️ Exhibit Status</h3>';
-    
-    if (Object.keys(state.exhibits).length === 0) {
-        html += '<p style="color: #9ca3af;">No exhibits yet. Build one to get started!</p>';
-    } else {
-        for (const id in state.exhibits) {
-            const exhibit = state.exhibits[id];
-            const fence = exhibit.fenceCondition ?? 100;
-            const cleanliness = exhibit.cleanliness ?? 100;
-            const fenceColor = fence >= 70 ? '#22c55e' : fence >= 50 ? '#f59e0b' : fence >= 30 ? '#ef4444' : '#dc2626';
-            const cleanColor = cleanliness >= 70 ? '#22c55e' : cleanliness >= 50 ? '#f59e0b' : cleanliness >= 30 ? '#ef4444' : '#dc2626';
-            
-            html += `
-                <div style="background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                    <div style="font-weight: bold; margin-bottom: 6px;">${exhibit.name} (${exhibit.animals.length} animals)</div>
-                    <div style="display: flex; gap: 15px; font-size: 0.9rem; flex-wrap: wrap;">
-                        <div>🔧 Fence: <strong style="color: ${fenceColor}">${fence.toFixed(1)}%</strong></div>
-                        <div>✨ Clean: <strong style="color: ${cleanColor}">${cleanliness.toFixed(1)}%</strong></div>
-                    </div>
-                    <div style="margin-top: 8px; font-size: 0.85rem; color: #9ca3af;">
-                        🐾 Animals: ${exhibit.animals.map(a => a.name).join(', ') || 'None'}
-                    </div>
-                </div>
-            `;
-        }
-    }
-    html += '</div>';
-    html += '<div class="status-panel"><h2 style="margin-bottom: 15px;">🏞️ Manage Exhibits</h2><p style="color: #9ca3af;">Coming soon! Repair fences, buy upgrades, and move animals.</p></div>';
-    
-    el.innerHTML = html;
-}
 
 function renderVisitorsTab() {
     const el = document.getElementById('visitors');
@@ -239,6 +204,14 @@ eventBus.on('STAFF_FIRED', (data) => {
 
 eventBus.on('AMENITY_BUILT', (data) => {
     logMessage(`🏪 Built ${data.amenityName} for $${data.cost}`);
+});
+
+eventBus.on('EXHIBIT_BUILD_STARTED', (data) => {
+    logMessage(`🏗️ Started building ${data.name} (${data.size}) for $${data.cost} - ${data.days} days`);
+});
+
+eventBus.on('FENCE_REPAIRED', (data) => {
+    logMessage(`🔧 Repaired fence at ${data.exhibitName} for $${data.cost}`);
 });
 
 // =====================================================================
