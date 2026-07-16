@@ -2,21 +2,65 @@
   {
     "id": "keeper_jr",
     "name": "Junior Keeper",
+    "icon": "🧑‍🌾",
     "role": "keeper",
+    "description": "A dedicated animal caretaker. Feeds animals and maintains exhibit cleanliness.",
+    "cost": 500,
+    "salary": 50,
     "keeperSlots": 2,
+    "cleanerSlots": 0,
     "effects": {
-      "cleanExhibits": 0,
-      "maintenanceLevel": 0
+      "animalHappiness": 5,
+      "cleanExhibits": 2,
+      "maxStaff": 5
+    }
+  },
+  {
+    "id": "keeper_sr",
+    "name": "Senior Keeper",
+    "icon": "👨‍🌾",
+    "role": "keeper",
+    "description": "Experienced keeper with expertise in animal care and breeding.",
+    "cost": 1500,
+    "salary": 100,
+    "keeperSlots": 3,
+    "cleanerSlots": 0,
+    "effects": {
+      "animalHappiness": 10,
+      "breedingBonus": 0.1,
+      "cleanExhibits": 3,
+      "maxStaff": 3
     }
   },
   {
     "id": "janitor",
     "name": "Janitor",
+    "icon": "🧹",
     "role": "janitor",
+    "description": "Keeps the zoo clean and tidy. Deep cleans exhibits and maintains amenities.",
+    "cost": 300,
+    "salary": 30,
+    "keeperSlots": 0,
     "cleanerSlots": 5,
     "effects": {
-      "cleanExhibits": 3,
-      "maintenanceLevel": 1
+      "cleanPark": 10,
+      "cleanExhibits": 5,
+      "maxStaff": 10
+    }
+  },
+  {
+    "id": "maintenance",
+    "name": "Maintenance Worker",
+    "icon": "🔧",
+    "role": "maintenance",
+    "description": "Repairs fences and maintains facilities. Prevents animal escapes.",
+    "cost": 800,
+    "salary": 60,
+    "keeperSlots": 0,
+    "cleanerSlots": 0,
+    "effects": {
+      "maintenanceLevel": 2,
+      "maxStaff": 4
     }
   }
 ]
