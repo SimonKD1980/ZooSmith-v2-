@@ -12,21 +12,55 @@ import {
     isUnderstaffed 
 } from './engine/systems/StaffSystem.js';
 import { renderShop } from './ui/ShopUI.js';
+import { renderSupplies } from './ui/SuppliesUI.js';
 
-// --- UI REFERENCES ---
+// =====================================================================
+// UI REFERENCES
+// =====================================================================
 const moneyEl = document.getElementById('money');
 const dayEl = document.getElementById('day');
 const ratingEl = document.getElementById('rating');
 const satisfactionEl = document.getElementById('satisfaction');
+const zooNameEl = document.getElementById('zooName');
 const endDayBtn = document.getElementById('endDayBtn');
+const buildExhibitBtn = document.getElementById('buildExhibitBtn');
 const logEl = document.getElementById('log');
 const exhibitStatusEl = document.getElementById('exhibitStatus');
 const visitorStatusEl = document.getElementById('visitorStatus');
 const foodStatusEl = document.getElementById('foodStatus');
 const staffStatusEl = document.getElementById('staffStatus');
 
-// --- UI UPDATE FUNCTION (DEFINED ONLY ONCE) ---
+// =====================================================================
+// TAB NAVIGATION
+// =====================================================================
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const sectionId = btn.dataset.section;
+        
+        // Update active button
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update active section
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        const section = document.getElementById(sectionId);
+        if (section) section.classList.add('active');
+        
+        // Render the appropriate tab
+        if (sectionId === 'shop') renderShop();
+        else if (sectionId === 'supplies') renderSupplies();
+        else if (sectionId === 'exhibits') renderExhibitsTab();
+        else if (sectionId === 'staff') renderStaffTab();
+        else if (sectionId === 'amenities') renderAmenitiesTab();
+        else if (sectionId === 'visitors') renderVisitorsTab();
+    });
+});
+
+// =====================================================================
+// MAIN UI UPDATE
+// =====================================================================
 function updateUI() {
+    // Safety check for money
     if (typeof state.money !== 'number' || isNaN(state.money)) {
         console.error('❌ state.money is invalid:', state.money);
         state.money = 0;
@@ -36,6 +70,7 @@ function updateUI() {
     if (dayEl) dayEl.textContent = state.day;
     if (ratingEl) ratingEl.textContent = state.zooRating;
     if (satisfactionEl) satisfactionEl.textContent = state.visitorSatisfaction;
+    if (zooNameEl) zooNameEl.textContent = state.zooName || 'My Zoo';
 
     updateExhibitStatus();
     updateVisitorStatus();
@@ -43,11 +78,15 @@ function updateUI() {
     updateStaffStatus();
 }
 
+// =====================================================================
+// STATUS PANEL UPDATES
+// =====================================================================
 function updateExhibitStatus() {
     if (!exhibitStatusEl) return;
-    let html = '<h3 style="margin: 0 0 10px 0;">🏞️ Exhibit Status</h3>';
+    let html = '<h3>🏞️ Exhibit Status</h3>';
+    
     if (Object.keys(state.exhibits).length === 0) {
-        html += '<p style="color: #9ca3af;">No exhibits yet</p>';
+        html += '<p style="color: #9ca3af;">No exhibits yet. Build one to get started!</p>';
     } else {
         for (const id in state.exhibits) {
             const exhibit = state.exhibits[id];
@@ -55,10 +94,11 @@ function updateExhibitStatus() {
             const cleanliness = exhibit.cleanliness ?? 100;
             const fenceColor = fence >= 70 ? '#22c55e' : fence >= 50 ? '#f59e0b' : fence >= 30 ? '#ef4444' : '#dc2626';
             const cleanColor = cleanliness >= 70 ? '#22c55e' : cleanliness >= 50 ? '#f59e0b' : cleanliness >= 30 ? '#ef4444' : '#dc2626';
+            
             html += `
                 <div style="background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
                     <div style="font-weight: bold; margin-bottom: 6px;">${exhibit.name} (${exhibit.animals.length} animals)</div>
-                    <div style="display: flex; gap: 15px; font-size: 0.9rem;">
+                    <div style="display: flex; gap: 15px; font-size: 0.9rem; flex-wrap: wrap;">
                         <div>🔧 Fence: <strong style="color: ${fenceColor}">${fence.toFixed(1)}%</strong></div>
                         <div>✨ Clean: <strong style="color: ${cleanColor}">${cleanliness.toFixed(1)}%</strong></div>
                     </div>
@@ -71,7 +111,7 @@ function updateExhibitStatus() {
 
 function updateVisitorStatus() {
     if (!visitorStatusEl) return;
-    let html = '<h3 style="margin: 0 0 10px 0;">👥 Visitor Summary</h3>';
+    let html = '<h3>👥 Visitor Summary</h3>';
     html += `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
@@ -88,6 +128,7 @@ function updateVisitorStatus() {
             </div>
         </div>
     `;
+    
     if (state.visitorComplaints && state.visitorComplaints.length > 0) {
         html += '<div style="margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 6px;">';
         html += '<div style="font-size: 0.8rem; color: #fca5a5; margin-bottom: 6px; font-weight: 700;">⚠️ Complaints:</div>';
@@ -101,8 +142,9 @@ function updateVisitorStatus() {
 
 function updateFoodStatus() {
     if (!foodStatusEl) return;
-    let html = '<h3 style="margin: 0 0 10px 0;">🍽️ Food Inventory</h3>';
+    let html = '<h3>🍽️ Food Inventory</h3>';
     html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">';
+    
     for (const foodType in FOOD_TYPES) {
         const food = FOOD_TYPES[foodType];
         const current = state.food[foodType] || 0;
@@ -110,6 +152,7 @@ function updateFoodStatus() {
         const percent = (current / cap) * 100;
         const isLow = current < 10;
         const isEmpty = current === 0;
+        
         html += `
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid ${isEmpty ? '#dc2626' : isLow ? '#f59e0b' : '#1e293b'};">
                 <div style="font-size: 2rem; text-align: center;">${food.icon}</div>
@@ -135,7 +178,7 @@ function updateStaffStatus() {
     const cleanerDemand = getCleanerDemand();
     const understaffed = isUnderstaffed();
 
-    let html = '<h3 style="margin: 0 0 10px 0;">👷 Staff Overview</h3>';
+    let html = '<h3>👷 Staff Overview</h3>';
     html += `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
@@ -167,6 +210,7 @@ function updateStaffStatus() {
             </div>
         </div>
     `;
+    
     if (understaffed) {
         html += `
             <div style="margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 6px; text-align: center;">
@@ -180,9 +224,41 @@ function updateStaffStatus() {
     staffStatusEl.innerHTML = html;
 }
 
-// --- EVENT LISTENERS ---
+// =====================================================================
+// TAB RENDERERS (Placeholders for tabs we haven't built yet)
+// =====================================================================
+function renderExhibitsTab() {
+    const el = document.getElementById('exhibits');
+    if (!el) return;
+    el.innerHTML = '<h2 style="margin-bottom: 15px;">🏞️ Exhibits</h2><p style="color: #9ca3af;">Coming soon! View detailed exhibit info, repair fences, and manage animals.</p>';
+}
+
+function renderStaffTab() {
+    const el = document.getElementById('staff');
+    if (!el) return;
+    el.innerHTML = '<h2 style="margin-bottom: 15px;">👷 Staff</h2><p style="color: #9ca3af;">Coming soon! Hire keepers, cleaners, and maintenance workers.</p>';
+}
+
+function renderAmenitiesTab() {
+    const el = document.getElementById('amenities');
+    if (!el) return;
+    el.innerHTML = '<h2 style="margin-bottom: 15px;">🏪 Amenities</h2><p style="color: #9ca3af;">Coming soon! Build restrooms, food stands, and gift shops.</p>';
+}
+
+function renderVisitorsTab() {
+    const el = document.getElementById('visitors');
+    if (!el) return;
+    el.innerHTML = '<h2 style="margin-bottom: 15px;">👥 Visitors</h2><p style="color: #9ca3af;">Coming soon! Adjust ticket prices and view visitor stats.</p>';
+}
+
+// =====================================================================
+// EVENT LISTENERS
+// =====================================================================
 eventBus.on('DAY_ADVANCED', () => {
     updateUI();
+    // Re-render active tab
+    const activeTab = document.querySelector('.nav-btn.active');
+    if (activeTab) activeTab.click();
     logMessage(`--- Day ${state.day} Complete ---`);
 });
 
@@ -252,7 +328,14 @@ eventBus.on('ANIMAL_PURCHASED', (data) => {
     logMessage(`🎉 Purchased ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
 });
 
-// --- BUTTON CLICK ---
+eventBus.on('FOOD_PURCHASED', (data) => {
+    const food = FOOD_TYPES[data.foodType];
+    logMessage(`🍽️ Bought ${data.amount} ${food.name} for $${data.cost}`);
+});
+
+// =====================================================================
+// BUTTON HANDLERS
+// =====================================================================
 if (endDayBtn) {
     endDayBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -260,20 +343,35 @@ if (endDayBtn) {
     });
 }
 
-// --- HELPER ---
+if (buildExhibitBtn) {
+    buildExhibitBtn.addEventListener('click', () => {
+        document.getElementById('buildModal').classList.add('active');
+    });
+}
+
+// =====================================================================
+// LOG HELPER
+// =====================================================================
 function logMessage(msg) {
     if (!logEl) return;
     const p = document.createElement('div');
     p.textContent = msg;
     logEl.prepend(p);
+    // Keep log manageable
+    while (logEl.children.length > 100) {
+        logEl.removeChild(logEl.lastChild);
+    }
 }
 
-// --- INIT ---
+// =====================================================================
+// INITIALIZATION
+// =====================================================================
 async function init() {
     await loadAllData();
     updateUI();
     renderShop();
-    logMessage("🦁 ZooSmith V2 Engine Initialized with Shop!");
+    logMessage("🦁 ZooSmith V2 Engine Initialized!");
+    logMessage("💡 Tip: Click 'End Day' to advance time and see your zoo in action.");
 }
 
 init();
