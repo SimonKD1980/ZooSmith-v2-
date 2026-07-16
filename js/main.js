@@ -4,7 +4,6 @@ import { eventBus } from './engine/EventBus.js';
 import { advanceDay } from './engine/Engine.js';
 import { loadAllData } from './engine/data.js';
 import { FOOD_TYPES } from './engine/constants.js';
-import { renderShop } from './ui/ShopUI.js';
 import { 
     getKeeperCapacity, 
     getKeeperDemand, 
@@ -12,6 +11,7 @@ import {
     getCleanerDemand,
     isUnderstaffed 
 } from './engine/systems/StaffSystem.js';
+import { renderShop } from './ui/ShopUI.js';
 
 // --- UI REFERENCES ---
 const moneyEl = document.getElementById('money');
@@ -25,21 +25,13 @@ const visitorStatusEl = document.getElementById('visitorStatus');
 const foodStatusEl = document.getElementById('foodStatus');
 const staffStatusEl = document.getElementById('staffStatus');
 
-// 🔍 DEBUG: Check if the button actually exists
-console.log("🔍 DEBUG: endDayBtn element is:", endDayBtn);
-
-if (endDayBtn) {
-    endDayBtn.addEventListener('click', (e) => {
-        console.log("✅ DEBUG: End Day button was CLICKED!");
-        e.preventDefault();
-        advanceDay();
-    });
-} else {
-    console.error("❌ DEBUG: Could not find endDayBtn in the HTML!");
-}
-
-// --- UI UPDATE FUNCTION ---
+// --- UI UPDATE FUNCTION (DEFINED ONLY ONCE) ---
 function updateUI() {
+    if (typeof state.money !== 'number' || isNaN(state.money)) {
+        console.error('❌ state.money is invalid:', state.money);
+        state.money = 0;
+    }
+    
     if (moneyEl) moneyEl.textContent = state.money.toLocaleString();
     if (dayEl) dayEl.textContent = state.day;
     if (ratingEl) ratingEl.textContent = state.zooRating;
@@ -260,6 +252,14 @@ eventBus.on('ANIMAL_PURCHASED', (data) => {
     logMessage(`🎉 Purchased ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
 });
 
+// --- BUTTON CLICK ---
+if (endDayBtn) {
+    endDayBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        advanceDay();
+    });
+}
+
 // --- HELPER ---
 function logMessage(msg) {
     if (!logEl) return;
@@ -268,30 +268,11 @@ function logMessage(msg) {
     logEl.prepend(p);
 }
 
-function updateUI() {
-    // 🔥 FIX: Ensure money is always a valid number
-    if (typeof state.money !== 'number' || isNaN(state.money)) {
-        console.error('❌ state.money is invalid:', state.money);
-        state.money = 0; // Reset to 0 if corrupted
-    }
-    
-    if (moneyEl) moneyEl.textContent = state.money.toLocaleString();
-    if (dayEl) dayEl.textContent = state.day;
-    if (ratingEl) ratingEl.textContent = state.zooRating;
-    if (satisfactionEl) satisfactionEl.textContent = state.visitorSatisfaction;
-
-    updateExhibitStatus();
-    updateVisitorStatus();
-    updateFoodStatus();
-    updateStaffStatus();
-}
-
-
 // --- INIT ---
 async function init() {
     await loadAllData();
     updateUI();
-    renderShop(); // ← ADD THIS - Initialize the shop
+    renderShop();
     logMessage("🦁 ZooSmith V2 Engine Initialized with Shop!");
 }
 
