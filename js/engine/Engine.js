@@ -31,6 +31,10 @@ export function advanceDay() {
     // Get detailed animal breakdown
     const animalBreakdown = getAnimalBreakdown();
     
+    // 🔥 NEW: Get animal purchase expenses from today
+    const animalPurchases = state.dailyReport?.animalPurchases || [];
+    const animalPurchaseTotal = animalPurchases.reduce((sum, p) => sum + p.cost, 0);
+    
     // Generate daily report
     const dailyReport = {
         day: state.day,
@@ -46,11 +50,14 @@ export function advanceDay() {
             food: state.dailyReport?.foodExpense || 0,
             upkeep: state.dailyReport?.upkeepExpense || 0,
             maintenance: state.dailyReport?.maintenanceExpense || 0,
+            animalPurchases: animalPurchaseTotal, // 🔥 NEW
             total: (state.dailyReport?.staffExpense || 0) + 
                    (state.dailyReport?.foodExpense || 0) + 
                    (state.dailyReport?.upkeepExpense || 0) + 
-                   (state.dailyReport?.maintenanceExpense || 0)
+                   (state.dailyReport?.maintenanceExpense || 0) +
+                   animalPurchaseTotal // 🔥 NEW
         },
+        animalPurchases: animalPurchases, // 🔥 NEW: Store purchase details
         netProfit: netProfit,
         rating: state.zooRating,
         ratingChange: state.zooRating - startRating,
@@ -66,6 +73,15 @@ export function advanceDay() {
     if (state.dailyReports.length > state.maxDailyReports) {
         state.dailyReports.shift();
     }
+
+    // 🔥 NEW: Clear daily report for next day
+    state.dailyReport = {
+        staffExpense: 0,
+        foodExpense: 0,
+        upkeepExpense: 0,
+        maintenanceExpense: 0,
+        animalPurchases: []
+    };
 
     state.day++;
     state.daysSinceNewAnimal++;
