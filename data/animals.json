@@ -2,14 +2,15 @@
   {
     "id": "lion",
     "name": "Lion",
-    "cost": 1000,
-    "dirtiness": 3,
-    "requiredExhibitSize": "medium"
-  },
-  {
-    "id": "zebra",
-    "name": "Zebra",
-    "dirtiness": 2,
-    "requiredExhibitSize": "small"
+    "scienceName": "Panthera leo",
+    "category": "Mammals",
+    "diet": "Carnivore",
+    "habitat": "Savanna",
+    "conservationStatus": "Vulnerable",
+    "cost": 5000,
+    "attractionValue": 15,
+    "requiredExhibitSize": "medium",
+    "foodAmount": 3,
+    "info": "The king of the jungle, known for its majestic mane and powerful roar."
   }
 ]
