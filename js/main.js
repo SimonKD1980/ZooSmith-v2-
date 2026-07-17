@@ -17,6 +17,14 @@ import { renderSupplies } from './ui/SuppliesUI.js';
 import { renderStaff } from './ui/StaffUI.js';
 import { renderAmenities } from './ui/AmenitiesUI.js';
 import { renderExhibits } from './ui/ExhibitsUI.js';
+import { 
+    saveGame, 
+    loadGame, 
+    getSaveSlots, 
+    deleteSave, 
+    exportSave, 
+    importSave 
+} from './engine/SaveSystem.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -53,6 +61,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         else if (sectionId === 'amenities') renderAmenities();
         else if (sectionId === 'exhibits') renderExhibits();
         else if (sectionId === 'visitors') renderVisitorsTab();
+        if (sectionId === 'saves') renderSavesTab();
     });
 });
 
@@ -74,6 +83,61 @@ function updateUI() {
     if (satisfactionEl) satisfactionEl.textContent = state.visitorSatisfaction;
     if (zooNameEl) zooNameEl.textContent = state.zooName || 'My Zoo';
 }
+
+function renderSavesTab() {
+    const el = document.getElementById('saves');
+    if (!el) return;
+
+    const slots = getSaveSlots();
+
+    let html = `
+        <div class="status-panel">
+            <h3>💾 Save & Load Management</h3>
+            <p style="color: #9ca3af; margin-bottom: 15px;">Your game auto-saves every day. You can also manually save, load, export, or import your zoo.</p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button onclick="window.manualSave('Slot 1')" style="padding: 10px 20px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">💾 Save to Slot 1</button>
+                <button onclick="window.manualSave('Slot 2')" style="padding: 10px 20px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">💾 Save to Slot 2</button>
+                <button onclick="window.manualSave('Slot 3')" style="padding: 10px 20px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">💾 Save to Slot 3</button>
+                <button onclick="window.exportCurrentSave()" style="padding: 10px 20px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">📤 Export Save</button>
+                <button onclick="document.getElementById('importSaveInput').click()" style="padding: 10px 20px; background: #a855f7; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">📥 Import Save</button>
+           9px; font-weight: 700; cursor: pointer;">📥 Import Save</button>
+            </div>
+
+            <h4 style="margin-bottom: 10px; color: #e5e7eb;">Available Saves:</h4>
+            <div style="display: grid; gap: 10px;">
+    `;
+
+    if (slots.length === 0) {
+        html += `<div style="color: #9ca3af; text-align: center; padding: 20px;">No saves found. Play a day to create an autosave!</div>`;
+    } else {
+        slots.forEach(slot => {
+            const dateStr = new Date(slot.date).toLocaleString();
+            const isAutosave = slot.slot === 'autosave';
+            
+            html += `
+                <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-weight: 700; color: #e5e7eb; font-size: 1.1rem;">
+                            ${isAutosave ? '🔄 ' : '💾 '}${slot.slot}
+                        </div>
+                        <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 4px;">
+                            📅 Day ${slot.day} • 💰 $${slot.money.toLocaleString()} • ⭐ ${slot.rating}/100 • 🕒 ${dateStr}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="window.loadSpecificSave('${slot.slot}')" style="padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Load</button>
+                        ${!isAutosave ? `<button onclick="window.deleteSpecificSave('${slot.slot}')" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Delete</button>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    html += `</div></div>`;
+    el.innerHTML = html;
+}
+
 
 // =====================================================================
 // VISITORS TAB (with Rating Breakdown)
@@ -213,10 +277,28 @@ function getNextTierBonus() {
 // EVENT LISTENERS
 // =====================================================================
 eventBus.on('DAY_ADVANCED', () => {
+    saveGame('autosave'); // ← AUTO-SAVE HERE
     updateUI();
     const activeTab = document.querySelector('.nav-btn.active');
     if (activeTab) activeTab.click();
-    logMessage(`--- Day ${state.day} Complete ---`);
+    logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
+});
+
+eventBus.on('GAME_SAVED', (data) => {
+    console.log(`💾 Game saved to: ${data.slot}`);
+});
+
+eventBus.on('GAME_LOADED', (data) => {
+    console.log(`📂 Game loaded from: ${data.slot}`);
+    logMessage(`📂 Loaded save: ${data.slot}`);
+});
+
+eventBus.on('SAVE_DELETED', (data) => {
+    logMessage(`🗑️ Deleted save: ${data.slot}`);
+});
+
+eventBus.on('GAME_IMPORTED', (data) => {
+    logMessage(`📥 Imported save as: ${data.slot}`);
 });
 
 eventBus.on('ECONOMY_PROCESSED', (data) => {
@@ -346,6 +428,49 @@ function logMessage(msg) {
     while (logEl.children.length > 100) {
         logEl.removeChild(logEl.lastChild);
     }
+}
+
+// Expose save/load functions to window for onclick handlers
+window.manualSave = (slot) => {
+    if (saveGame(slot)) {
+        alert(`Game saved to "${slot}"!`);
+        renderSavesTab(); // Refresh the list
+    }
+};
+
+window.loadSpecificSave = (slot) => {
+    if (confirm(`Load "${slot}"? Any unsaved progress will be lost.`)) {
+        if (loadGame(slot)) {
+            updateUI();
+            renderShop(); // Refresh current view
+            alert(`Loaded "${slot}" successfully!`);
+        }
+    }
+};
+
+window.deleteSpecificSave = (slot) => {
+    deleteSave(slot);
+    renderSavesTab(); // Refresh the list
+};
+
+window.exportCurrentSave = () => {
+    // Export the most recent non-autosave, or autosave if that's all there is
+    const slots = getSaveSlots();
+    const slotToExport = slots.find(s => s.slot !== 'autosave')?.slot || 'autosave';
+    exportSave(slotToExport);
+};
+
+// Handle file input change for importing
+const importInput = document.getElementById('importSaveInput');
+if (importInput) {
+    importInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            importSave(file);
+            renderSavesTab(); // Refresh list to show new imported save
+            e.target.value = ''; // Reset input
+        }
+    });
 }
 
 // =====================================================================
