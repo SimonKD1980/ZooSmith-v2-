@@ -274,20 +274,13 @@ export function closeBuyModal() {
     state.pendingAnimal = null;
 }
 
-export function confirmBuyAnimal() {
-    const exhibitSelect = document.getElementById("exhibitSelect");
-    const genderSelect = document.getElementById("genderSelect");
-    
-    if (!exhibitSelect || !genderSelect) return;
-    
-    const exhibitId = exhibitSelect.value;
-    const gender = genderSelect.value;
+function confirmBuyAnimal() {
+    const exhibitId = document.getElementById("exhibitSelect").value;
+    const gender = document.getElementById("genderSelect").value;
     const animal = state.pendingAnimal;
-
-    if (!animal) return;
-
-    if (state.money < animal.cost) {
-        alert("Not enough money!");
+    
+    if (!exhibitId || !animal) {
+        alert("Please select an exhibit!");
         return;
     }
 
@@ -297,52 +290,55 @@ export function confirmBuyAnimal() {
         return;
     }
 
-    if (exhibit.buildDaysRemaining > 0) {
-        alert("Exhibit is still under construction!");
+    const cost = animal.cost ?? animal.price ?? 0;
+    
+    if (state.money < cost) {
+        alert(`Not enough money! Need $${cost}`);
         return;
     }
 
     // Deduct money
-    state.money -= animal.cost;
+    state.money -= cost;
 
-    // Add animal to exhibit
-    exhibit.animals.push({
-        id: animal.id,
-        name: getNextAnimalName(animal.name),
-        gender,
-        dailyIncome: animal.dailyIncome || 0,
-        foodCost: animal.foodCost || 0,
-        diet: animal.diet,
-        foodAmount: animal.foodAmount || 1,
-        compatibleWith: animal.compatibleWith || [],
-        minInExhibit: animal.minInExhibit || 1,
-        maxInExhibit: animal.maxInExhibit || 5,
-        preferredShelter: animal.preferredShelter || [],
-        preferredDecorations: animal.preferredDecorations || [],
-        preferredFacilities: animal.preferredFacilities || [],
-        dislikedShelter: animal.dislikedShelter || [],
-        dislikedDecorations: animal.dislikedDecorations || [],
-        dislikedFacilities: animal.dislikedFacilities || [],
-        bornInZoo: false,
-        health: 100,
-        ageDays: 0,
-        attractionValue: animal.attractionValue || 10
+    // 🔥 NEW: Track animal purchase in daily report
+    if (!state.dailyReport) state.dailyReport = {};
+    if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
+    
+    state.dailyReport.animalPurchases.push({
+        name: animal.name,
+        cost: cost,
+        exhibit: exhibit.name,
+        gender: gender
     });
 
-    state.daysSinceNewAnimal = 0;
+    // Create animal instance
+    const newAnimal = {
+        uid: 'animal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        id: animal.id,
+        name: animal.name,
+        gender: gender,
+        ageDays: 365, // Start as adult
+        health: 100,
+        sick: false,
+        wasHungry: false,
+        isPregnant: false,
+        daysUntilBirth: 0,
+        bornInZoo: false,
+        diet: animal.diet
+    };
 
-    // Emit event
+    exhibit.animals.push(newAnimal);
+
     eventBus.emit('ANIMAL_PURCHASED', {
         animal: animal.name,
+        cost: cost,
         exhibit: exhibit.name,
-        cost: animal.cost
+        gender: gender
     });
 
     closeBuyModal();
     renderShop();
-    
-    // Update UI
-    eventBus.emit('DAY_ADVANCED'); // Trigger UI refresh
+    eventBus.emit('DAY_ADVANCED'); // Refresh UI
 }
 
 function getNextAnimalName(speciesName) {
