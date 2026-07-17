@@ -8,9 +8,28 @@ let currentSearch = '';
 
 export function renderShop() {
     const shop = document.getElementById("shop");
-    if (!shop) return;
+    if (!shop) {
+        console.error('❌ Shop element not found!');
+        return;
+    }
+
+    console.log('🔍 DEBUG: data.animals =', data.animals);
+    console.log('🔍 DEBUG: data.animals length =', data.animals?.length);
+
+    if (!data.animals || data.animals.length === 0) {
+        shop.innerHTML = `
+            <div style="text-align:center; padding:40px; color:#fca5a5;">
+                <h3>❌ No Animal Data Found</h3>
+                <p style="color:#9ca3af;">Check your browser console (F12) for details.</p>
+                <p style="color:#9ca3af; font-size:0.9rem;">Make sure data/animals.json exists and has data.</p>
+            </div>
+        `;
+        return;
+    }
 
     const categories = [...new Set(data.animals.map(a => a.category || 'Other'))].sort();
+    
+    console.log('🔍 DEBUG: Categories found =', categories);
     
     shop.innerHTML = `
         <div style="margin-bottom: 20px;">
@@ -47,18 +66,25 @@ export function renderShop() {
 
     renderShopGrid();
 }
-
 function renderShopGrid() {
     const grid = document.getElementById('shopGrid');
-    if (!grid) return;
+    if (!grid) {
+        console.error('❌ Shop grid element not found!');
+        return;
+    }
+
+    console.log(' DEBUG: Rendering shop grid...');
+    console.log('🔍 DEBUG: Current category =', currentCategory);
+    console.log(' DEBUG: Current search =', currentSearch);
 
     const unlocked = [];
     const locked = [];
 
     data.animals.forEach(animal => {
-        // For now, all animals are unlocked (we'll add research/achievement checks later)
         unlocked.push(animal);
     });
+
+    console.log('🔍 DEBUG: Total animals to show =', unlocked.length);
 
     let filtered = unlocked;
     if (currentCategory !== 'all') {
@@ -72,28 +98,33 @@ function renderShopGrid() {
         );
     }
 
+    console.log('🔍 DEBUG: Filtered animals =', filtered.length);
+
     if (filtered.length === 0) {
-        grid.innerHTML = '<div style="text-align:center; padding:40px; color:#9ca3af; grid-column: 1/-1;"><h3>No animals found</h3></div>';
+        grid.innerHTML = '<div style="text-align:center; padding:40px; color:#9ca3af; grid-column: 1/-1;"><h3>No animals found</h3><p style="color:#64748b;">Try adjusting your search or filters</p></div>';
         return;
     }
 
     grid.innerHTML = '';
-    filtered.forEach(animal => {
+    filtered.forEach((animal, index) => {
+        console.log(`🔍 DEBUG: Rendering animal ${index + 1}:`, animal.name);
+        
         const slotCost = getAnimalSlotCost(animal);
         const slotColor = slotCost >= 3 ? '#ef4444' : slotCost >= 2 ? '#f59e0b' : '#3b82f6';
-        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
+        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '' : '🍖';
         const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' :
             animal.conservationStatus === 'Vulnerable' ? '🟡' :
-            animal.conservationStatus === 'Critically Endangered' ? '⚫' : '🟢';
+            animal.conservationStatus === 'Critically Endangered' ? '⚫' : '';
 
         const actualFoodCost = getActualFoodCost(animal);
+        const imageUrl = animal.image || 'https://placehold.co/400x200/1e293b/e5e7eb?text=No+Image';
 
         const card = document.createElement("div");
         card.className = "premium-card";
         card.style.cssText = "background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden;";
         
         card.innerHTML = `
-            <img src="${animal.image}" alt="${animal.name}" style="width: 100%; height: 200px; object-fit: cover;" />
+            <img src="${imageUrl}" alt="${animal.name}" style="width: 100%; height: 200px; object-fit: cover; background: #0f172a;" />
             <div style="padding: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                     <div>
@@ -106,12 +137,12 @@ function renderShopGrid() {
                     <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">${dietEmoji} ${animal.diet}</span>
                     <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🌍 ${animal.habitat}</span>
                     <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">${statusEmoji} ${animal.conservationStatus}</span>
-                    <span style="background: #0f172a; color: ${slotColor}; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🧑‍🌾 ${slotCost} slot${slotCost > 1 ? 's' : ''}</span>
+                    <span style="background: #0f172a; color: ${slotColor}; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🧑‍ ${slotCost} slot${slotCost > 1 ? 's' : ''}</span>
                 </div>
-                <p style="color: #9ca3af; font-size: 0.9rem; margin: 10px 0;">${animal.info}</p>
+                <p style="color: #9ca3af; font-size: 0.9rem; margin: 10px 0;">${animal.info || 'No description available.'}</p>
                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin: 6px 0;">
-                    <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🍖 Upkeep: $${actualFoodCost}/day</span>
-                    <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🌟 Attraction: +${animal.attractionValue}</span>
+                    <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;"> Upkeep: $${actualFoodCost}/day</span>
+                    <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;"> Attraction: +${animal.attractionValue || 10}</span>
                 </div>
                 <div style="font-size: 1.4rem; font-weight: 800; color: #22c55e; margin: 10px 0; text-align: center; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2);">
                     💰 $${(animal.cost ?? animal.price ?? 0).toLocaleString()}
@@ -125,8 +156,9 @@ function renderShopGrid() {
         card.querySelector(".buy-animal-btn").onclick = () => openBuyModal(animal);
         grid.appendChild(card);
     });
+    
+    console.log('✅ DEBUG: Shop grid rendered successfully!');
 }
-
 function getAnimalSlotCost(animal) {
     const size = animal.requiredExhibitSize || "small";
     if (size === "large") return 3;
