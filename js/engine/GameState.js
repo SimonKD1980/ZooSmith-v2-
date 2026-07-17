@@ -36,6 +36,10 @@ export const state = {
     daysSinceNewAnimal: 0,
     ticketPrice: 20,
 
+    //Reporting
+    dailyReports: [],  // Array of daily report objects
+    maxDailyReports: 30,  // Keep last 30 days
+
     // Exhibits
     exhibits: {
         'exhibit_1': {
