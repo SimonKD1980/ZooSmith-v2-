@@ -197,72 +197,94 @@ function openBuyModal(animal) {
     let wrongType = 0;
     let wrongSize = 0;
 
-    console.log('🔍 DEBUG: Trying to add animal:', animal.name);
-    console.log('🔍 DEBUG: Required type:', animal.requiredExhibitType || 'terrestrial');
-    console.log('🔍 DEBUG: Required size:', animal.requiredExhibitSize || 'small');
-    console.log('🔍 DEBUG: Total exhibits:', ids.length);
-
     const requiredType = animal.requiredExhibitType || 'terrestrial';
 
     for (const id of ids) {
         const exhibit = state.exhibits[id];
         
-        console.log(`🔍 DEBUG: Checking exhibit "${exhibit.name}":`, {
-            buildDaysRemaining: exhibit.buildDaysRemaining,
-            type: exhibit.type,
-            size: exhibit.size
-        });
-        
-        // Check if exhibit is still under construction
         if (exhibit.buildDaysRemaining > 0) {
-            console.log(`  ❌ Skipped: Under construction (${exhibit.buildDaysRemaining} days left)`);
             underConstruction++;
             continue;
         }
         
-        // Check exhibit type compatibility
         if (exhibit.type !== requiredType) {
-            console.log(`  ❌ Skipped: Wrong type (has ${exhibit.type}, needs ${requiredType})`);
             wrongType++;
             continue;
         }
         
-        // Check exhibit size compatibility
         if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) {
-            console.log(`  ❌ Skipped: Wrong size (has ${exhibit.size}, needs ${animal.requiredExhibitSize || 'small'} or larger)`);
             wrongSize++;
             continue;
         }
 
-        console.log(`  ✅ Compatible! Adding to dropdown`);
         const opt = document.createElement("option");
         opt.value = id;
-        opt.textContent = `${exhibit.name} (${exhibit.size})`;
+        const exhibitType = data.exhibitTypes?.[exhibit.type] || { emoji: '🏞️', name: 'Exhibit' };
+        opt.textContent = `${exhibitType.emoji} ${exhibit.name} (${exhibit.size})`;
         select.appendChild(opt);
         compatibleExhibits++;
     }
 
-    console.log(`🔍 DEBUG: Summary - Compatible: ${compatibleExhibits}, Under construction: ${underConstruction}, Wrong type: ${wrongType}, Wrong size: ${wrongSize}`);
-
     if (compatibleExhibits === 0) {
         let message = `No compatible exhibits available!\n\n`;
-        if (underConstruction > 0) {
-            message += `🚧 ${underConstruction} exhibit(s) under construction\n`;
-        }
-        if (wrongType > 0) {
-            message += `❌ ${wrongType} exhibit(s) wrong type\n`;
-        }
-        if (wrongSize > 0) {
-            message += `❌ ${wrongSize} exhibit(s) wrong size\n`;
-        }
+        if (underConstruction > 0) message += `🚧 ${underConstruction} exhibit(s) under construction\n`;
+        if (wrongType > 0) message += `❌ ${wrongType} exhibit(s) wrong type\n`;
+        if (wrongSize > 0) message += `❌ ${wrongSize} exhibit(s) wrong size\n`;
         message += `\nRequired: ${requiredType} exhibit, ${animal.requiredExhibitSize || 'small'} size or larger.`;
         alert(message);
         return;
     }
 
+    // Update modal content to include Age selector
+    const modalContent = modal.querySelector('.modal-content');
+    modalContent.innerHTML = `
+        <h3>🦁 Add ${animal.name} to Zoo</h3>
+        <p style="color: #9ca3af; margin-bottom: 15px;">Select exhibit, gender, and life stage:</p>
+        
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">Exhibit:</label>
+        <select id="exhibitSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
+            <!-- Options populated above -->
+        </select>
+        
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">Gender:</label>
+        <select id="genderSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
+            <option value="male">♂️ Male</option>
+            <option value="female">♀️ Female</option>
+        </select>
+
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">Life Stage:</label>
+        <select id="ageSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
+            <option value="baby">🍼 Baby (0-30 days) - Lower attraction, grows over time</option>
+            <option value="juvenile">🐾 Juvenile (31-90 days) - Moderate attraction</option>
+            <option value="adult" selected>🦁 Adult (91-365 days) - Full attraction value</option>
+            <option value="senior">👴 Senior (365+ days) - Full attraction, higher health risks</option>
+        </select>
+        
+        <div class="modal-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="confirm-btn" style="flex: 1; padding: 12px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="confirmBuyAnimal()">✅ Confirm Purchase</button>
+            <button class="cancel-btn" style="flex: 1; padding: 12px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="closeBuyModal()">❌ Cancel</button
+        </div>
+    `;
+
+    // Re-populate the exhibit select since we overwrote the innerHTML
+    const newSelect = document.getElementById("exhibitSelect");
+    for (const id of ids) {
+        const exhibit = state.exhibits[id];
+        if (exhibit.buildDaysRemaining > 0) continue;
+        if (exhibit.type !== requiredType) continue;
+        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) continue;
+
+        const opt = document.createElement("option");
+        opt.value = id;
+        const exhibitType = data.exhibitTypes?.[exhibit.type] || { emoji: '🏞️', name: 'Exhibit' };
+        opt.textContent = `${exhibitType.emoji} ${exhibit.name} (${exhibit.size})`;
+        newSelect.appendChild(opt)
+    }
+
     state.pendingAnimal = animal;
     modal.classList.add("active");
 }
+
 function exhibitSizeOk(exhibitSize, requiredSize) {
     const SIZE_RANK = { small: 1, medium: 2, large: 3 };
     return SIZE_RANK[exhibitSize] >= SIZE_RANK[requiredSize];
@@ -277,6 +299,7 @@ export function closeBuyModal() {
 function confirmBuyAnimal() {
     const exhibitId = document.getElementById("exhibitSelect").value;
     const gender = document.getElementById("genderSelect").value;
+    const ageStage = document.getElementById("ageSelect").value; // 🔥 NEW
     const animal = state.pendingAnimal;
     
     if (!exhibitId || !animal) {
@@ -297,10 +320,17 @@ function confirmBuyAnimal() {
         return;
     }
 
+    // 🔥 NEW: Determine ageDays based on selection
+    let ageDays = 365; // Default adult
+    if (ageStage === 'baby') ageDays = Math.floor(Math.random() * 30); // 0-29 days
+    else if (ageStage === 'juvenile') ageDays = 30 + Math.floor(Math.random() * 60); // 30-89 days
+    else if (ageStage === 'adult') ageDays = 90 + Math.floor(Math.random() * 275); // 90-364 days
+    else if (ageStage === 'senior') ageDays = 365 + Math.floor(Math.random() * 400); // 365-765 days
+
     // Deduct money
     state.money -= cost;
 
-    // 🔥 NEW: Track animal purchase in daily report
+    // Track animal purchase in daily report
     if (!state.dailyReport) state.dailyReport = {};
     if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
     
@@ -308,16 +338,17 @@ function confirmBuyAnimal() {
         name: animal.name,
         cost: cost,
         exhibit: exhibit.name,
-        gender: gender
+        gender: gender,
+        ageStage: ageStage // 🔥 NEW: Track age stage in report
     });
 
-    // Create animal instance
+    // Create animal instance with chosen age
     const newAnimal = {
         uid: 'animal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
         id: animal.id,
         name: animal.name,
         gender: gender,
-        ageDays: 365, // Start as adult
+        ageDays: ageDays, // 🔥 NEW: Applied chosen age
         health: 100,
         sick: false,
         wasHungry: false,
@@ -333,7 +364,8 @@ function confirmBuyAnimal() {
         animal: animal.name,
         cost: cost,
         exhibit: exhibit.name,
-        gender: gender
+        gender: gender,
+        ageStage: ageStage // 🔥 NEW
     });
 
     closeBuyModal();
