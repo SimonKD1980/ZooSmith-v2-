@@ -10,9 +10,7 @@ export function renderExhibits() {
 
     let html = '';
 
-    // =====================================================================
     // SECTION 1: Build New Exhibit
-    // =====================================================================
     html += `
         <div class="status-panel">
             <h3>🏗️ Build New Exhibit</h3>
@@ -50,9 +48,7 @@ export function renderExhibits() {
         </div>
     `;
 
-    // =====================================================================
     // SECTION 2: Current Exhibits
-    // =====================================================================
     html += `<div class="status-panel"><h3>🏞️ Your Exhibits</h3>`;
 
     if (Object.keys(state.exhibits).length === 0) {
@@ -310,17 +306,183 @@ export function showAnimalDetails(exhibitId, animalName) {
                 </div>
             ` : ''}
             
-            <div style="background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #9ca3af;">
-                <strong style="color: #e5e7eb;">Exhibit:</strong> ${exhibit.name}<br>
+            <div style="background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #9ca3af; margin-bottom: 15px;">
+                <strong style="color: #e5e7eb;">Current Exhibit:</strong> ${exhibit.name}<br>
                 <strong style="color: #e5e7eb;">Born in Zoo:</strong> ${animal.bornInZoo ? 'Yes 🏠' : 'No (imported)'}
             </div>
+            
+            <button onclick="window.openTransferModal('${exhibitId}', '${animal.name}')" 
+                style="width: 100%; padding: 12px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
+                🔄 Transfer to Another Exhibit
+            </button>
         </div>
     `;
     
     document.body.appendChild(alertBox);
 }
 
+export function openTransferModal(currentExhibitId, animalName) {
+    // Close the animal details modal
+    const existingModal = document.querySelector('div[style*="position: fixed"]');
+    if (existingModal) existingModal.remove();
+
+    const currentExhibit = state.exhibits[currentExhibitId];
+    if (!currentExhibit) return;
+
+    const animal = currentExhibit.animals.find(a => a.name === animalName);
+    if (!animal) return;
+
+    const speciesData = data.animals.find(a => a.id === animal.id);
+    const requiredSize = speciesData?.requiredExhibitSize || 'small';
+
+    // Find compatible exhibits
+    const compatibleExhibits = [];
+    for (const id in state.exhibits) {
+        if (id === currentExhibitId) continue; // Skip current exhibit
+        
+        const exhibit = state.exhibits[id];
+        if (exhibit.buildDaysRemaining > 0) continue; // Skip under construction
+        
+        const exhibitType = EXHIBIT_TYPES[exhibit.size];
+        if (!exhibitType) continue;
+        
+        // Check size compatibility
+        const sizeOrder = ['small', 'medium', 'large'];
+        const requiredIndex = sizeOrder.indexOf(requiredSize);
+        const exhibitIndex = sizeOrder.indexOf(exhibit.size);
+        
+        if (exhibitIndex < requiredIndex) continue; // Too small
+        
+        // Check capacity
+        if (exhibit.animals.length >= exhibitType.maxAnimals) continue; // Full
+        
+        // Check species compatibility with existing animals
+        const compatibleWith = speciesData?.compatibleWith || [];
+        const hasIncompatible = exhibit.animals.some(existingAnimal => {
+            const existingSpecies = data.animals.find(a => a.id === existingAnimal.id);
+            if (!existingSpecies) return false;
+            
+            // Check if current animal is compatible with existing animal
+            const isCompatible = compatibleWith.includes(existingAnimal.id) || 
+                                (existingSpecies.compatibleWith || []).includes(animal.id);
+            return !isCompatible;
+        });
+        
+        if (hasIncompatible) continue; // Incompatible species
+        
+        compatibleExhibits.push({
+            id: id,
+            name: exhibit.name,
+            size: exhibit.size,
+            animals: exhibit.animals.length,
+            maxAnimals: exhibitType.maxAnimals
+        });
+    }
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
+    
+    let exhibitsHTML = '';
+    if (compatibleExhibits.length === 0) {
+        exhibitsHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No compatible exhibits available. Build a new exhibit or check size/compatibility requirements.</p>';
+    } else {
+        compatibleExhibits.forEach(ex => {
+            exhibitsHTML += `
+                <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" 
+                    onclick="window.transferAnimal('${currentExhibitId}', '${ex.id}', '${animalName}')"
+                    onmouseover="this.style.borderColor='#3b82f6'" 
+                    onmouseout="this.style.borderColor='#334155'">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 700; color: #e5e7eb;">${ex.name}</div>
+                            <div style="font-size: 0.85rem; color: #9ca3af;">${ex.size} • ${ex.animals}/${ex.maxAnimals} animals</div>
+                        </div>
+                        <div style="color: #3b82f6; font-weight: 700;">→</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    modal.innerHTML = `
+        <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #334155; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                <div>
+                    <h2 style="margin: 0; color: #e5e7eb;">🔄 Transfer ${animal.name}</h2>
+                    <p style="margin: 4px 0 0; color: #9ca3af; font-size: 0.9rem;">From: ${currentExhibit.name}</p>
+                </div>
+                <button onclick="this.closest('div[style*=fixed]').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700;">✕</button>
+            </div>
+            
+            <div style="margin-bottom: 15px; padding: 10px; background: #0f172a; border-radius: 6px; font-size: 0.85rem; color: #9ca3af;">
+                <strong style="color: #e5e7eb;">Requirements:</strong><br>
+                • Minimum size: ${requiredSize}<br>
+                • Must be compatible with existing animals
+            </div>
+            
+            <h3 style="color: #e5e7eb; margin-bottom: 10px;">Select Destination:</h3>
+            ${exhibitsHTML}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+export function transferAnimal(fromExhibitId, toExhibitId, animalName) {
+    const fromExhibit = state.exhibits[fromExhibitId];
+    const toExhibit = state.exhibits[toExhibitId];
+    
+    if (!fromExhibit || !toExhibit) {
+        alert("Invalid exhibit!");
+        return;
+    }
+
+    const animalIndex = fromExhibit.animals.findIndex(a => a.name === animalName);
+    if (animalIndex === -1) {
+        alert("Animal not found!");
+        return;
+    }
+
+    const animal = fromExhibit.animals[animalIndex];
+    const speciesData = data.animals.find(a => a.id === animal.id);
+    
+    // Validate compatibility one more time
+    const requiredSize = speciesData?.requiredExhibitSize || 'small';
+    const sizeOrder = ['small', 'medium', 'large'];
+    const requiredIndex = sizeOrder.indexOf(requiredSize);
+    const exhibitIndex = sizeOrder.indexOf(toExhibit.size);
+    
+    if (exhibitIndex < requiredIndex) {
+        alert(`Exhibit too small! ${animal.name} needs at least a ${requiredSize} exhibit.`);
+        return;
+    }
+
+    const exhibitType = EXHIBIT_TYPES[toExhibit.size];
+    if (toExhibit.animals.length >= exhibitType.maxAnimals) {
+        alert("Destination exhibit is full!");
+        return;
+    }
+
+    // Move the animal
+    fromExhibit.animals.splice(animalIndex, 1);
+    toExhibit.animals.push(animal);
+
+    // Close modal
+    const modal = document.querySelector('div[style*="position: fixed"]');
+    if (modal) modal.remove();
+
+    eventBus.emit('ANIMAL_TRANSFERRED', {
+        animalName: animal.name,
+        fromExhibit: fromExhibit.name,
+        toExhibit: toExhibit.name
+    });
+
+    renderExhibits();
+}
+
 // Expose to window
 window.buildExhibit = buildExhibit;
 window.repairFence = repairFence;
 window.showAnimalDetails = showAnimalDetails;
+window.openTransferModal = openTransferModal;
+window.transferAnimal = transferAnimal;
