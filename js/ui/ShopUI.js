@@ -235,24 +235,32 @@ function openBuyModal(animal) {
         return;
     }
 
-    // Update modal content to include Age selector
+    // 🔥 NEW: Generate a random default name
+    const defaultName = generateRandomAnimalName(animal.name);
+
+    // Update modal content to include Name input
     const modalContent = modal.querySelector('.modal-content');
     modalContent.innerHTML = `
         <h3>🦁 Add ${animal.name} to Zoo</h3>
-        <p style="color: #9ca3af; margin-bottom: 15px;">Select exhibit, gender, and life stage:</p>
+        <p style="color: #9ca3af; margin-bottom: 15px;">Customize your new animal:</p>
         
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">Exhibit:</label>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">🏷️ Animal Name:</label>
+        <input type="text" id="animalNameInput" value="${defaultName}" 
+            style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;"
+            placeholder="Enter a name..." maxlength="20">
+        <button onclick="window.randomizeAnimalName('${animal.name}')" style="margin-bottom: 15px; padding: 6px 12px; background: #334155; color: #e5e7eb; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🎲 Randomize Name</button>
+        
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">🏞️ Exhibit:</label>
         <select id="exhibitSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
-            <!-- Options populated above -->
         </select>
         
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">Gender:</label>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">⚧️ Gender:</label>
         <select id="genderSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
             <option value="male">♂️ Male</option>
             <option value="female">♀️ Female</option>
         </select>
 
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">Life Stage:</label>
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">🎂 Life Stage:</label>
         <select id="ageSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
             <option value="baby">🍼 Baby (0-30 days) - Lower attraction, grows over time</option>
             <option value="juvenile">🐾 Juvenile (31-90 days) - Moderate attraction</option>
@@ -262,7 +270,7 @@ function openBuyModal(animal) {
         
         <div class="modal-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
             <button class="confirm-btn" style="flex: 1; padding: 12px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="confirmBuyAnimal()">✅ Confirm Purchase</button>
-            <button class="cancel-btn" style="flex: 1; padding: 12px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="closeBuyModal()">❌ Cancel</button
+            <button class="cancel-btn" style="flex: 1; padding: 12px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="closeBuyModal()">❌ Cancel</button>
         </div>
     `;
 
@@ -278,7 +286,7 @@ function openBuyModal(animal) {
         opt.value = id;
         const exhibitType = data.exhibitTypes?.[exhibit.type] || { emoji: '🏞️', name: 'Exhibit' };
         opt.textContent = `${exhibitType.emoji} ${exhibit.name} (${exhibit.size})`;
-        newSelect.appendChild(opt)
+        newSelect.appendChild(opt);
     }
 
     state.pendingAnimal = animal;
@@ -299,11 +307,18 @@ export function closeBuyModal() {
 function confirmBuyAnimal() {
     const exhibitId = document.getElementById("exhibitSelect").value;
     const gender = document.getElementById("genderSelect").value;
-    const ageStage = document.getElementById("ageSelect").value; // 🔥 NEW
+    const ageStage = document.getElementById("ageSelect").value;
+    const customName = document.getElementById("animalNameInput").value.trim(); // 🔥 NEW
     const animal = state.pendingAnimal;
     
     if (!exhibitId || !animal) {
         alert("Please select an exhibit!");
+        return;
+    }
+
+    // 🔥 NEW: Validate name
+    if (!customName || customName.length === 0) {
+        alert("Please enter a name for your animal!");
         return;
     }
 
@@ -320,12 +335,12 @@ function confirmBuyAnimal() {
         return;
     }
 
-    // 🔥 NEW: Determine ageDays based on selection
-    let ageDays = 365; // Default adult
-    if (ageStage === 'baby') ageDays = Math.floor(Math.random() * 30); // 0-29 days
-    else if (ageStage === 'juvenile') ageDays = 30 + Math.floor(Math.random() * 60); // 30-89 days
-    else if (ageStage === 'adult') ageDays = 90 + Math.floor(Math.random() * 275); // 90-364 days
-    else if (ageStage === 'senior') ageDays = 365 + Math.floor(Math.random() * 400); // 365-765 days
+    // Determine ageDays based on selection
+    let ageDays = 365;
+    if (ageStage === 'baby') ageDays = Math.floor(Math.random() * 30);
+    else if (ageStage === 'juvenile') ageDays = 30 + Math.floor(Math.random() * 60);
+    else if (ageStage === 'adult') ageDays = 90 + Math.floor(Math.random() * 275);
+    else if (ageStage === 'senior') ageDays = 365 + Math.floor(Math.random() * 400);
 
     // Deduct money
     state.money -= cost;
@@ -335,20 +350,22 @@ function confirmBuyAnimal() {
     if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
     
     state.dailyReport.animalPurchases.push({
-        name: animal.name,
+        name: customName, // 🔥 CHANGED: Use custom name
+        species: animal.name, // 🔥 NEW: Track species separately
         cost: cost,
         exhibit: exhibit.name,
         gender: gender,
-        ageStage: ageStage // 🔥 NEW: Track age stage in report
+        ageStage: ageStage
     });
 
-    // Create animal instance with chosen age
+    // Create animal instance with chosen age and custom name
     const newAnimal = {
         uid: 'animal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-        id: animal.id,
-        name: animal.name,
+        id: animal.id, // 🔥 Species ID (for grouping)
+        speciesName: animal.name, // 🔥 NEW: Species name (for display/grouping)
+        name: customName, // 🔥 CHANGED: Custom individual name
         gender: gender,
-        ageDays: ageDays, // 🔥 NEW: Applied chosen age
+        ageDays: ageDays,
         health: 100,
         sick: false,
         wasHungry: false,
@@ -361,16 +378,17 @@ function confirmBuyAnimal() {
     exhibit.animals.push(newAnimal);
 
     eventBus.emit('ANIMAL_PURCHASED', {
-        animal: animal.name,
+        animal: customName, // 🔥 CHANGED: Use custom name
+        species: animal.name, // 🔥 NEW: Track species
         cost: cost,
         exhibit: exhibit.name,
         gender: gender,
-        ageStage: ageStage // 🔥 NEW
+        ageStage: ageStage
     });
 
     closeBuyModal();
     renderShop();
-    eventBus.emit('DAY_ADVANCED'); // Refresh UI
+    eventBus.emit('DAY_ADVANCED');
 }
 
 function getNextAnimalName(speciesName) {
@@ -381,6 +399,33 @@ function getNextAnimalName(speciesName) {
     return suggestedName;
 }
 
+// =====================================================================
+// NAME GENERATION HELPERS
+// =====================================================================
+const MALE_NAMES = ['Leo', 'Max', 'Charlie', 'Rocky', 'Zeus', 'Thor', 'Simba', 'Rex', 'Oscar', 'Felix', 'Milo', 'Buddy', 'Duke', 'Titan', 'Apollo', 'Loki', 'Kong', 'Rango', 'Diego', 'Alex'];
+const FEMALE_NAMES = ['Luna', 'Bella', 'Daisy', 'Cleo', 'Nala', 'Zara', 'Willow', 'Mia', 'Ruby', 'Stella', 'Ginger', 'Lola', 'Pepper', 'Ivy', 'Athena', 'Freya', 'Kali', 'Suki', 'Maya', 'Aria'];
+const GENDER_NEUTRAL_NAMES = ['Shadow', 'Storm', 'Blaze', 'Spirit', 'Misty', 'Thunder', 'Sunny', 'Pepper', 'Scout', 'Raven', 'Phoenix', 'Echo', 'Sage', 'Jasper', 'Indigo'];
+
+function generateRandomAnimalName(speciesName) {
+    // 50% chance of gendered name, 50% chance of species-based name
+    if (Math.random() < 0.5) {
+        const allNames = [...MALE_NAMES, ...FEMALE_NAMES, ...GENDER_NEUTRAL_NAMES];
+        return allNames[Math.floor(Math.random() * allNames.length)];
+    } else {
+        // Use species-based name
+        return speciesName + ' ' + (Math.floor(Math.random() * 99) + 1);
+    }
+}
+
+function randomizeAnimalName(speciesName) {
+    const input = document.getElementById('animalNameInput');
+    if (input) {
+        input.value = generateRandomAnimalName(speciesName);
+    }
+}
+
+// Expose to window
+window.randomizeAnimalName = randomizeAnimalName;
 // Expose functions to window for onclick handlers
 window.filterByCategory = (category) => {
     currentCategory = category;
