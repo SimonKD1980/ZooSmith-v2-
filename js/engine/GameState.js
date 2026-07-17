@@ -34,6 +34,7 @@ export const state = {
     ticketPriceImpact: 0,
     ticketSatisfactionImpact: 0,
     daysSinceNewAnimal: 0,
+    ticketPrice: 20,
 
     // Exhibits
     exhibits: {
