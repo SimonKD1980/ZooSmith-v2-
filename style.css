@@ -315,6 +315,78 @@ main {
 }
 #tutorialOverlay.active { display: block; }
 
+/* Tooltip Styles */
+.tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-wrapper .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: max-content;
+    max-width: 250px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #e5e7eb;
+    text-align: left;
+    border-radius: 8px;
+    padding: 10px 14px;
+    position: absolute;
+    z-index: 100;
+    top: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.2s, visibility 0.2s;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    border: 1px solid #475569;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    white-space: normal;
+}
+
+.tooltip-wrapper .tooltip-text::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent #334155 transparent;
+}
+
+.tooltip-wrapper .tooltip-text strong {
+    color: #22c55e;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Keep tooltips on screen for edge items */
+.tooltip-wrapper:first-child .tooltip-text {
+    left: 0;
+    transform: translateX(0);
+}
+.tooltip-wrapper:first-child .tooltip-text::after {
+    left: 20px;
+}
+
+.tooltip-wrapper:last-child .tooltip-text {
+    left: auto;
+    right: 0;
+    transform: translateX(0);
+}
+.tooltip-wrapper:last-child .tooltip-text::after {
+    left: auto;
+    right: 20px;
+}
+
 /* --- 5.4 Responsive Breakpoints --- */
 
 /* Mobile Layout */
