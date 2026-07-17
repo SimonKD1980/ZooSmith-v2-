@@ -30,6 +30,8 @@ const endDayBtn = document.getElementById('endDayBtn');
 const buildExhibitBtn = document.getElementById('buildExhibitBtn');
 const logEl = document.getElementById('log');
 
+console.log('🚀 main.js loaded!');
+
 // =====================================================================
 // TAB NAVIGATION
 // =====================================================================
@@ -350,11 +352,22 @@ function logMessage(msg) {
 // INITIALIZATION
 // =====================================================================
 async function init() {
-    await loadAllData();
-    updateUI();
-    renderShop();
-    logMessage("🦁 ZooSmith V2 Engine Initialized!");
-    logMessage("💡 Tip: Click the 👥 Visitors tab to see your zoo rating breakdown.");
+    console.log('🚀 init() function called!');
+    
+    try {
+        console.log('🚀 About to call loadAllData()...');
+        await loadAllData();
+        console.log('✅ loadAllData() completed!');
+        console.log('📊 data.animals length:', data.animals.length);
+        
+        updateUI();
+        renderShop();
+        logMessage("🦁 ZooSmith V2 Engine Initialized!");
+        logMessage("💡 Tip: Click the 👥 Visitors tab to see your zoo rating breakdown.");
+    } catch (error) {
+        console.error('❌ ERROR in init():', error);
+    }
 }
 
-init
+console.log('🚀 About to call init()...');
+init();
