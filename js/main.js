@@ -452,6 +452,12 @@ eventBus.on('DAY_ADVANCED', () => {
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
 });
 
+eventBus.on('ANIMAL_PURCHASED', (data) => {
+    const stageEmoji = { baby: '🍼', juvenile: '🐾', adult: '🦁', senior: '👴' };
+    const emoji = stageEmoji[data.ageStage] || '🦁';
+    logMessage(`🎉 Purchased ${emoji} ${data.ageStage} ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
+});
+
 eventBus.on('DAILY_REPORT_GENERATED', (data) => {
     console.log('📊 Daily report generated:', data);
 });
