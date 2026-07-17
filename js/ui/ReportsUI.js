@@ -54,16 +54,17 @@ export function renderReports() {
                     
                     <!-- Expenses Section -->
                     <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
-                        <h4 style="color: #ef4444; margin: 0 0 15px 0;">💸 EXPENSES</h4>
+                    <h4 style="color: #ef4444; margin: 0 0 15px 0;">💸 EXPENSES</h4>
                         ${renderLineItem('👷 Staff Salaries', `$${latest.expenses.staff.toLocaleString()}`)}
                         ${renderLineItem('🍖 Food Costs', `$${latest.expenses.food.toLocaleString()}`)}
                         ${renderLineItem('🏛️ Facility Upkeep', `$${latest.expenses.upkeep.toLocaleString()}`)}
                         ${renderLineItem('🔧 Maintenance', `$${latest.expenses.maintenance.toLocaleString()}`)}
-                        <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
-                            ${renderLineItem('Total Expenses', `$${latest.expenses.total.toLocaleString()}`, true)}
-                        </div>
+                        ${latest.expenses.animalPurchases > 0 ? renderLineItem('🦁 Animal Purchases', `$${latest.expenses.animalPurchases.toLocaleString()}`) : ''}
+                    <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
+                        ${renderLineItem('Total Expenses', `$${latest.expenses.total.toLocaleString()}`, true)}
                     </div>
-                </div>
+            </div>
+        </div>
                 
                 <!-- Net Profit -->
                 <div style="margin-top: 20px; padding: 20px; background: ${latest.netProfit >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border: 2px solid ${latest.netProfit >= 0 ? '#22c55e' : '#ef4444'}; border-radius: 8px; text-align: center;">
@@ -153,35 +154,42 @@ export function renderReports() {
             { name: 'Maintenance', value: latest.expenses.maintenance, color: '#ef4444' }
         ];
         
-        const totalExp = latest.expenses.total || 1;
-        
-        html += `
-            <div class="status-panel">
-                <h3>💸 Expense Breakdown</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    ${expenseCategories.map(cat => {
-                        const percentage = Math.round((cat.value / totalExp) * 100);
-                        return `
-                            <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid ${cat.color};">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                    <span style="color: #e5e7eb; font-weight: 700;">${cat.name}</span>
-                                    <span style="color: ${cat.color}; font-weight: 800;">${percentage}%</span>
-                                </div>
-                                <div style="height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden;">
-                                    <div style="height: 100%; width: ${percentage}%; background: ${cat.color};"></div>
-                                </div>
-                                <div style="margin-top: 6px; color: #9ca3af; font-size: 0.85rem;">
-                                    $${cat.value.toLocaleString()}
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    }
+        // Expense Breakdown
+if (latest) {
+    const expenseCategories = [
+        { name: 'Staff', value: latest.expenses.staff, color: '#3b82f6' },
+        { name: 'Food', value: latest.expenses.food, color: '#22c55e' },
+        { name: 'Upkeep', value: latest.expenses.upkeep, color: '#f59e0b' },
+        { name: 'Maintenance', value: latest.expenses.maintenance, color: '#ef4444' },
+        { name: 'Animal Purchases', value: latest.expenses.animalPurchases || 0, color: '#a855f7' }
+    ].filter(cat => cat.value > 0); // Only show categories with expenses
     
-    el.innerHTML = html;
+    const totalExp = latest.expenses.total || 1;
+    
+    html += `
+        <div class="status-panel">
+            <h3>💸 Expense Breakdown</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                ${expenseCategories.map(cat => {
+                    const percentage = Math.round((cat.value / totalExp) * 100);
+                    return `
+                        <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid ${cat.color};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #e5e7eb; font-weight: 700;">${cat.name}</span>
+                                <span style="color: ${cat.color}; font-weight: 800;">${percentage}%</span>
+                            </div>
+                            <div style="height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${percentage}%; background: ${cat.color};"></div>
+                            </div>
+                            <div style="margin-top: 6px; color: #9ca3af; font-size: 0.85rem;">
+                                $${cat.value.toLocaleString()}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
 }
 
 function renderSummaryCard(title, value, color) {
