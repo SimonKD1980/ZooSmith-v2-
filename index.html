@@ -13,6 +13,8 @@
             padding: 20px; 
             min-height: 100vh;
         }
+        
+        /* Header */
         .header { 
             display: flex; 
             gap: 15px; 
@@ -34,6 +36,8 @@
             font-weight: 700;
             font-size: 1.2rem;
         }
+        
+        /* Navigation */
         .nav {
             display: flex;
             gap: 6px;
@@ -54,8 +58,16 @@
             font-size: 0.9rem;
             transition: all 0.2s;
         }
-        .nav button:hover { background: #334155; color: #e5e7eb; }
-        .nav button.active { background: #22c55e; color: #000; }
+        .nav button:hover {
+            background: #334155;
+            color: #e5e7eb;
+        }
+        .nav button.active {
+            background: #22c55e;
+            color: #000;
+        }
+        
+        /* Action Buttons */
         .action-bar {
             display: flex;
             gap: 10px;
@@ -69,20 +81,31 @@
             border: none;
             border-radius: 8px;
             font-weight: 700;
+            transition: transform 0.1s;
         }
+        .action-btn:active { transform: scale(0.97); }
         .end-day-btn { background: #22c55e; color: #000; }
         .end-day-btn:hover { background: #16a34a; }
         .build-btn { background: #3b82f6; color: #fff; }
         .build-btn:hover { background: #2563eb; }
+        
+        /* Sections */
         .section { display: none; }
         .section.active { display: block; }
+        
+        /* Status Panels */
         .status-panel {
             background: #1e293b;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 15px;
         }
-        .status-panel h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+        .status-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        /* Log */
         #log { 
             margin-top: 20px; 
             background: #000; 
@@ -93,7 +116,12 @@
             font-family: monospace; 
             font-size: 0.9rem;
         }
-        #log div { padding: 2px 0; border-bottom: 1px solid #1e293b; }
+        #log div {
+            padding: 2px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -113,7 +141,10 @@
             width: 90%;
             border: 2px solid #334155;
         }
-        .modal-content h3 { margin-top: 0; color: #e5e7eb; }
+        .modal-content h3 {
+            margin-top: 0;
+            color: #e5e7eb;
+        }
         .modal-content select {
             width: 100%;
             padding: 10px;
@@ -124,7 +155,10 @@
             border-radius: 8px;
             font-size: 1rem;
         }
-        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
         .modal-buttons button {
             flex: 1;
             padding: 12px;
@@ -136,51 +170,107 @@
         }
         .confirm-btn { background: #22c55e; color: #000; }
         .cancel-btn { background: #ef4444; color: #fff; }
+        
+        /* Tooltip Styles */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            width: max-content;
+            max-width: 250px;
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: #e5e7eb;
+            text-align: left;
+            border-radius: 8px;
+            padding: 10px 14px;
+            position: absolute;
+            z-index: 100;
+            top: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: opacity 0.2s, visibility 0.2s;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            border: 1px solid #475569;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            white-space: normal;
+        }
+        
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: transparent transparent #334155 transparent;
+        }
+        
+        .tooltip-text strong {
+            color: #22c55e;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .tooltip-wrapper:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
-<!-- Header -->
-<div class="header">
-    <div class="tooltip-wrapper">
-        <div class="zoo-name">🏞️ <span id="zooName">My Zoo</span></div>
-        <div class="tooltip-text">
-            <strong>🏞️ Zoo Name</strong>
-            The name of your zoo. Click the Visitors tab to see your rating breakdown and track your progress!
-        </div>
-    </div>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
     
-    <div class="tooltip-wrapper">
-        <div class="stat">💰 $<span id="money">10,000</span></div>
-        <div class="tooltip-text">
-            <strong>💰 Money</strong>
-            Your zoo's current funds. Used to buy animals, hire staff, build exhibits, and pay daily salaries and upkeep.
+    <!-- Header -->
+    <div class="header">
+        <div class="tooltip-wrapper">
+            <div class="zoo-name">🏞️ <span id="zooName">My Zoo</span></div>
+            <div class="tooltip-text">
+                <strong>🏞️ Zoo Name</strong>
+                The name of your zoo. Click the Visitors tab to see your rating breakdown and track your progress!
+            </div>
+        </div>
+        
+        <div class="tooltip-wrapper">
+            <div class="stat">💰 $<span id="money">10,000</span></div>
+            <div class="tooltip-text">
+                <strong>💰 Money</strong>
+                Your zoo's current funds. Used to buy animals, hire staff, build exhibits, and pay daily salaries and upkeep.
+            </div>
+        </div>
+        
+        <div class="tooltip-wrapper">
+            <div class="stat">📅 Day <span id="day">1</span></div>
+            <div class="tooltip-text">
+                <strong>📅 Day Counter</strong>
+                Current day of your zoo. Click "End Day" to advance time — animals eat, staff get paid, and visitors arrive!
+            </div>
+        </div>
+        
+        <div class="tooltip-wrapper">
+            <div class="stat">⭐ <span id="rating">50</span></div>
+            <div class="tooltip-text">
+                <strong>⭐ Zoo Rating</strong>
+                Your zoo's reputation score (0-100). Based on animal care, variety, visitor experience, and facility quality. Reach higher tiers for cash bonuses!
+            </div>
+        </div>
+        
+        <div class="tooltip-wrapper">
+            <div class="stat">😊 <span id="satisfaction">80</span>%</div>
+            <div class="tooltip-text">
+                <strong>😊 Visitor Satisfaction</strong>
+                How happy your visitors are. Build amenities (restrooms, food stands, gift shops) to keep them smiling and spending!
+            </div>
         </div>
     </div>
-    
-    <div class="tooltip-wrapper">
-        <div class="stat">📅 Day <span id="day">1</span></div>
-        <div class="tooltip-text">
-            <strong>📅 Day Counter</strong>
-            Current day of your zoo. Click "End Day" to advance time — animals eat, staff get paid, and visitors arrive!
-        </div>
-    </div>
-    
-    <div class="tooltip-wrapper">
-        <div class="stat">⭐ <span id="rating">50</span></div>
-        <div class="tooltip-text">
-            <strong>⭐ Zoo Rating</strong>
-            Your zoo's reputation score (0-100). Based on animal care, variety, visitor experience, and facility quality. Reach higher tiers for cash bonuses!
-        </div>
-    </div>
-    
-    <div class="tooltip-wrapper">
-        <div class="stat">😊 <span id="satisfaction">80</span>%</div>
-        <div class="tooltip-text">
-            <strong>😊 Visitor Satisfaction</strong>
-            How happy your visitors are. Build amenities (restrooms, food stands, gift shops) to keep them smiling and spending!
-        </div>
-    </div>
-</div>
 
     <!-- Navigation -->
     <div class="nav">
@@ -190,7 +280,7 @@
         <button class="nav-btn" data-section="supplies">🍽️ Supplies</button>
         <button class="nav-btn" data-section="amenities">🏪 Amenities</button>
         <button class="nav-btn" data-section="visitors">👥 Visitors</button>
-        <button class="nav-btn" data-section="saves">💾 Saves</button> <!-- ADD THIS -->
+        <button class="nav-btn" data-section="saves">💾 Saves</button>
     </div>
 
     <!-- Action Buttons -->
@@ -199,17 +289,14 @@
         <button id="buildExhibitBtn" class="action-btn build-btn">🏗️ Build Exhibit</button>
     </div>
 
-    <!-- Tab Sections (NO MORE always-visible status panels!) -->
+    <!-- Tab Sections -->
     <div id="shop" class="section active"></div>
     <div id="exhibits" class="section"></div>
     <div id="staff" class="section"></div>
     <div id="supplies" class="section"></div>
     <div id="amenities" class="section"></div>
     <div id="visitors" class="section"></div>
-    <div id="saves" class="section"></div> <!-- ADD THIS -->
-
-    <!-- Hidden file input for importing saves -->
-    <input type="file" id="importSaveInput" accept=".json" style="display: none;" />
+    <div id="saves" class="section"></div>
 
     <!-- Log -->
     <div id="log"></div>
@@ -241,6 +328,9 @@
             <button class="cancel-btn" style="width: 100%;" onclick="document.getElementById('buildModal').classList.remove('active')">Close</button>
         </div>
     </div>
+
+    <!-- Hidden file input for importing saves -->
+    <input type="file" id="importSaveInput" accept=".json" style="display: none;" />
 
     <script type="module" src="./js/main.js"></script>
 </body>
