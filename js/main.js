@@ -2,7 +2,7 @@
 import { state } from './engine/GameState.js';
 import { eventBus } from './engine/EventBus.js';
 import { advanceDay } from './engine/Engine.js';
-import { loadAllData } from './engine/data.js';
+import { loadAllData, data } from './engine/data.js'; // ← ADDED 'data' HERE
 import { FOOD_TYPES } from './engine/constants.js';
 import { 
     getKeeperCapacity, 
