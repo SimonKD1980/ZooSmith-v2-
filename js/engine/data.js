@@ -22,28 +22,38 @@ export async function loadAllData() {
         }
         
         const animalsArr = await animalsRes.json();
-        console.log('📦 Step 3: Parsed animals, length:', animalsArr.length);
-        
-        data.animals = animalsArr;
+        data.animals = Array.isArray(animalsArr) ? animalsArr : [];
         console.log(`✅ Loaded ${data.animals.length} animals`);
         
-        // Load amenities
+        // Load amenities (Handles both Array and Object formats)
         console.log('📦 Fetching amenities.json...');
         const amenitiesRes = await fetch('./data/amenities.json');
         if (amenitiesRes.ok) {
-            const amenitiesArr = await amenitiesRes.json();
+            const amenitiesData = await amenitiesRes.json();
             data.amenities = {};
-            amenitiesArr.forEach(item => data.amenities[item.id] = item);
+            
+            if (Array.isArray(amenitiesData)) {
+                amenitiesData.forEach(item => {
+                    if (item.id) data.amenities[item.id] = item;
+                });
+            } else {
+                data.amenities = amenitiesData; // Already an object
+            }
             console.log(`✅ Loaded ${Object.keys(data.amenities).length} amenities`);
         } else {
             console.warn('⚠️ amenities.json failed to load:', amenitiesRes.status);
         }
         
-        // Load staff
+        // Load staff (Handles both Array and Object formats)
         console.log('📦 Fetching staff.json...');
         const staffRes = await fetch('./data/staff.json');
         if (staffRes.ok) {
-            data.staff = await staffRes.json();
+            const staffData = await staffRes.json();
+            if (Array.isArray(staffData)) {
+                data.staff = staffData;
+            } else {
+                data.staff = Object.values(staffData);
+            }
             console.log(`✅ Loaded ${data.staff.length} staff types`);
         } else {
             console.warn('⚠️ staff.json failed to load:', staffRes.status);
