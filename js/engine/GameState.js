@@ -18,7 +18,11 @@ export const state = {
     food: {
         hay: 30,
         meat: 20,
-        produce: 15
+        produce: 15,
+
+    zooRating: 50,
+    ratingBreakdown: null,
+    tiersReached: [] // Tracks which tiers have been awarded bonuses
     },
 
     // Visitor Data
