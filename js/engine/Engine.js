@@ -7,6 +7,7 @@ import { processFacilities } from './systems/FacilitySystem.js';
 import { processVisitors } from './systems/VisitorSystem.js';
 import { processStaff } from './systems/StaffSystem.js';
 import { processRating } from './systems/RatingSystem.js';
+import { data } from './data.js';
 
 export function advanceDay() {
     console.log(`--- Advancing to Day ${state.day} ---`);
@@ -26,6 +27,9 @@ export function advanceDay() {
     // Calculate daily P&L
     const endMoney = state.money;
     const netProfit = endMoney - startMoney;
+    
+    // Get detailed animal breakdown
+    const animalBreakdown = getAnimalBreakdown();
     
     // Generate daily report
     const dailyReport = {
@@ -50,9 +54,11 @@ export function advanceDay() {
         netProfit: netProfit,
         rating: state.zooRating,
         ratingChange: state.zooRating - startRating,
-        animalCount: getTotalAnimalCount(),
+        animalCount: animalBreakdown.total,
+        animalBreakdown: animalBreakdown.breakdown,
         staffCount: state.hiredStaff?.length || 0,
-        ticketPrice: state.ticketPrice || 20
+        ticketPrice: state.ticketPrice || 20,
+        exhibits: Object.keys(state.exhibits || {}).length
     };
     
     // Add to reports array and limit to max
@@ -68,8 +74,23 @@ export function advanceDay() {
     eventBus.emit('DAILY_REPORT_GENERATED', dailyReport);
 }
 
-function getTotalAnimalCount() {
-    return Object.values(state.exhibits || {}).reduce((total, exhibit) => {
-        return total + (exhibit.animals?.length || 0);
-    }, 0);
+function getAnimalBreakdown() {
+    const breakdown = {};
+    let total = 0;
+    
+    Object.values(state.exhibits || {}).forEach(exhibit => {
+        (exhibit.animals || []).forEach(animal => {
+            const speciesName = animal.name || animal.id;
+            if (!breakdown[speciesName]) {
+                breakdown[speciesName] = 0;
+            }
+            breakdown[speciesName]++;
+            total++;
+        });
+    });
+    
+    return {
+        total,
+        breakdown
+    };
 }
