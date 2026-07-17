@@ -8,10 +8,10 @@ export function renderReports() {
     const reports = state.dailyReports || [];
     
     // Calculate totals
-    const totalIncome = reports.reduce((sum, r) => sum + r.income.total, 0);
-    const totalExpenses = reports.reduce((sum, r) => sum + r.expenses.total, 0);
-    const totalNetProfit = reports.reduce((sum, r) => sum + r.netProfit, 0);
-    const totalVisitors = reports.reduce((sum, r) => sum + r.visitors, 0);
+    const totalIncome = reports.reduce((sum, r) => sum + (r.income?.total || 0), 0);
+    const totalExpenses = reports.reduce((sum, r) => sum + (r.expenses?.total || 0), 0);
+    const totalNetProfit = reports.reduce((sum, r) => sum + (r.netProfit || 0), 0);
+    const totalVisitors = reports.reduce((sum, r) => sum + (r.visitors || 0), 0);
     
     const avgDailyProfit = reports.length > 0 ? totalNetProfit / reports.length : 0;
     const avgDailyVisitors = reports.length > 0 ? totalVisitors / reports.length : 0;
@@ -28,7 +28,7 @@ export function renderReports() {
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                 ${renderSummaryCard('💰 Total Income', `$${totalIncome.toLocaleString()}`, '#22c55e')}
                 ${renderSummaryCard('💸 Total Expenses', `$${totalExpenses.toLocaleString()}`, '#ef4444')}
-                ${renderSummaryCard(' Net Profit', `$${totalNetProfit.toLocaleString()}`, totalNetProfit >= 0 ? '#22c55e' : '#ef4444')}
+                ${renderSummaryCard('📈 Net Profit', `$${totalNetProfit.toLocaleString()}`, totalNetProfit >= 0 ? '#22c55e' : '#ef4444')}
                 ${renderSummaryCard('📅 Days Tracked', `${reports.length}`, '#3b82f6')}
                 ${renderSummaryCard('👥 Total Visitors', totalVisitors.toLocaleString(), '#a855f7')}
                 ${renderSummaryCard('📊 Avg Daily Profit', `$${Math.round(avgDailyProfit).toLocaleString()}`, avgDailyProfit >= 0 ? '#22c55e' : '#ef4444')}
@@ -45,42 +45,42 @@ export function renderReports() {
                     <!-- Income Section -->
                     <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
                         <h4 style="color: #22c55e; margin: 0 0 15px 0;">💵 INCOME</h4>
-                        ${renderLineItem('🎟️ Ticket Sales', `$${latest.income.tickets.toLocaleString()}`)}
-                        ${renderLineItem('🏪 Amenity Sales', `$${latest.income.amenities.toLocaleString()}`)}
+                        ${renderLineItem('🎟️ Ticket Sales', `$${(latest.income?.tickets || 0).toLocaleString()}`)}
+                        ${renderLineItem('🏪 Amenity Sales', `$${(latest.income?.amenities || 0).toLocaleString()}`)}
                         <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
-                            ${renderLineItem('Total Income', `$${latest.income.total.toLocaleString()}`, true)}
+                            ${renderLineItem('Total Income', `$${(latest.income?.total || 0).toLocaleString()}`, true)}
                         </div>
                     </div>
                     
                     <!-- Expenses Section -->
                     <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
-                    <h4 style="color: #ef4444; margin: 0 0 15px 0;">💸 EXPENSES</h4>
-                        ${renderLineItem('👷 Staff Salaries', `$${latest.expenses.staff.toLocaleString()}`)}
-                        ${renderLineItem('🍖 Food Costs', `$${latest.expenses.food.toLocaleString()}`)}
-                        ${renderLineItem('🏛️ Facility Upkeep', `$${latest.expenses.upkeep.toLocaleString()}`)}
-                        ${renderLineItem('🔧 Maintenance', `$${latest.expenses.maintenance.toLocaleString()}`)}
-                        ${latest.expenses.animalPurchases > 0 ? renderLineItem('🦁 Animal Purchases', `$${latest.expenses.animalPurchases.toLocaleString()}`) : ''}
-                    <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
-                        ${renderLineItem('Total Expenses', `$${latest.expenses.total.toLocaleString()}`, true)}
+                        <h4 style="color: #ef4444; margin: 0 0 15px 0;">💸 EXPENSES</h4>
+                        ${renderLineItem('👷 Staff Salaries', `$${(latest.expenses?.staff || 0).toLocaleString()}`)}
+                        ${renderLineItem('🍖 Food Costs', `$${(latest.expenses?.food || 0).toLocaleString()}`)}
+                        ${renderLineItem('🏛️ Facility Upkeep', `$${(latest.expenses?.upkeep || 0).toLocaleString()}`)}
+                        ${renderLineItem('🔧 Maintenance', `$${(latest.expenses?.maintenance || 0).toLocaleString()}`)}
+                        ${(latest.expenses?.animalPurchases || 0) > 0 ? renderLineItem('🦁 Animal Purchases', `$${(latest.expenses.animalPurchases).toLocaleString()}`) : ''}
+                        <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
+                            ${renderLineItem('Total Expenses', `$${(latest.expenses?.total || 0).toLocaleString()}`, true)}
+                        </div>
                     </div>
-            </div>
-        </div>
+                </div>
                 
                 <!-- Net Profit -->
-                <div style="margin-top: 20px; padding: 20px; background: ${latest.netProfit >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border: 2px solid ${latest.netProfit >= 0 ? '#22c55e' : '#ef4444'}; border-radius: 8px; text-align: center;">
+                <div style="margin-top: 20px; padding: 20px; background: ${(latest.netProfit || 0) >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border: 2px solid ${(latest.netProfit || 0) >= 0 ? '#22c55e' : '#ef4444'}; border-radius: 8px; text-align: center;">
                     <div style="font-size: 1.1rem; color: #9ca3af; margin-bottom: 8px;">NET PROFIT / LOSS</div>
-                    <div style="font-size: 2.5rem; font-weight: 800; color: ${latest.netProfit >= 0 ? '#22c55e' : '#ef4444'};">
-                        ${latest.netProfit >= 0 ? '+' : ''}$${latest.netProfit.toLocaleString()}
+                    <div style="font-size: 2.5rem; font-weight: 800; color: ${(latest.netProfit || 0) >= 0 ? '#22c55e' : '#ef4444'};">
+                        ${(latest.netProfit || 0) >= 0 ? '+' : ''}$${(latest.netProfit || 0).toLocaleString()}
                     </div>
                 </div>
                 
                 <!-- Additional Stats -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 20px;">
-                    ${renderStatBox('👥 Visitors', latest.visitors, '#3b82f6')}
-                    ${renderStatBox('⭐ Rating', `${latest.rating}/100`, latest.rating >= 60 ? '#22c55e' : '#f59e0b')}
-                    ${renderStatBox('🐾 Animals', latest.animalCount, '#a855f7')}
-                    ${renderStatBox('👷 Staff', latest.staffCount, '#f59e0b')}
-                    ${renderStatBox('🎟️ Ticket Price', `$${latest.ticketPrice}`, '#22c55e')}
+                    ${renderStatBox('👥 Visitors', latest.visitors || 0, '#3b82f6')}
+                    ${renderStatBox('⭐ Rating', `${latest.rating || 0}/100`, (latest.rating || 0) >= 60 ? '#22c55e' : '#f59e0b')}
+                    ${renderStatBox('🐾 Animals', latest.animalCount || 0, '#a855f7')}
+                    ${renderStatBox('👷 Staff', latest.staffCount || 0, '#f59e0b')}
+                    ${renderStatBox('🎟️ Ticket Price', `$${latest.ticketPrice || 20}`, '#22c55e')}
                     ${renderStatBox('🏞️ Exhibits', latest.exhibits || 0, '#ec4899')}
                 </div>
             </div>
@@ -128,14 +128,14 @@ export function renderReports() {
                             ${reports.slice().reverse().map(report => `
                                 <tr style="border-bottom: 1px solid #1e293b;">
                                     <td style="padding: 10px; color: #e5e7eb;">${report.day}</td>
-                                    <td style="padding: 10px; text-align: right; color: #22c55e;">$${report.income.total.toLocaleString()}</td>
-                                    <td style="padding: 10px; text-align: right; color: #ef4444;">$${report.expenses.total.toLocaleString()}</td>
-                                    <td style="padding: 10px; text-align: right; font-weight: 700; color: ${report.netProfit >= 0 ? '#22c55e' : '#ef4444'};">
-                                        ${report.netProfit >= 0 ? '+' : ''}$${report.netProfit.toLocaleString()}
+                                    <td style="padding: 10px; text-align: right; color: #22c55e;">$${(report.income?.total || 0).toLocaleString()}</td>
+                                    <td style="padding: 10px; text-align: right; color: #ef4444;">$${(report.expenses?.total || 0).toLocaleString()}</td>
+                                    <td style="padding: 10px; text-align: right; font-weight: 700; color: ${(report.netProfit || 0) >= 0 ? '#22c55e' : '#ef4444'};">
+                                        ${(report.netProfit || 0) >= 0 ? '+' : ''}$${(report.netProfit || 0).toLocaleString()}
                                     </td>
-                                    <td style="padding: 10px; text-align: right; color: #3b82f6;">${report.visitors}</td>
-                                    <td style="padding: 10px; text-align: right; color: #a855f7;">${report.animalCount}</td>
-                                    <td style="padding: 10px; text-align: right; color: #ec4899;">${report.rating}</td>
+                                    <td style="padding: 10px; text-align: right; color: #3b82f6;">${report.visitors || 0}</td>
+                                    <td style="padding: 10px; text-align: right; color: #a855f7;">${report.animalCount || 0}</td>
+                                    <td style="padding: 10px; text-align: right; color: #ec4899;">${report.rating || 0}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -148,48 +148,42 @@ export function renderReports() {
     // Expense Breakdown
     if (latest) {
         const expenseCategories = [
-            { name: 'Staff', value: latest.expenses.staff, color: '#3b82f6' },
-            { name: 'Food', value: latest.expenses.food, color: '#22c55e' },
-            { name: 'Upkeep', value: latest.expenses.upkeep, color: '#f59e0b' },
-            { name: 'Maintenance', value: latest.expenses.maintenance, color: '#ef4444' }
-        ];
+            { name: 'Staff', value: latest.expenses?.staff || 0, color: '#3b82f6' },
+            { name: 'Food', value: latest.expenses?.food || 0, color: '#22c55e' },
+            { name: 'Upkeep', value: latest.expenses?.upkeep || 0, color: '#f59e0b' },
+            { name: 'Maintenance', value: latest.expenses?.maintenance || 0, color: '#ef4444' },
+            { name: 'Animal Purchases', value: latest.expenses?.animalPurchases || 0, color: '#a855f7' }
+        ].filter(cat => cat.value > 0); // Only show categories with expenses
         
-        // Expense Breakdown
-if (latest) {
-    const expenseCategories = [
-        { name: 'Staff', value: latest.expenses.staff, color: '#3b82f6' },
-        { name: 'Food', value: latest.expenses.food, color: '#22c55e' },
-        { name: 'Upkeep', value: latest.expenses.upkeep, color: '#f59e0b' },
-        { name: 'Maintenance', value: latest.expenses.maintenance, color: '#ef4444' },
-        { name: 'Animal Purchases', value: latest.expenses.animalPurchases || 0, color: '#a855f7' }
-    ].filter(cat => cat.value > 0); // Only show categories with expenses
-    
-    const totalExp = latest.expenses.total || 1;
-    
-    html += `
-        <div class="status-panel">
-            <h3>💸 Expense Breakdown</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                ${expenseCategories.map(cat => {
-                    const percentage = Math.round((cat.value / totalExp) * 100);
-                    return `
-                        <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid ${cat.color};">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="color: #e5e7eb; font-weight: 700;">${cat.name}</span>
-                                <span style="color: ${cat.color}; font-weight: 800;">${percentage}%</span>
+        const totalExp = latest.expenses?.total || 1;
+        
+        html += `
+            <div class="status-panel">
+                <h3>💸 Expense Breakdown</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    ${expenseCategories.map(cat => {
+                        const percentage = Math.round((cat.value / totalExp) * 100);
+                        return `
+                            <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid ${cat.color};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                    <span style="color: #e5e7eb; font-weight: 700;">${cat.name}</span>
+                                    <span style="color: ${cat.color}; font-weight: 800;">${percentage}%</span>
+                                </div>
+                                <div style="height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden;">
+                                    <div style="height: 100%; width: ${percentage}%; background: ${cat.color};"></div>
+                                </div>
+                                <div style="margin-top: 6px; color: #9ca3af; font-size: 0.85rem;">
+                                    $${cat.value.toLocaleString()}
+                                </div>
                             </div>
-                            <div style="height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: ${percentage}%; background: ${cat.color};"></div>
-                            </div>
-                            <div style="margin-top: 6px; color: #9ca3af; font-size: 0.85rem;">
-                                $${cat.value.toLocaleString()}
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
+                        `;
+                    }).join('')}
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    }
+    
+    el.innerHTML = html;
 }
 
 function renderSummaryCard(title, value, color) {
