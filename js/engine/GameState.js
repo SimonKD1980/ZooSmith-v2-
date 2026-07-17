@@ -14,6 +14,12 @@ export const state = {
     totalDeaths: 0,
     bredAnimals: 0,
 
+    // Research Objects
+    researchCompleted: [],  // Array of research IDs that are completed
+    researchInProgress: null,  // Current research being worked on
+    researchDaysRemaining: 0,  // Days until current research completes
+
+    
     // Food Inventory
     food: {
         hay: 30,
