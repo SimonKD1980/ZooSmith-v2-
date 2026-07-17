@@ -284,6 +284,10 @@ eventBus.on('DAY_ADVANCED', () => {
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
 });
 
+eventBus.on('ANIMAL_TRANSFERRED', (data) => {
+    logMessage(`🔄 Transferred ${data.animalName} from ${data.fromExhibit} to ${data.toExhibit}`);
+});
+
 eventBus.on('GAME_SAVED', (data) => {
     console.log(`💾 Game saved to: ${data.slot}`);
 });
