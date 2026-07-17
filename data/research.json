@@ -1,0 +1,68 @@
+[
+  {
+    "id": "basic_exotic_mammals",
+    "name": "Basic Exotic Mammals",
+    "icon": "🐘",
+    "description": "Unlock exotic mammals like elephants and giraffes",
+    "cost": 5000,
+    "researchDays": 3,
+    "category": "animals",
+    "unlocks": ["elephant", "giraffe", "rhino"],
+    "requires": []
+  },
+  {
+    "id": "big_cats",
+    "name": "Big Cat Conservation",
+    "icon": "🐅",
+    "description": "Unlock rare big cats like tigers and cheetahs",
+    "cost": 8000,
+    "researchDays": 5,
+    "category": "animals",
+    "unlocks": ["tiger", "cheetah", "leopard"],
+    "requires": ["basic_exotic_mammals"]
+  },
+  {
+    "id": "marine_life",
+    "name": "Marine Biology",
+    "icon": "🐬",
+    "description": "Unlock marine animals like dolphins and seals",
+    "cost": 10000,
+    "researchDays": 6,
+    "category": "animals",
+    "unlocks": ["dolphin", "seal", "penguin"],
+    "requires": ["basic_exotic_mammals"]
+  },
+  {
+    "id": "premium_amenities",
+    "name": "Premium Guest Services",
+    "icon": "🎢",
+    "description": "Unlock premium amenities like VIP tours and safari rides",
+    "cost": 6000,
+    "researchDays": 4,
+    "category": "amenities",
+    "unlocks": ["vip_tour", "safari_ride", "petting_zoo"],
+    "requires": []
+  },
+  {
+    "id": "advanced_staff",
+    "name": "Advanced Staff Training",
+    "icon": "🎓",
+    "description": "Unlock senior staff positions with better efficiency",
+    "cost": 4000,
+    "researchDays": 3,
+    "category": "staff",
+    "unlocks": ["senior_keeper", "head_janitor", "veterinarian"],
+    "requires": []
+  },
+  {
+    "id": "conservation_program",
+    "name": "Conservation Program",
+    "icon": "🌍",
+    "description": "Unlock endangered species and boost zoo rating",
+    "cost": 15000,
+    "researchDays": 8,
+    "category": "animals",
+    "unlocks": ["panda", "snow_leopard", "orangutan"],
+    "requires": ["big_cats", "marine_life"]
+  }
+]
