@@ -550,7 +550,9 @@ eventBus.on('UNDERSTAFFED', (data) => {
 });
 
 eventBus.on('ANIMAL_PURCHASED', (data) => {
-    logMessage(`🎉 Purchased ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
+    const stageEmoji = { baby: '🍼', juvenile: '🐾', adult: '🦁', senior: '👴' };
+    const emoji = stageEmoji[data.ageStage] || '🦁';
+    logMessage(`🎉 Welcome ${data.animal} the ${emoji} ${data.ageStage} ${data.species}! (Cost: $${data.cost})`);
 });
 
 eventBus.on('FOOD_PURCHASED', (data) => {
