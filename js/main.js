@@ -25,6 +25,7 @@ import {
     exportSave, 
     importSave 
 } from './engine/SaveSystem.js';
+import { renderReports } from './ui/ReportsUI.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -61,7 +62,8 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         else if (sectionId === 'amenities') renderAmenities();
         else if (sectionId === 'exhibits') renderExhibits();
         else if (sectionId === 'visitors') renderVisitorsTab();
-        if (sectionId === 'saves') renderSavesTab();
+        else if (sectionId === 'saves') renderSavesTab();
+        else if (sectionId === 'reports') renderReports();
     });
 });
 
@@ -448,6 +450,10 @@ eventBus.on('DAY_ADVANCED', () => {
     const activeTab = document.querySelector('.nav-btn.active');
     if (activeTab) activeTab.click();
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
+});
+
+eventBus.on('DAILY_REPORT_GENERATED', (data) => {
+    console.log('📊 Daily report generated:', data);
 });
 
 eventBus.on('TICKET_PRICE_CHANGED', (data) => {
