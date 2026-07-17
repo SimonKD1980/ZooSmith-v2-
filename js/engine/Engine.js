@@ -96,7 +96,8 @@ function getAnimalBreakdown() {
     
     Object.values(state.exhibits || {}).forEach(exhibit => {
         (exhibit.animals || []).forEach(animal => {
-            const speciesName = animal.name || animal.id;
+            // 🔥 FIX: Use species name for grouping, not individual name
+            const speciesName = animal.speciesName || animal.name || animal.id;
             if (!breakdown[speciesName]) {
                 breakdown[speciesName] = 0;
             }
