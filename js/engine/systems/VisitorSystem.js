@@ -2,313 +2,139 @@
 import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
-import { getStaffEffects } from './StaffSystem.js'; // ← Imported, no duplicate
 
 export function processVisitors() {
-    // 1. Calculate attraction score
-    const attraction = calculateAttraction();
+    // Calculate base visitor attraction from animals
+    let baseAttraction = 0;
+    Object.values(state.exhibits).forEach(exhibit => {
+        exhibit.animals.forEach(animal => {
+            const animalData = data.animals.find(a => a.id === animal.id);
+            baseAttraction += animalData?.attractionValue || 10;
+        });
+    });
+
+    // Calculate ticket price impact
+    const ticketPrice = state.ticketPrice || 20;
+    const optimalPrice = 20; // Sweet spot
+    const priceRatio = optimalPrice / ticketPrice;
     
-    // 2. Generate actual visitor count
-    const visitors = generateVisitors(attraction);
-    state.dailyVisitors = visitors;
+    // Higher price = fewer visitors, lower price = more visitors
+    let priceMultiplier = 1;
+    if (ticketPrice > optimalPrice) {
+        // Expensive: reduces visitors
+        priceMultiplier = Math.max(0.3, 1 - ((ticketPrice - optimalPrice) / 100));
+    } else {
+        // Cheap: increases visitors
+        priceMultiplier = 1 + ((optimalPrice - ticketPrice) / 40);
+    }
+
+    // Calculate visitor satisfaction impact from price
+    let priceSatisfactionImpact = 0;
+    if (ticketPrice > 30) {
+        priceSatisfactionImpact = -20; // Too expensive
+    } else if (ticketPrice > 25) {
+        priceSatisfactionImpact = -10; // Somewhat expensive
+    } else if (ticketPrice < 10) {
+        priceSatisfactionImpact = -5; // Too cheap (perceived as low quality)
+    } else if (ticketPrice >= 15 && ticketPrice <= 25) {
+        priceSatisfactionImpact = 5; // Good value
+    }
+
+    // Calculate amenities impact
+    let amenityBonus = 0;
+    const amenityCount = Object.values(state.amenities || {}).reduce((sum, count) => sum + count, 0);
+    amenityBonus += Math.min(20, amenityCount * 2); // +2 per amenity, max +20
+
+    // Check for essential amenities
+    const hasRestroom = (state.amenities?.restroom || 0) > 0;
+    const hasFood = (state.amenities?.food_stand || 0) > 0 || (state.amenities?.cafe || 0) > 0;
+    const hasBin = (state.amenities?.bin || 0) > 0;
     
-    // 3. Process visitor behavior (spending, complaints, satisfaction)
-    processVisitorBehavior(visitors);
+    if (!hasRestroom) amenityBonus -= 15;
+    if (!hasFood) amenityBonus -= 10;
+    if (!hasBin) amenityBonus -= 5;
+
+    // Calculate final visitor satisfaction
+    const baseSatisfaction = 50;
+    let finalSatisfaction = baseSatisfaction + priceSatisfactionImpact + amenityBonus;
+    finalSatisfaction = Math.max(0, Math.min(100, finalSatisfaction));
+    state.visitorSatisfaction = Math.round(finalSatisfaction);
+    state.guestHappiness = Math.round(finalSatisfaction);
+
+    // Calculate visitor count
+    const baseVisitors = 50 + (baseAttraction * 2);
+    const adjustedVisitors = Math.round(baseVisitors * priceMultiplier);
+    const finalVisitors = Math.max(0, Math.min(500, adjustedVisitors)); // Cap at 500
     
-    // 4. Calculate guest happiness
-    const guestHappiness = calculateGuestHappiness();
-    state.guestHappiness = guestHappiness;
+    state.dailyVisitors = finalVisitors;
+
+    // Calculate ticket revenue
+    const ticketRevenue = finalVisitors * ticketPrice;
+
+    // Calculate amenity spending
+    const amenitySpending = calculateAmenitySpending(finalVisitors, finalSatisfaction);
     
-    // 5. Emit event for UI
+    state.visitorSpending = {
+        tickets: ticketRevenue,
+        amenities: amenitySpending,
+        total: ticketRevenue + amenitySpending
+    };
+
+    // Generate complaints if satisfaction is low
+    state.visitorComplaints = [];
+    if (finalSatisfaction < 40) {
+        if (!hasRestroom) {
+            state.visitorComplaints.push({
+                icon: '🚻',
+                text: 'No restrooms available!'
+            });
+        }
+        if (!hasFood) {
+            state.visitorComplaints.push({
+                icon: '🍔',
+                text: 'No food options!'
+            });
+        }
+        if (ticketPrice > 30) {
+            state.visitorComplaints.push({
+                icon: '💸',
+                text: 'Tickets are too expensive!'
+            });
+        }
+    }
+
+    // Emit event
     eventBus.emit('VISITORS_PROCESSED', {
-        attraction,
-        visitors,
-        guestHappiness,
+        visitors: finalVisitors,
+        satisfaction: finalSatisfaction,
         spending: state.visitorSpending,
         complaints: state.visitorComplaints
     });
+
+    return {
+        visitors: finalVisitors,
+        satisfaction: finalSatisfaction,
+        spending: state.visitorSpending
+    };
 }
 
-// =====================================================================
-// 1. ATTRACTION CALCULATION
-// =====================================================================
-function calculateAttraction() {
-    let score = 0;
-    
-    for (const id in state.exhibits) {
-        const exhibit = state.exhibits[id];
-        if (exhibit.buildDaysRemaining > 0) continue;
-        
-        exhibit.animals.forEach(animal => {
-            score += animal.attractionValue || 10;
-        });
-        
-        score += getExhibitHappiness(exhibit) * 0.5;
-    }
-    
-    return score;
-}
+function calculateAmenitySpending(visitors, satisfaction) {
+    if (visitors === 0) return 0;
 
-// =====================================================================
-// 2. VISITOR GENERATION
-// =====================================================================
-function generateVisitors(attraction) {
-    if (typeof attraction !== 'number' || isNaN(attraction)) {
-        console.warn('⚠️ Attraction is invalid:', attraction);
-        return 0;
-    }
+    let spending = 0;
     
-    if (attraction <= 0) return 0;
+    // Base spending per visitor (increases with satisfaction)
+    const baseSpending = 5 + (satisfaction / 10);
     
-    const hasRestroom = (state.amenities.restroom || 0) > 0;
-    const hasFood = (state.amenities.food_stand || 0) > 0 || 
-                    (state.amenities.cafe || 0) > 0 || 
-                    (state.amenities.restaurant || 0) > 0;
+    // Food stands
+    const foodStands = (state.amenities?.food_stand || 0) + 
+                       (state.amenities?.cafe || 0) * 2 + 
+                       (state.amenities?.restaurant || 0) * 3;
+    spending += Math.min(visitors * 0.3, foodStands * 50) * baseSpending;
     
-    // Base visitors based on amenities
-    let baseVisitors;
-    if (hasRestroom && hasFood) {
-        baseVisitors = 10;
-    } else if (hasRestroom || hasFood) {
-        baseVisitors = 2;
-    } else {
-        baseVisitors = 0;
-    }
+    // Gift shops
+    const giftShops = (state.amenities?.gift_shop || 0);
+    spending += Math.min(visitors * 0.2, giftShops * 40) * (baseSpending * 0.8);
     
-    // Add visitors based on attraction
-    let visitors = baseVisitors + Math.floor(1.2 * Math.sqrt(attraction));
-    
-    // Decay factor for novelty
-    const decayFactor = Math.min(1, (state.daysSinceNewAnimal || 0) / 20);
-    visitors = Math.floor(visitors * (1 - (decayFactor * 0.4)));
-    
-    // Ticket price impact
-    const priceImpact = state.ticketPriceImpact || 0;
-    const priceMultiplier = Math.max(0.1, 1 + (priceImpact / 100));
-    visitors = Math.floor(visitors * priceMultiplier);
-    
-    // Satisfaction impact
-    visitors = Math.max(0, Math.floor(visitors * ((state.visitorSatisfaction || 100) / 100)));
-    
-    // Safety check
-    if (isNaN(visitors)) {
-        console.error('❌ Visitors calculation produced NaN!');
-        return 0;
-    }
-    
-    return visitors;
-}
-
-// =====================================================================
-// 3. VISITOR BEHAVIOR (Spending & Complaints)
-// =====================================================================
-function processVisitorBehavior(visitors) {
-    state.visitorComplaints = [];
-    state.visitorSpending = { food: 0, gifts: 0, total: 0 };
-    
-    const staffEffects = getStaffEffects();
-    const cleanlinessFactor = Math.min(0.8, (staffEffects.cleanPark || 0) / 100);
-    
-    // Generate complaints if amenities are missing
-    if (visitors >= 5) {
-        if (!(state.amenities.restroom > 0)) {
-            const complaint = {
-                icon: '🚻',
-                text: 'Visitors are asking where the restrooms are!',
-                type: 'warning'
-            };
-            state.visitorComplaints.push(complaint);
-            state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 5);
-            console.log(`⚠️ Complaint: ${complaint.icon} ${complaint.text}`);
-        }
-        
-        if (!(state.amenities.bench > 0)) {
-            const complaint = {
-                icon: '🪑',
-                text: 'Tired visitors have nowhere to sit.',
-                type: 'info'
-            };
-            state.visitorComplaints.push(complaint);
-            state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 3);
-            console.log(`⚠️ Complaint: ${complaint.icon} ${complaint.text}`);
-        }
-        
-        if (!(state.amenities.bin > 0)) {
-            const complaint = {
-                icon: '🗑️',
-                text: 'No bins! Trash is starting to pile up.',
-                type: 'info'
-            };
-            state.visitorComplaints.push(complaint);
-            state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 3);
-            console.log(`⚠️ Complaint: ${complaint.icon} ${complaint.text}`);
-        }
-        
-        const hasFood = (state.amenities.food_stand || 0) > 0 || 
-                        (state.amenities.cafe || 0) > 0 || 
-                        (state.amenities.restaurant || 0) > 0;
-        if (!hasFood) {
-            const complaint = {
-                icon: '🍔',
-                text: 'Hungry visitors can\'t find anywhere to eat!',
-                type: 'warning'
-            };
-            state.visitorComplaints.push(complaint);
-            state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 5);
-            console.log(`⚠️ Complaint: ${complaint.icon} ${complaint.text}`);
-        }
-    }
-    
-    // Check amenity capacity
-    for (const id in data.amenities) {
-        const amenity = data.amenities[id];
-        const count = state.amenities[id] || 0;
-        
-        if (amenity.capacity > 0 && count > 0) {
-            const totalCapacity = count * amenity.capacity;
-            
-            if (id === 'restroom') {
-                if (totalCapacity * 15 < Math.ceil(visitors * 0.8)) {
-                    state.visitorComplaints.push({
-                        icon: amenity.icon,
-                        text: `Long ${amenity.name.toLowerCase()} lines!`,
-                        type: "warning"
-                    });
-                    state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 2 * (1 - cleanlinessFactor));
-                }
-            } else if (id === 'bin') {
-                if (count < Math.ceil(visitors / amenity.capacity) && visitors > 8) {
-                    state.visitorComplaints.push({
-                        icon: amenity.icon,
-                        text: `Trash overflowing!`,
-                        type: "warning"
-                    });
-                    state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 3 * (1 - cleanlinessFactor));
-                }
-            } else {
-                if (totalCapacity < Math.ceil(visitors * 0.20) * 0.5) {
-                    state.visitorComplaints.push({
-                        icon: amenity.icon,
-                        text: `Some tired visitors couldn't find a seat.`,
-                        type: "warning"
-                    });
-                    state.visitorSatisfaction = Math.max(0, (state.visitorSatisfaction || 100) - 3 * (1 - cleanlinessFactor));
-                }
-            }
-        }
-    }
-    
-    // Process spending at revenue-generating amenities
-    for (const id in data.amenities) {
-        const amenity = data.amenities[id];
-        const count = state.amenities[id] || 0;
-        
-        if (amenity.revenue > 0 && count > 0) {
-            let buyerPercentage = 0.3;
-            if (id.includes('food') || id.includes('restaurant') || id.includes('cafe')) {
-                buyerPercentage = 0.50;
-            } else if (id.includes('gift') || id.includes('shop') || id.includes('store')) {
-                buyerPercentage = 0.20;
-            }
-            
-            const actualBuyers = Math.min(
-                Math.floor(visitors * buyerPercentage), 
-                count * (amenity.maxCustomers || 50)
-            );
-            
-            const revenue = actualBuyers * amenity.revenue;
-            
-            if (revenue > 0) {
-                if (id.includes('food') || id.includes('restaurant') || id.includes('cafe')) {
-                    state.visitorSpending.food += revenue;
-                } else {
-                    state.visitorSpending.gifts += revenue;
-                }
-                
-                state.money += revenue;
-            }
-        }
-    }
-    
-    state.visitorSpending.total = state.visitorSpending.food + state.visitorSpending.gifts;
-    
-    // Calculate final satisfaction
-    let baseSatisfaction = 0;
-    if ((state.amenities.restroom || 0) > 0) baseSatisfaction += 20;
-    if ((state.amenities.bin || 0) > 0) baseSatisfaction += 15;
-    if ((state.amenities.bench || 0) > 0) baseSatisfaction += 15;
-    if ((state.amenities.food_stand || 0) > 0) baseSatisfaction += 20;
-    if ((state.amenities.gift_shop || 0) > 0) baseSatisfaction += 10;
-    
-    baseSatisfaction += Math.min(20, Object.values(state.amenities).reduce((sum, count) => sum + count, 0) * 2);
-    
-    const penalty = state.visitorComplaints.reduce((sum, c) => 
-        sum + (c.type === 'warning' ? 5 : c.type === 'info' ? 2 : 3), 0
-    );
-    
-    const priceSatisfactionImpact = state.ticketSatisfactionImpact || 0;
-    state.visitorSatisfaction = Math.max(0, Math.min(100, baseSatisfaction - penalty + priceSatisfactionImpact));
-    
-    // Log total complaints
-    if (state.visitorComplaints.length > 0) {
-        console.log(`📊 Total complaints today: ${state.visitorComplaints.length}`);
-    } else {
-        console.log(`✅ No complaints today! Visitors are happy.`);
-    }
-}
-
-// =====================================================================
-// 4. GUEST HAPPINESS CALCULATION
-// =====================================================================
-function calculateGuestHappiness() {
-    let happiness = 50;
-    
-    if (calculateAttraction() > 50) happiness += 10;
-    
-    let avgAnimalHappiness = 0;
-    const exhibitCount = Object.keys(state.exhibits).length;
-    
-    if (exhibitCount > 0) {
-        let totalHappiness = 0;
-        for (const id in state.exhibits) {
-            totalHappiness += getExhibitHappiness(state.exhibits[id]);
-        }
-        avgAnimalHappiness = totalHappiness / exhibitCount;
-    }
-    
-    if (avgAnimalHappiness > 80) happiness += 15;
-    
-    const staffEffects = getStaffEffects();
-    happiness += (staffEffects.visitorHappiness || 0) + (staffEffects.cleanPark || 0) * 0.3;
-    
-    return Math.max(0, Math.min(100, Math.round(happiness)));
-}
-
-// =====================================================================
-// HELPERS
-// =====================================================================
-function getExhibitHappiness(exhibit) {
-    if (!exhibit || !exhibit.animals?.length) return 0;
-    
-    let totalHappiness = 0;
-    
-    exhibit.animals.forEach(animal => {
-        let happiness = 50; // Base
-        
-        const health = animal.health ?? 100;
-        happiness += (health / 10);
-        
-        if (animal.wasHungry) {
-            happiness -= 30;
-        }
-        
-        const cleanliness = exhibit.cleanliness ?? 100;
-        if (cleanliness < 50) {
-            happiness -= (50 - cleanliness) * 0.5;
-        }
-        
-        totalHappiness += happiness;
-    });
-    
-    return Math.max(0, Math.min(100, Math.round(totalHappiness / exhibit.animals.length)));
+    return Math.round(spending);
 }
