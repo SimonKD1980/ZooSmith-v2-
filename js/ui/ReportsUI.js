@@ -46,7 +46,7 @@ export function renderReports() {
                     <div style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid #22c55e;">
                         <h4 style="color: #22c55e; margin: 0 0 15px 0;">💵 INCOME</h4>
                         ${renderLineItem('🎟️ Ticket Sales', `$${latest.income.tickets.toLocaleString()}`)}
-                        ${renderLineItem(' Amenity Sales', `$${latest.income.amenities.toLocaleString()}`)}
+                        ${renderLineItem('🏪 Amenity Sales', `$${latest.income.amenities.toLocaleString()}`)}
                         <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
                             ${renderLineItem('Total Income', `$${latest.income.total.toLocaleString()}`, true)}
                         </div>
@@ -58,7 +58,7 @@ export function renderReports() {
                         ${renderLineItem('👷 Staff Salaries', `$${latest.expenses.staff.toLocaleString()}`)}
                         ${renderLineItem('🍖 Food Costs', `$${latest.expenses.food.toLocaleString()}`)}
                         ${renderLineItem('🏛️ Facility Upkeep', `$${latest.expenses.upkeep.toLocaleString()}`)}
-                        ${renderLineItem(' Maintenance', `$${latest.expenses.maintenance.toLocaleString()}`)}
+                        ${renderLineItem('🔧 Maintenance', `$${latest.expenses.maintenance.toLocaleString()}`)}
                         <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
                             ${renderLineItem('Total Expenses', `$${latest.expenses.total.toLocaleString()}`, true)}
                         </div>
@@ -80,9 +80,29 @@ export function renderReports() {
                     ${renderStatBox('🐾 Animals', latest.animalCount, '#a855f7')}
                     ${renderStatBox('👷 Staff', latest.staffCount, '#f59e0b')}
                     ${renderStatBox('🎟️ Ticket Price', `$${latest.ticketPrice}`, '#22c55e')}
+                    ${renderStatBox('🏞️ Exhibits', latest.exhibits || 0, '#ec4899')}
                 </div>
             </div>
         `;
+        
+        // Animal Breakdown
+        if (latest.animalBreakdown && Object.keys(latest.animalBreakdown).length > 0) {
+            html += `
+                <div class="status-panel" style="border: 2px solid #a855f7;">
+                    <h3>🐾 Animal Population Breakdown</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                        ${Object.entries(latest.animalBreakdown).map(([species, count]) => `
+                            <div style="background: #0f172a; padding: 12px; border-radius: 8px; border-left: 4px solid #a855f7;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #e5e7eb; font-weight: 700;">${species}</span>
+                                    <span style="color: #a855f7; font-weight: 800; font-size: 1.2rem;">${count}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
     }
     
     // Historical Trends
@@ -99,6 +119,7 @@ export function renderReports() {
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #334155;">Expenses</th>
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #334155;">Net Profit</th>
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #334155;">Visitors</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #334155;">Animals</th>
                                 <th style="padding: 10px; text-align: right; border-bottom: 2px solid #334155;">Rating</th>
                             </tr>
                         </thead>
@@ -112,7 +133,8 @@ export function renderReports() {
                                         ${report.netProfit >= 0 ? '+' : ''}$${report.netProfit.toLocaleString()}
                                     </td>
                                     <td style="padding: 10px; text-align: right; color: #3b82f6;">${report.visitors}</td>
-                                    <td style="padding: 10px; text-align: right; color: #a855f7;">${report.rating}</td>
+                                    <td style="padding: 10px; text-align: right; color: #a855f7;">${report.animalCount}</td>
+                                    <td style="padding: 10px; text-align: right; color: #ec4899;">${report.rating}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -122,7 +144,7 @@ export function renderReports() {
         `;
     }
     
-    // Expense Breakdown Pie Chart (Text-based)
+    // Expense Breakdown
     if (latest) {
         const expenseCategories = [
             { name: 'Staff', value: latest.expenses.staff, color: '#3b82f6' },
