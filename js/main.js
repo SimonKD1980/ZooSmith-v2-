@@ -148,20 +148,72 @@ function renderVisitorsTab() {
     
     let html = renderRatingBreakdown();
     
+    // Ticket Pricing Section
+    const currentPrice = state.ticketPrice || 20;
+    html += `
+        <div class="status-panel" style="border: 2px solid #3b82f6;">
+            <h3>🎟️ Ticket Pricing</h3>
+            <p style="color: #9ca3af; margin-bottom: 15px;">Adjust your ticket prices to balance profit and visitor satisfaction.</p>
+            
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <input type="range" id="ticketPriceSlider" min="5" max="50" value="${currentPrice}" 
+                        style="width: 100%; height: 8px; border-radius: 4px; background: #1e293b; outline: none; -webkit-appearance: none;"
+                        oninput="window.updateTicketPrice(this.value)">
+                    <style>
+                        input[type=range]::-webkit-slider-thumb {
+                            -webkit-appearance: none;
+                            appearance: none;
+                            width: 24px;
+                            height: 24px;
+                            border-radius: 50%;
+                            background: #3b82f6;
+                            cursor: pointer;
+                            border: 3px solid #0f172a;
+                        }
+                        input[type=range]::-moz-range-thumb {
+                            width: 24px;
+                            height: 24px;
+                            border-radius: 50%;
+                            background: #3b82f6;
+                            cursor: pointer;
+                            border: 3px solid #0f172a;
+                        }
+                    </style>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="color: #9ca3af; font-size: 0.9rem;">$</span>
+                    <input type="number" id="ticketPriceInput" value="${currentPrice}" min="5" max="50" 
+                        style="width: 80px; padding: 10px; font-size: 1.2rem; font-weight: 700; background: #0f172a; color: #e5e7eb; border: 2px solid #3b82f6; border-radius: 8px; text-align: center;"
+                        onchange="window.updateTicketPrice(this.value)">
+                </div>
+            </div>
+            
+            <div id="ticketPriceFeedback" style="background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid ${getPriceFeedbackColor(currentPrice)};">
+                ${getTicketPriceFeedback(currentPrice)}
+            </div>
+        </div>
+    `;
+    
+    // Visitor Summary
     html += '<div class="status-panel"><h3>👥 Visitor Summary</h3>';
     html += `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 0.8rem; color: #9ca3af;">Today's Visitors</div>
-                <div style="font-size: 1.5rem; font-weight: 800; color: #3b82f6;">${state.dailyVisitors}</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #3b82f6;">${state.dailyVisitors || 0}</div>
             </div>
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 0.8rem; color: #9ca3af;">Guest Happiness</div>
                 <div style="font-size: 1.5rem; font-weight: 800; color: ${(state.guestHappiness || 50) >= 70 ? '#22c55e' : '#f59e0b'};">${state.guestHappiness || 50}%</div>
             </div>
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 0.8rem; color: #9ca3af;">Ticket Revenue</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #22c55e;">$${((state.visitorSpending?.tickets) || 0).toLocaleString()}</div>
+            </div>
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; text-align: center;">
                 <div style="font-size: 0.8rem; color: #9ca3af;">Amenity Revenue</div>
-                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24;">$${(state.visitorSpending?.total || 0).toLocaleString()}</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24;">$${((state.visitorSpending?.amenities) || 0).toLocaleString()}</div>
             </div>
         </div>
     `;
@@ -178,6 +230,120 @@ function renderVisitorsTab() {
     
     el.innerHTML = html;
 }
+
+// Helper functions for ticket pricing feedback
+function getTicketPriceFeedback(price) {
+    price = parseInt(price) || 20;
+    
+    let impact = '';
+    let color = '';
+    let advice = '';
+    
+    if (price < 10) {
+        impact = ' Very High Visitor Count';
+        color = '#22c55e';
+        advice = 'Tickets are very cheap! You\'ll get lots of visitors, but they may perceive low quality. Consider raising prices to $15-25.';
+    } else if (price < 15) {
+        impact = ' High Visitor Count';
+        color = '#22c55e';
+        advice = 'Good value pricing! Visitors are happy with the price. Great for building reputation.';
+    } else if (price <= 25) {
+        impact = '✅ Balanced';
+        color = '#3b82f6';
+        advice = 'Optimal pricing! Good balance between profit and visitor satisfaction.';
+    } else if (price <= 35) {
+        impact = '📉 Moderate Visitor Count';
+        color = '#f59e0b';
+        advice = 'Premium pricing. Fewer visitors but higher profit per person. Make sure your amenities are excellent!';
+    } else {
+        impact = ' Low Visitor Count';
+        color = '#ef4444';
+        advice = 'Very expensive! Visitors are complaining about prices. Consider lowering to $20-30 or adding premium amenities.';
+    }
+    
+    return `
+        <div style="margin-bottom: 10px;">
+            <div style="font-weight: 700; color: ${color}; margin-bottom: 4px;">${impact}</div>
+            <div style="font-size: 0.9rem; color: #9ca3af;">${advice}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 0.85rem;">
+            <div style="background: #1e293b; padding: 8px; border-radius: 6px;">
+                <div style="color: #9ca3af;">Est. Visitors</div>
+                <div style="font-weight: 700; color: #e5e7eb;">${estimateVisitors(price)}</div>
+            </div>
+            <div style="background: #1e293b; padding: 8px; border-radius: 6px;">
+                <div style="color: #9ca3af;">Est. Satisfaction</div>
+                <div style="font-weight: 700; color: #e5e7eb;">${estimateSatisfaction(price)}%</div>
+            </div>
+            <div style="background: #1e293b; padding: 8px; border-radius: 6px;">
+                <div style="color: #9ca3af;">Est. Daily Revenue</div>
+                <div style="font-weight: 700; color: #22c55e;">$${estimateRevenue(price)}</div>
+            </div>
+        </div>
+    `;
+}
+
+function getPriceFeedbackColor(price) {
+    price = parseInt(price) || 20;
+    if (price < 10) return '#22c55e';
+    if (price < 15) return '#22c55e';
+    if (price <= 25) return '#3b82f6';
+    if (price <= 35) return '#f59e0b';
+    return '#ef4444';
+}
+
+function estimateVisitors(price) {
+    const baseAttraction = 100; // Simplified estimate
+    const optimalPrice = 20;
+    let priceMultiplier = 1;
+    if (price > optimalPrice) {
+        priceMultiplier = Math.max(0.3, 1 - ((price - optimalPrice) / 100));
+    } else {
+        priceMultiplier = 1 + ((optimalPrice - price) / 40);
+    }
+    return Math.round((50 + (baseAttraction * 2)) * priceMultiplier);
+}
+
+function estimateSatisfaction(price) {
+    let impact = 0;
+    if (price > 30) impact = -20;
+    else if (price > 25) impact = -10;
+    else if (price < 10) impact = -5;
+    else if (price >= 15 && price <= 25) impact = 5;
+    
+    const baseSatisfaction = 50;
+    const amenityBonus = 10; // Simplified
+    return Math.max(0, Math.min(100, baseSatisfaction + impact + amenityBonus));
+}
+
+function estimateRevenue(price) {
+    const visitors = estimateVisitors(price);
+    return (visitors * price).toLocaleString();
+}
+
+// Expose to window
+window.updateTicketPrice = (value) => {
+    const price = parseInt(value) || 20;
+    state.ticketPrice = Math.max(5, Math.min(50, price));
+    
+    // Sync slider and input
+    const slider = document.getElementById('ticketPriceSlider');
+    const input = document.getElementById('ticketPriceInput');
+    if (slider) slider.value = state.ticketPrice;
+    if (input) input.value = state.ticketPrice;
+    
+    // Update feedback
+    const feedbackDiv = document.getElementById('ticketPriceFeedback');
+    if (feedbackDiv) {
+        feedbackDiv.innerHTML = getTicketPriceFeedback(state.ticketPrice);
+        feedbackDiv.style.borderLeftColor = getPriceFeedbackColor(state.ticketPrice);
+    }
+    
+    // Re-render to update estimates
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'visitors') {
+        renderVisitorsTab();
+    }
+};
 
 // =====================================================================
 // RATING BREAKDOWN RENDERER
@@ -282,6 +448,10 @@ eventBus.on('DAY_ADVANCED', () => {
     const activeTab = document.querySelector('.nav-btn.active');
     if (activeTab) activeTab.click();
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
+});
+
+eventBus.on('TICKET_PRICE_CHANGED', (data) => {
+    logMessage(`🎟️ Ticket price changed to $${data.price}`);
 });
 
 eventBus.on('ANIMAL_TRANSFERRED', (data) => {
