@@ -26,6 +26,7 @@ import {
     importSave 
 } from './engine/SaveSystem.js';
 import { renderReports } from './ui/ReportsUI.js';
+import { renderResearch } from './ui/ResearchUI.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -64,6 +65,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         else if (sectionId === 'visitors') renderVisitorsTab();
         else if (sectionId === 'saves') renderSavesTab();
         else if (sectionId === 'reports') renderReports();
+        else if (sectionId === 'research') renderResearch();
     });
 });
 
@@ -456,6 +458,14 @@ eventBus.on('ANIMAL_PURCHASED', (data) => {
     const stageEmoji = { baby: '🍼', juvenile: '🐾', adult: '🦁', senior: '👴' };
     const emoji = stageEmoji[data.ageStage] || '🦁';
     logMessage(`🎉 Purchased ${emoji} ${data.ageStage} ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
+});
+
+eventBus.on('RESEARCH_STARTED', (data) => {
+    logMessage(`🔬 Started researching ${data.icon} ${data.researchName} ($${data.cost}, ${data.days} days)`);
+});
+
+eventBus.on('RESEARCH_COMPLETED', (data) => {
+    logMessage(`✅ RESEARCH COMPLETE! ${data.icon} ${data.researchName} - Unlocked: ${data.unlocks.join(', ')}`);
 });
 
 eventBus.on('DAILY_REPORT_GENERATED', (data) => {
