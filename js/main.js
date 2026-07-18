@@ -27,6 +27,7 @@ import {
 } from './engine/SaveSystem.js';
 import { renderReports } from './ui/ReportsUI.js';
 import { renderResearch } from './ui/ResearchUI.js';
+import { startResearch } from './engine/systems/ResearchSystem.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -706,6 +707,17 @@ async function init() {
         console.error('❌ ERROR in init():', error);
     }
 }
+
+// =====================================================================
+// RESEARCH UI WRAPPER
+// =====================================================================
+window.startResearch = (researchId) => {
+    const success = startResearch(researchId);
+    if (success) {
+        updateUI();       // 🔥 Instantly updates the money in the header
+        renderResearch(); // 🔥 Instantly updates the research tab to show the progress bar
+    }
+};
 
 console.log('🚀 About to call init()...');
 init();
