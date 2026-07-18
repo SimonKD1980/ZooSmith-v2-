@@ -36,16 +36,11 @@ export function processResearch() {
 export function startResearch(researchId) {
     const researchData = data.research.find(r => r.id === researchId);
     
-    if (!researchData) {
-        alert("Research not found!");
-        return false;
-    }
-
+    if (!researchData) return false;
     if (state.researchCompleted.includes(researchId)) {
         alert("Already researched!");
         return false;
     }
-
     if (state.researchInProgress) {
         alert("Already researching something! Wait for it to complete.");
         return false;
@@ -64,8 +59,14 @@ export function startResearch(researchId) {
         return false;
     }
 
-    // 🔥 Deduct money and set state
+    // 🔥 1. Deduct money
     state.money -= researchData.cost;
+    
+    // 🔥 2. Track in daily report expenses
+    if (!state.dailyReport) state.dailyReport = {};
+    state.dailyReport.researchExpense = (state.dailyReport.researchExpense || 0) + researchData.cost;
+
+    // 🔥 3. Start the research
     state.researchInProgress = researchId;
     state.researchDaysRemaining = researchData.researchDays;
 
