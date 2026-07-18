@@ -9,6 +9,7 @@ import {
     getCleanerDemand,
     isUnderstaffed 
 } from '../engine/systems/StaffSystem.js';
+import { isUnlocked } from '../engine/systems/ResearchSystem.js';
 
 export function renderStaff() {
     const staffEl = document.getElementById('staff');
@@ -75,14 +76,17 @@ export function renderStaff() {
 
     // Render each staff type
     data.staff.forEach(staff => {
+        // 🔥 Check if staff type is unlocked via research
+        const isLocked = staff.id && !isUnlocked(staff.id);
+        
         const hiredInstances = state.hiredStaff.filter(s => s.typeId === staff.id);
         const hiredCount = hiredInstances.length;
         const maxStaff = staff.effects?.maxStaff || 99;
         const isMaxed = hiredCount >= maxStaff;
 
-        // Build effects display
+        // Build effects display (only show if unlocked)
         let effectsHTML = '';
-        if (staff.effects) {
+        if (staff.effects && !isLocked) {
             const effects = Object.entries(staff.effects)
                 .filter(([key]) => !['maxStaff', 'maintenanceLevel', 'keeperSlots', 'cleanerSlots'].includes(key))
                 .map(([key, val]) => {
@@ -102,29 +106,34 @@ export function renderStaff() {
         }
 
         html += `
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; overflow: hidden;">
+            <div style="background: #1e293b; border: 1px solid ${isLocked ? '#64748b' : '#334155'}; border-radius: 12px; overflow: hidden; position: relative; ${isLocked ? 'opacity: 0.7;' : ''}">
+                ${isLocked ? `
+                    <div style="position: absolute; top: 10px; right: 10px; background: #64748b; color: #fff; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; z-index: 10;">
+                        🔒 LOCKED
+                    </div>
+                ` : ''}
                 <div style="background: linear-gradient(135deg, #334155, #1e293b); padding: 15px; text-align: center;">
-                    <span style="font-size: 3rem;">${staff.icon || '👤'}</span>
+                    <span style="font-size: 3rem; ${isLocked ? 'filter: grayscale(100%);' : ''}">${staff.icon || '👤'}</span>
                     <h3 style="margin: 8px 0 4px; color: #e5e7eb;">${staff.name}</h3>
                     <div style="font-size: 0.85rem; color: #9ca3af;">${staff.role || 'Staff'} • Hired: ${hiredCount}/${maxStaff}</div>
                 </div>
                 <div style="padding: 15px;">
-                    <p style="color: #9ca3af; font-size: 0.9rem; margin: 0 0 10px;">${staff.description || 'A valuable addition to your team.'}</p>
-                    ${capacityInfo ? `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">${capacityInfo}</div>` : ''}
-                    ${effectsHTML}
-                    <div style="font-size: 1.2rem; font-weight: 800; color: #22c55e; margin: 10px 0; text-align: center; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2);">
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin: 0 0 10px;">${isLocked ? '🔒 Research required to unlock this staff type.' : (staff.description || 'A valuable addition to your team.')}</p>
+                    ${!isLocked && capacityInfo ? `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">${capacityInfo}</div>` : ''}
+                    ${!isLocked ? effectsHTML : ''}
+                    <div style="font-size: 1.2rem; font-weight: 800; color: ${isLocked ? '#64748b' : '#22c55e'}; margin: 10px 0; text-align: center; background: ${isLocked ? 'rgba(100, 116, 139, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; padding: 8px; border-radius: 8px; border: 1px solid ${isLocked ? 'rgba(100, 116, 139, 0.2)' : 'rgba(34, 197, 94, 0.2)'};">
                         💰 $${staff.cost.toLocaleString()} (hire) • $${staff.salary || 0}/day
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="window.hireStaff('${staff.id}')" 
-                            style="flex: 1; padding: 10px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;"
-                            ${isMaxed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
-                            ${isMaxed ? 'Max Hired' : '✅ Hire'}
+                        <button onclick="${isLocked ? '' : `window.hireStaff('${staff.id}')`}" 
+                            style="flex: 1; padding: 10px; background: ${isLocked ? '#475569' : '#22c55e'}; color: ${isLocked ? '#9ca3af' : '#000'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; font-size: 0.9rem;"
+                            ${isLocked || isMaxed ? 'disabled' : ''}>
+                            ${isLocked ? '🔒 Locked' : (isMaxed ? 'Max Hired' : '✅ Hire')}
                         </button>
-                        <button onclick="window.fireStaff('${staff.id}')" 
-                            style="flex: 1; padding: 10px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;"
-                            ${hiredCount === 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
-                            ${hiredCount === 0 ? 'None Hired' : '❌ Fire One'}
+                        <button onclick="${isLocked ? '' : `window.fireStaff('${staff.id}')`}" 
+                            style="flex: 1; padding: 10px; background: ${isLocked ? '#475569' : '#ef4444'}; color: ${isLocked ? '#9ca3af' : '#fff'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; font-size: 0.9rem;"
+                            ${isLocked || hiredCount === 0 ? 'disabled' : ''}>
+                            ${isLocked ? '🔒 Locked' : (hiredCount === 0 ? 'None Hired' : '❌ Fire One')}
                         </button>
                     </div>
                 </div>
@@ -144,6 +153,12 @@ export function hireStaff(staffId) {
     const staff = data.staff.find(s => s.id === staffId);
     if (!staff) {
         alert("Staff type not found!");
+        return;
+    }
+
+    // 🔥 Safety check for locked staff
+    if (!isUnlocked(staffId)) {
+        alert("This staff type is locked! Complete the required research first.");
         return;
     }
 
@@ -184,6 +199,12 @@ export function fireStaff(staffId) {
     const staff = data.staff.find(s => s.id === staffId);
     if (!staff) {
         alert("Staff type not found!");
+        return;
+    }
+
+    // 🔥 Safety check for locked staff
+    if (!isUnlocked(staffId)) {
+        alert("This staff type is locked!");
         return;
     }
 
