@@ -39,18 +39,20 @@ export function advanceDay() {
             tickets: state.visitorSpending?.tickets || 0,
             amenities: state.visitorSpending?.amenities || 0,
             total: (state.visitorSpending?.tickets || 0) + (state.visitorSpending?.amenities || 0)
-        },
+        },        
         expenses: {
             staff: state.dailyReport?.staffExpense || 0,
             food: state.dailyReport?.foodExpense || 0,
             upkeep: state.dailyReport?.upkeepExpense || 0,
             maintenance: state.dailyReport?.maintenanceExpense || 0,
             animalPurchases: animalPurchaseTotal,
+            research: state.dailyReport?.researchExpense || 0, // 🔥 NEW: Add research expense
             total: (state.dailyReport?.staffExpense || 0) + 
                    (state.dailyReport?.foodExpense || 0) + 
                    (state.dailyReport?.upkeepExpense || 0) + 
                    (state.dailyReport?.maintenanceExpense || 0) +
-                   animalPurchaseTotal
+                   animalPurchaseTotal +
+                   (state.dailyReport?.researchExpense || 0) // 🔥 NEW: Add to total
         },
         animalPurchases: animalPurchases,
         netProfit: netProfit,
@@ -67,13 +69,14 @@ export function advanceDay() {
     if (state.dailyReports.length > state.maxDailyReports) {
         state.dailyReports.shift();
     }
-
+    
     state.dailyReport = {
         staffExpense: 0,
         foodExpense: 0,
         upkeepExpense: 0,
         maintenanceExpense: 0,
-        animalPurchases: []
+        animalPurchases: [],
+        researchExpense: 0 // 🔥 NEW: Reset research expense for next day
     };
 
     state.day++;
