@@ -62,5 +62,36 @@
       "maintenanceLevel": 2,
       "maxStaff": 4
     }
+  },
+    {
+    "id": "senior_keeper",
+    "name": "Senior Keeper",
+    "icon": "👨‍🔬",
+    "description": "Experienced keeper with advanced animal care skills. Handles 3x more animals.",
+    "cost": 300,
+    "salary": 80,
+    "keeperCapacity": 3,
+    "cleanerCapacity": 0
+  },
+  {
+    "id": "head_janitor",
+    "name": "Head Janitor",
+    "icon": "🧹",
+    "description": "Leads the cleaning team. Cleans 3x more exhibits than regular janitors.",
+    "cost": 250,
+    "salary": 70,
+    "keeperCapacity": 0,
+    "cleanerCapacity": 3
+  },
+  {
+    "id": "veterinarian",
+    "name": "Veterinarian",
+    "icon": "🩺",
+    "description": "Medical professional who treats sick animals faster and prevents outbreaks.",
+    "cost": 500,
+    "salary": 120,
+    "keeperCapacity": 2,
+    "cleanerCapacity": 0,
+    "specialty": "medical"
   }
 ]
