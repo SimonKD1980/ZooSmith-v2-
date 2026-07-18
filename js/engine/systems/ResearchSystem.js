@@ -8,6 +8,11 @@ export function processResearch() {
 
     state.researchDaysRemaining--;
 
+    // 🔥 Emit an event so the UI knows to update the progress bar
+    eventBus.emit('RESEARCH_PROGRESS', {
+        daysRemaining: state.researchDaysRemaining
+    });
+
     if (state.researchDaysRemaining <= 0) {
         // Research complete!
         const researchId = state.researchInProgress;
@@ -36,19 +41,16 @@ export function startResearch(researchId) {
         return false;
     }
 
-    // Check if already completed
     if (state.researchCompleted.includes(researchId)) {
         alert("Already researched!");
         return false;
     }
 
-    // Check if already in progress
     if (state.researchInProgress) {
         alert("Already researching something! Wait for it to complete.");
         return false;
     }
 
-    // Check prerequisites
     if (researchData.requires && researchData.requires.length > 0) {
         const missing = researchData.requires.filter(req => !state.researchCompleted.includes(req));
         if (missing.length > 0) {
@@ -57,13 +59,12 @@ export function startResearch(researchId) {
         }
     }
 
-    // Check money
     if (state.money < researchData.cost) {
         alert(`Not enough money! Need $${researchData.cost}`);
         return false;
     }
 
-    // Start research
+    // 🔥 Deduct money and set state
     state.money -= researchData.cost;
     state.researchInProgress = researchId;
     state.researchDaysRemaining = researchData.researchDays;
@@ -79,7 +80,6 @@ export function startResearch(researchId) {
 }
 
 export function isUnlocked(itemId) {
-    // Check if item is in any completed research's unlocks
     return data.research.some(r => 
         state.researchCompleted.includes(r.id) && 
         r.unlocks && r.unlocks.includes(itemId)
