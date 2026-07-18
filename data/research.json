@@ -1,90 +1,68 @@
 [
   {
-    "id": "restroom",
-    "name": "Restroom",
-    "icon": "🚻",
-    "description": "Essential facility. Visitors will complain if you don't have one.",
-    "cost": 1000,
-    "revenue": 0,
-    "capacity": 50,
-    "maxCustomers": 200,
-    "maintenanceCost": 10
-  },
-  {
-    "id": "bin",
-    "name": "Trash Bin",
-    "icon": "🗑️",
-    "description": "Keeps the zoo clean and prevents visitor complaints.",
-    "cost": 200,
-    "revenue": 0,
-    "capacity": 0,
-    "maxCustomers": 0,
-    "maintenanceCost": 2
-  },
-  {
-    "id": "food_stand",
-    "name": "Food Stand",
-    "icon": "🌭",
-    "description": "Sells snacks to hungry visitors. Generates steady income.",
-    "cost": 1500,
-    "revenue": 5,
-    "capacity": 30,
-    "maxCustomers": 150,
-    "maintenanceCost": 15
-  },
-  {
-    "id": "bench",
-    "name": "Bench",
-    "icon": "🪑",
-    "description": "A place for visitors to rest. Improves satisfaction slightly.",
-    "cost": 300,
-    "revenue": 0,
-    "capacity": 4,
-    "maxCustomers": 0,
-    "maintenanceCost": 1
-  },
-  {
-    "id": "gift_shop",
-    "name": "Gift Shop",
-    "icon": "🎁",
-    "description": "Sells souvenirs. Visitors with high satisfaction spend more here.",
-    "cost": 3000,
-    "revenue": 8,
-    "capacity": 20,
-    "maxCustomers": 100,
-    "maintenanceCost": 20
-  },
-  {
-    "id": "vip_tour",
-    "name": "VIP Tour",
-    "icon": "🎩",
-    "description": "Exclusive behind-the-scenes tours for premium guests. High revenue!",
+    "id": "basic_exotic_mammals",
+    "name": "Basic Exotic Mammals",
+    "icon": "🐘",
+    "description": "Unlock exotic mammals",
     "cost": 5000,
-    "revenue": 35,
-    "capacity": 0,
-    "maxCustomers": 20,
-    "maintenanceCost": 25
+    "researchDays": 3,
+    "category": "animals",
+    "unlocks": ["elephant", "giraffe", "rhino"],
+    "requires": []
   },
   {
-    "id": "safari_ride",
-    "name": "Safari Ride",
-    "icon": "🚙",
-    "description": "Guided truck tours through the savanna exhibits. Visitors love it!",
+    "id": "big_cats",
+    "name": "Big Cat Conservation",
+    "icon": "🐅",
+    "description": "Unlock rare big cats",
     "cost": 8000,
-    "revenue": 25,
-    "capacity": 0,
-    "maxCustomers": 100,
-    "maintenanceCost": 40
+    "researchDays": 5,
+    "category": "animals",
+    "unlocks": ["tiger", "cheetah", "leopard"],
+    "requires": ["basic_exotic_mammals"]
   },
   {
-    "id": "petting_zoo",
-    "name": "Petting Zoo",
-    "icon": "🐐",
-    "description": "Interactive area where kids can pet friendly animals. Family favorite!",
-    "cost": 3000,
-    "revenue": 10,
-    "capacity": 15,
-    "maxCustomers": 80,
-    "maintenanceCost": 15
+    "id": "marine_life",
+    "name": "Marine Biology",
+    "icon": "🐬",
+    "description": "Unlock marine animals",
+    "cost": 10000,
+    "researchDays": 6,
+    "category": "animals",
+    "unlocks": ["dolphin", "seal", "penguin"],
+    "requires": ["basic_exotic_mammals"]
+  },
+  {
+    "id": "premium_amenities",
+    "name": "Premium Guest Services",
+    "icon": "🎢",
+    "description": "Unlock premium amenities",
+    "cost": 6000,
+    "researchDays": 4,
+    "category": "amenities",
+    "unlocks": ["vip_tour", "safari_ride", "petting_zoo"],
+    "requires": []
+  },
+  {
+    "id": "advanced_staff",
+    "name": "Advanced Staff Training",
+    "icon": "🎓",
+    "description": "Unlock senior staff",
+    "cost": 4000,
+    "researchDays": 3,
+    "category": "staff",
+    "unlocks": ["senior_keeper", "head_janitor", "veterinarian"],
+    "requires": []
+  },
+  {
+    "id": "conservation_program",
+    "name": "Conservation Program",
+    "icon": "🌍",
+    "description": "Unlock endangered species",
+    "cost": 15000,
+    "researchDays": 8,
+    "category": "animals",
+    "unlocks": ["panda", "snow_leopard", "orangutan"],
+    "requires": ["big_cats", "marine_life"]
   }
 ]
