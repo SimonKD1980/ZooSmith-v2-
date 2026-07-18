@@ -460,6 +460,21 @@ eventBus.on('ANIMAL_PURCHASED', (data) => {
     logMessage(`🎉 Purchased ${emoji} ${data.ageStage} ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
 });
 
+eventBus.on('RESEARCH_PROGRESS', () => {
+    // If the player is currently looking at the research tab, redraw it to show the new day count
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
+        renderResearch();
+    }
+});
+
+eventBus.on('RESEARCH_COMPLETED', (data) => {
+    logMessage(`✅ RESEARCH COMPLETE! ${data.icon} ${data.researchName} - Unlocked: ${data.unlocks.join(', ')}`);
+    // Redraw research tab to show it moved to "Completed"
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
+        renderResearch();
+    }
+});
+
 eventBus.on('RESEARCH_STARTED', (data) => {
     logMessage(`🔬 Started researching ${data.icon} ${data.researchName} ($${data.cost}, ${data.days} days)`);
 });
