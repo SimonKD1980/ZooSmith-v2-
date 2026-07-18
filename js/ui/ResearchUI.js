@@ -140,14 +140,4 @@ export function renderResearch() {
     el.innerHTML = html;
 }
 
-// Expose to window with immediate UI update
-window.startResearch = (researchId) => {
-    // Call the actual system function
-    const success = startResearch(researchId);
-    
-    // If it was successful, update the header money and re-render the tab immediately!
-    if (success) {
-        updateUI();       // 🔥 Updates the money in the header
-        renderResearch(); // 🔥 Updates the research tab to show the progress bar
-    }
-};
+export { startResearch };
