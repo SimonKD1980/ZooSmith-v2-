@@ -145,8 +145,9 @@ window.startResearch = (researchId) => {
     // Call the actual system function
     const success = startResearch(researchId);
     
-    // If it was successful, re-render the tab immediately so the player sees the progress bar!
+    // If it was successful, update the header money and re-render the tab immediately!
     if (success) {
-        renderResearch();
+        updateUI();       // 🔥 Updates the money in the header
+        renderResearch(); // 🔥 Updates the research tab to show the progress bar
     }
 };
