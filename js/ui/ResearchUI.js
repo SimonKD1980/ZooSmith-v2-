@@ -140,5 +140,13 @@ export function renderResearch() {
     el.innerHTML = html;
 }
 
-// Expose to window
-window.startResearch = startResearch;
+// Expose to window with immediate UI update
+window.startResearch = (researchId) => {
+    // Call the actual system function
+    const success = startResearch(researchId);
+    
+    // If it was successful, re-render the tab immediately so the player sees the progress bar!
+    if (success) {
+        renderResearch();
+    }
+};
