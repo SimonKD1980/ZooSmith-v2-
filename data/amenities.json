@@ -1,15 +1,60 @@
-{
-  "bin": {
-    "id": "bin",
-    "name": "Trash Bin",
-    "maintenanceCost": 2
-  },
-  "restroom": {
+[
+  {
     "id": "restroom",
     "name": "Restroom",
+    "icon": "🚻",
+    "description": "Essential facility. Visitors will complain if you don't have one.",
+    "cost": 1000,
+    "revenue": 0,
+    "capacity": 50,
+    "maxCustomers": 200,
     "maintenanceCost": 10
   },
-    {
+  {
+    "id": "bin",
+    "name": "Trash Bin",
+    "icon": "🗑️",
+    "description": "Keeps the zoo clean and prevents visitor complaints.",
+    "cost": 200,
+    "revenue": 0,
+    "capacity": 0,
+    "maxCustomers": 0,
+    "maintenanceCost": 2
+  },
+  {
+    "id": "food_stand",
+    "name": "Food Stand",
+    "icon": "🌭",
+    "description": "Sells snacks to hungry visitors. Generates steady income.",
+    "cost": 1500,
+    "revenue": 5,
+    "capacity": 30,
+    "maxCustomers": 150,
+    "maintenanceCost": 15
+  },
+  {
+    "id": "bench",
+    "name": "Bench",
+    "icon": "🪑",
+    "description": "A place for visitors to rest. Improves satisfaction slightly.",
+    "cost": 300,
+    "revenue": 0,
+    "capacity": 4,
+    "maxCustomers": 0,
+    "maintenanceCost": 1
+  },
+  {
+    "id": "gift_shop",
+    "name": "Gift Shop",
+    "icon": "🎁",
+    "description": "Sells souvenirs. Visitors with high satisfaction spend more here.",
+    "cost": 3000,
+    "revenue": 8,
+    "capacity": 20,
+    "maxCustomers": 100,
+    "maintenanceCost": 20
+  },
+  {
     "id": "vip_tour",
     "name": "VIP Tour",
     "icon": "🎩",
@@ -42,4 +87,4 @@
     "maxCustomers": 80,
     "maintenanceCost": 15
   }
-}
+]
