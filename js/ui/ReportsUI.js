@@ -60,6 +60,7 @@ export function renderReports() {
                         ${renderLineItem('🏛️ Facility Upkeep', `$${(latest.expenses?.upkeep || 0).toLocaleString()}`)}
                         ${renderLineItem('🔧 Maintenance', `$${(latest.expenses?.maintenance || 0).toLocaleString()}`)}
                         ${(latest.expenses?.animalPurchases || 0) > 0 ? renderLineItem('🦁 Animal Purchases', `$${(latest.expenses.animalPurchases).toLocaleString()}`) : ''}
+                        ${(latest.expenses?.research || 0) > 0 ? renderLineItem('🔬 Research', `$${(latest.expenses.research).toLocaleString()}`) : ''} <!-- 🔥 NEW -->
                         <div style="border-top: 2px solid #334155; margin: 10px 0; padding-top: 10px;">
                             ${renderLineItem('Total Expenses', `$${(latest.expenses?.total || 0).toLocaleString()}`, true)}
                         </div>
@@ -147,13 +148,14 @@ export function renderReports() {
     
     // Expense Breakdown
     if (latest) {
-        const expenseCategories = [
-            { name: 'Staff', value: latest.expenses?.staff || 0, color: '#3b82f6' },
-            { name: 'Food', value: latest.expenses?.food || 0, color: '#22c55e' },
-            { name: 'Upkeep', value: latest.expenses?.upkeep || 0, color: '#f59e0b' },
-            { name: 'Maintenance', value: latest.expenses?.maintenance || 0, color: '#ef4444' },
-            { name: 'Animal Purchases', value: latest.expenses?.animalPurchases || 0, color: '#a855f7' }
-        ].filter(cat => cat.value > 0); // Only show categories with expenses
+const expenseCategories = [
+        { name: 'Staff', value: latest.expenses?.staff || 0, color: '#3b82f6' },
+        { name: 'Food', value: latest.expenses?.food || 0, color: '#22c55e' },
+        { name: 'Upkeep', value: latest.expenses?.upkeep || 0, color: '#f59e0b' },
+        { name: 'Maintenance', value: latest.expenses?.maintenance || 0, color: '#ef4444' },
+        { name: 'Animal Purchases', value: latest.expenses?.animalPurchases || 0, color: '#a855f7' },
+        { name: 'Research', value: latest.expenses?.research || 0, color: '#ec4899' } // 🔥 NEW
+    ].filter(cat => cat.value > 0);// Only show categories with expenses
         
         const totalExp = latest.expenses?.total || 1;
         
