@@ -67,6 +67,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         else if (sectionId === 'saves') renderSavesTab();
         else if (sectionId === 'reports') renderReports();
         else if (sectionId === 'research') renderResearch();
+        else if (sectionId === 'log') renderLogTab();
     });
 });
 
@@ -634,16 +635,57 @@ if (buildExhibitBtn) {
 // =====================================================================
 // LOG HELPER
 // =====================================================================
-function logMessage(msg) {
-    if (!logEl) return;
-    const p = document.createElement('div');
-    p.textContent = msg;
-    logEl.prepend(p);
-    while (logEl.children.length > 100) {
-        logEl.removeChild(logEl.lastChild);
+// =====================================================================
+// LOG TAB RENDERER
+// =====================================================================
+function renderLogTab() {
+    const el = document.getElementById('log');
+    if (!el) return;
+
+    el.innerHTML = `
+        <div class="status-panel">
+            <h3>📜 Game Log</h3>
+            <p style="color: #9ca3af; margin-bottom: 15px;">A complete history of all events in your zoo.</p>
+            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
+                <!-- Log messages will be inserted here -->
+            </div>
+        </div>
+    `;
+
+    // Move existing log messages to the new location
+    const logContent = document.getElementById('logContent');
+    if (logContent && logEl) {
+        // Copy existing messages
+        const messages = Array.from(logEl.children);
+        messages.forEach(msg => {
+            logContent.appendChild(msg.cloneNode(true));
+        });
     }
 }
 
+function logMessage(msg) {
+    // Create the message element
+    const p = document.createElement('div');
+    p.textContent = msg;
+    p.style.cssText = 'padding: 2px 0; border-bottom: 1px solid #1e293b;';
+    
+    // Add to the old log (for backwards compatibility during transition)
+    if (logEl) {
+        logEl.prepend(p.cloneNode(true));
+        while (logEl.children.length > 100) {
+            logEl.removeChild(logEl.lastChild);
+        }
+    }
+    
+    // 🔥 NEW: Add to the new log tab
+    const logContent = document.getElementById('logContent');
+    if (logContent) {
+        logContent.prepend(p.cloneNode(true));
+        while (logContent.children.length > 500) {
+            logContent.removeChild(logContent.lastChild);
+        }
+    }
+}
 // Expose save/load functions to window for onclick handlers
 window.manualSave = (slot) => {
     if (saveGame(slot)) {
