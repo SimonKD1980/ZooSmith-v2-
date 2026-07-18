@@ -2,6 +2,7 @@
 import { state } from '../engine/GameState.js';
 import { eventBus } from '../engine/EventBus.js';
 import { data } from '../engine/data.js';
+import { isUnlocked } from '../engine/systems/ResearchSystem.js';
 
 export function renderAmenities() {
     const amenitiesEl = document.getElementById('amenities');
