@@ -63,7 +63,6 @@ export function renderExhibits() {
             const exhibitType = EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
             const repairCost = Math.ceil((100 - fence) * 2);
 
-            // 🔥 Check for breeding opportunities
             const breedingInfo = getBreedingOpportunities(exhibit);
 
             html += `
@@ -138,7 +137,6 @@ export function renderExhibits() {
     exhibitsEl.innerHTML = html;
 }
 
-// 🔥 NEW: Check for breeding opportunities in an exhibit
 function getBreedingOpportunities(exhibit) {
     if (exhibit.buildDaysRemaining > 0) return { canBreed: false, pairs: [] };
     
@@ -184,8 +182,10 @@ function renderAnimalCard(animal, exhibitId) {
     if (animal.sick) statusBadges.push('<span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🤒 Sick</span>');
     if (animal.wasHungry) statusBadges.push('<span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🍖 Hungry</span>');
 
+    const animalIdentifier = animal.uid || animal.name;
+
     return `
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; cursor: pointer;" onclick="window.showAnimalDetails('${exhibitId}', '${animal.uid}')">
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; cursor: pointer;" onclick="window.showAnimalDetails('${exhibitId}', '${animalIdentifier}')">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
                 <div style="font-weight: 700; color: #e5e7eb; font-size: 0.95rem;">${animal.name}</div>
                 <span style="color: ${genderColor}; font-size: 0.9rem;">${genderEmoji}</span>
@@ -222,10 +222,9 @@ function renderAnimalCard(animal, exhibitId) {
     `;
 }
 
-// 🔥 NEW: Calculate pregnancy progress percentage
 function getPregnancyProgress(animal) {
     if (!animal.isPregnant) return 0;
-    const totalGestation = 60; // Max gestation is 60 days
+    const totalGestation = 60;
     const elapsed = totalGestation - animal.daysUntilBirth;
     return Math.min(100, (elapsed / totalGestation) * 100);
 }
@@ -309,25 +308,34 @@ export function repairFence(exhibitId) {
     eventBus.emit('DAY_ADVANCED');
 }
 
-export function showAnimalDetails(exhibitId, animalUid) {
+export function showAnimalDetails(exhibitId, animalIdentifier) {
     const exhibit = state.exhibits[exhibitId];
-    if (!exhibit) return;
+    if (!exhibit) {
+        console.error('Exhibit not found:', exhibitId);
+        return;
+    }
 
-    const animal = exhibit.animals.find(a => a.uid === animalUid);
-    if (!animal) return;
+    let animal = exhibit.animals.find(a => a.uid === animalIdentifier);
+    if (!animal) {
+        animal = exhibit.animals.find(a => a.name === animalIdentifier);
+    }
+    
+    if (!animal) {
+        console.error('Animal not found:', animalIdentifier);
+        alert('Animal not found!');
+        return;
+    }
 
     const stage = getLifeStage(animal.ageDays || 0);
     const health = animal.health ?? 100;
     const genderEmoji = animal.gender === 'male' ? '♂️ Male' : '♀️ Female';
     const speciesData = data.animals.find(a => a.id === animal.id);
 
-    // 🔥 Find parents if born in zoo
     let parentInfo = '';
     if (animal.bornInZoo && animal.mother) {
         let motherName = 'Unknown';
         let fatherName = 'Unknown';
         
-        // Search all exhibits for parents
         for (const ex of Object.values(state.exhibits)) {
             const mom = ex.animals.find(a => a.uid === animal.mother);
             if (mom) motherName = mom.name;
@@ -400,7 +408,7 @@ export function showAnimalDetails(exhibitId, animalUid) {
             
             ${parentInfo}
             
-            <button onclick="window.openTransferModal('${exhibitId}', '${animal.uid}')" 
+            <button onclick="window.openTransferModal('${exhibitId}', '${animal.uid || animal.name}')" 
                 style="width: 100%; padding: 12px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
                 🔄 Transfer to Another Exhibit
             </button>
@@ -410,14 +418,17 @@ export function showAnimalDetails(exhibitId, animalUid) {
     document.body.appendChild(alertBox);
 }
 
-export function openTransferModal(currentExhibitId, animalUid) {
+export function openTransferModal(currentExhibitId, animalIdentifier) {
     const existingModal = document.querySelector('div[style*="position: fixed"]');
     if (existingModal) existingModal.remove();
 
     const currentExhibit = state.exhibits[currentExhibitId];
     if (!currentExhibit) return;
 
-    const animal = currentExhibit.animals.find(a => a.uid === animalUid);
+    let animal = currentExhibit.animals.find(a => a.uid === animalIdentifier);
+    if (!animal) {
+        animal = currentExhibit.animals.find(a => a.name === animalIdentifier);
+    }
     if (!animal) return;
 
     const speciesData = data.animals.find(a => a.id === animal.id);
@@ -459,7 +470,7 @@ export function openTransferModal(currentExhibitId, animalUid) {
         compatibleExhibits.forEach(ex => {
             exhibitsHTML += `
                 <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" 
-                    onclick="window.transferAnimal('${currentExhibitId}', '${ex.id}', '${animalUid}')"
+                    onclick="window.transferAnimal('${currentExhibitId}', '${ex.id}', '${animal.uid || animal.name}')"
                     onmouseover="this.style.borderColor='#3b82f6'" 
                     onmouseout="this.style.borderColor='#334155'">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -492,7 +503,7 @@ export function openTransferModal(currentExhibitId, animalUid) {
     document.body.appendChild(modal);
 }
 
-export function transferAnimal(fromExhibitId, toExhibitId, animalUid) {
+export function transferAnimal(fromExhibitId, toExhibitId, animalIdentifier) {
     const fromExhibit = state.exhibits[fromExhibitId];
     const toExhibit = state.exhibits[toExhibitId];
     
@@ -501,7 +512,10 @@ export function transferAnimal(fromExhibitId, toExhibitId, animalUid) {
         return;
     }
 
-    const animalIndex = fromExhibit.animals.findIndex(a => a.uid === animalUid);
+    let animalIndex = fromExhibit.animals.findIndex(a => a.uid === animalIdentifier);
+    if (animalIndex === -1) {
+        animalIndex = fromExhibit.animals.findIndex(a => a.name === animalIdentifier);
+    }
     if (animalIndex === -1) {
         alert("Animal not found!");
         return;
@@ -524,8 +538,10 @@ export function transferAnimal(fromExhibitId, toExhibitId, animalUid) {
     renderExhibits();
 }
 
-// 🔥 NEW: Baby Naming Modal
 export function showBabyNamingModal(babyInfo) {
+    const existingModal = document.getElementById('babyNamingModal');
+    if (existingModal) existingModal.remove();
+    
     const modal = document.createElement('div');
     modal.id = 'babyNamingModal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; justify-content: center; align-items: center;';
@@ -562,7 +578,6 @@ export function showBabyNamingModal(babyInfo) {
     
     document.body.appendChild(modal);
     
-    // Focus the input
     setTimeout(() => {
         const input = document.getElementById('babyNameInput');
         if (input) {
@@ -572,7 +587,6 @@ export function showBabyNamingModal(babyInfo) {
     }, 100);
 }
 
-// 🔥 Baby name generation
 const BABY_MALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Prince', 'Duke', 'Sir'];
 const BABY_FEMALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Princess', 'Duchess', 'Lady'];
 
@@ -613,6 +627,7 @@ window.repairFence = repairFence;
 window.showAnimalDetails = showAnimalDetails;
 window.openTransferModal = openTransferModal;
 window.transferAnimal = transferAnimal;
+window.showBabyNamingModal = showBabyNamingModal;
 window.attemptBreeding = (exhibitId) => {
     if (attemptBreeding(exhibitId)) {
         renderExhibits();
