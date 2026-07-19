@@ -2,7 +2,7 @@
 import { state } from './engine/GameState.js';
 import { eventBus } from './engine/EventBus.js';
 import { advanceDay } from './engine/Engine.js';
-import { loadAllData, data } from './engine/data.js'; // ← ADDED 'data' HERE
+import { loadAllData, data } from './engine/data.js';
 import { FOOD_TYPES } from './engine/constants.js';
 import { 
     getKeeperCapacity, 
@@ -45,7 +45,7 @@ console.log('🚀 main.js loaded!');
 // =====================================================================
 // LOG STORAGE
 // =====================================================================
-const logMessages = []; // 🔥 Store all messages in memory
+const logMessages = [];
 const MAX_LOG_MESSAGES = 500;
 
 // =====================================================================
@@ -88,7 +88,6 @@ function updateUI() {
     if (moneyEl) moneyEl.textContent = state.money.toLocaleString();
     if (dayEl) dayEl.textContent = state.day;
     
-    // Show rating with tier emoji
     const tier = getTier(state.zooRating || 0);
     if (ratingEl) ratingEl.textContent = `${tier.emoji} ${state.zooRating}`;
     if (satisfactionEl) satisfactionEl.textContent = state.visitorSatisfaction;
@@ -112,7 +111,6 @@ function renderSavesTab() {
                 <button onclick="window.manualSave('Slot 3')" style="padding: 10px 20px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">💾 Save to Slot 3</button>
                 <button onclick="window.exportCurrentSave()" style="padding: 10px 20px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">📤 Export Save</button>
                 <button onclick="document.getElementById('importSaveInput').click()" style="padding: 10px 20px; background: #a855f7; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">📥 Import Save</button>
-           9px; font-weight: 700; cursor: pointer;">📥 Import Save</button>
             </div>
 
             <h4 style="margin-bottom: 10px; color: #e5e7eb;">Available Saves:</h4>
@@ -149,7 +147,6 @@ function renderSavesTab() {
     el.innerHTML = html;
 }
 
-
 // =====================================================================
 // VISITORS TAB (with Rating Breakdown)
 // =====================================================================
@@ -159,7 +156,6 @@ function renderVisitorsTab() {
     
     let html = renderRatingBreakdown();
     
-    // Ticket Pricing Section
     const currentPrice = state.ticketPrice || 20;
     html += `
         <div class="status-panel" style="border: 2px solid #3b82f6;">
@@ -206,7 +202,6 @@ function renderVisitorsTab() {
         </div>
     `;
     
-    // Visitor Summary
     html += '<div class="status-panel"><h3>👥 Visitor Summary</h3>';
     html += `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
@@ -242,7 +237,6 @@ function renderVisitorsTab() {
     el.innerHTML = html;
 }
 
-// Helper functions for ticket pricing feedback
 function getTicketPriceFeedback(price) {
     price = parseInt(price) || 20;
     
@@ -304,7 +298,7 @@ function getPriceFeedbackColor(price) {
 }
 
 function estimateVisitors(price) {
-    const baseAttraction = 100; // Simplified estimate
+    const baseAttraction = 100;
     const optimalPrice = 20;
     let priceMultiplier = 1;
     if (price > optimalPrice) {
@@ -323,7 +317,7 @@ function estimateSatisfaction(price) {
     else if (price >= 15 && price <= 25) impact = 5;
     
     const baseSatisfaction = 50;
-    const amenityBonus = 10; // Simplified
+    const amenityBonus = 10;
     return Math.max(0, Math.min(100, baseSatisfaction + impact + amenityBonus));
 }
 
@@ -332,25 +326,21 @@ function estimateRevenue(price) {
     return (visitors * price).toLocaleString();
 }
 
-// Expose to window
 window.updateTicketPrice = (value) => {
     const price = parseInt(value) || 20;
     state.ticketPrice = Math.max(5, Math.min(50, price));
     
-    // Sync slider and input
     const slider = document.getElementById('ticketPriceSlider');
     const input = document.getElementById('ticketPriceInput');
     if (slider) slider.value = state.ticketPrice;
     if (input) input.value = state.ticketPrice;
     
-    // Update feedback
     const feedbackDiv = document.getElementById('ticketPriceFeedback');
     if (feedbackDiv) {
         feedbackDiv.innerHTML = getTicketPriceFeedback(state.ticketPrice);
         feedbackDiv.style.borderLeftColor = getPriceFeedbackColor(state.ticketPrice);
     }
     
-    // Re-render to update estimates
     if (document.querySelector('.nav-btn.active')?.dataset.section === 'visitors') {
         renderVisitorsTab();
     }
@@ -451,72 +441,88 @@ function getNextTierBonus() {
 }
 
 // =====================================================================
+// LOG HELPER
+// =====================================================================
+function logMessage(msg) {
+    const timestamp = new Date().toLocaleTimeString();
+    const entry = {
+        text: msg,
+        time: timestamp,
+        fullText: `[${timestamp}] ${msg}`
+    };
+    
+    logMessages.unshift(entry);
+    
+    if (logMessages.length > MAX_LOG_MESSAGES) {
+        logMessages.pop();
+    }
+    
+    const logContent = document.getElementById('logContent');
+    if (logContent) {
+        renderLogContent();
+    }
+}
+
+function renderLogContent() {
+    const logContent = document.getElementById('logContent');
+    if (!logContent) return;
+    
+    if (logMessages.length === 0) {
+        logContent.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No events yet. Start playing to see your zoo\'s history!</div>';
+        return;
+    }
+    
+    logContent.innerHTML = logMessages.map(entry => 
+        `<div style="padding: 4px 0; border-bottom: 1px solid #1e293b; font-size: 0.9rem;">
+            <span style="color: #64748b; font-size: 0.75rem; margin-right: 8px;">${entry.time}</span>
+            <span style="color: #e5e7eb;">${entry.text}</span>
+        </div>`
+    ).join('');
+}
+
+// =====================================================================
+// LOG TAB RENDERER
+// =====================================================================
+function renderLogTab() {
+    const el = document.getElementById('log');
+    if (!el) return;
+
+    el.innerHTML = `
+        <div class="status-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0;">📜 Game Log</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="color: #9ca3af; font-size: 0.85rem;">${logMessages.length} events</span>
+                    <button onclick="window.clearLog()" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                        🗑️ Clear Log
+                    </button>
+                </div>
+            </div>
+            <p style="color: #9ca3af; margin-bottom: 15px;">A complete history of all events in your zoo.</p>
+            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 600px; overflow-y: auto; font-family: monospace;">
+            </div>
+        </div>
+    `;
+
+    renderLogContent();
+}
+
+window.clearLog = () => {
+    if (confirm('Clear all log messages? This cannot be undone.')) {
+        logMessages.length = 0;
+        renderLogContent();
+    }
+};
+
+// =====================================================================
 // EVENT LISTENERS
 // =====================================================================
 eventBus.on('DAY_ADVANCED', () => {
-    saveGame('autosave'); // ← AUTO-SAVE HERE
+    saveGame('autosave');
     updateUI();
     const activeTab = document.querySelector('.nav-btn.active');
     if (activeTab) activeTab.click();
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
-});
-
-eventBus.on('ANIMAL_PURCHASED', (data) => {
-    const stageEmoji = { baby: '🍼', juvenile: '🐾', adult: '🦁', senior: '👴' };
-    const emoji = stageEmoji[data.ageStage] || '🦁';
-    logMessage(`🎉 Purchased ${emoji} ${data.ageStage} ${data.animal} for $${data.cost} (placed in ${data.exhibit})`);
-});
-
-eventBus.on('RESEARCH_PROGRESS', () => {
-    // If the player is currently looking at the research tab, redraw it to show the new day count
-    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
-        renderResearch();
-    }
-});
-
-eventBus.on('RESEARCH_COMPLETED', (data) => {
-    logMessage(`✅ RESEARCH COMPLETE! ${data.icon} ${data.researchName} - Unlocked: ${data.unlocks.join(', ')}`);
-    // Redraw research tab to show it moved to "Completed"
-    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
-        renderResearch();
-    }
-});
-
-eventBus.on('RESEARCH_STARTED', (data) => {
-    logMessage(`🔬 Started researching ${data.icon} ${data.researchName} ($${data.cost}, ${data.days} days)`);
-});
-
-eventBus.on('RESEARCH_COMPLETED', (data) => {
-    logMessage(`✅ RESEARCH COMPLETE! ${data.icon} ${data.researchName} - Unlocked: ${data.unlocks.join(', ')}`);
-});
-
-eventBus.on('DAILY_REPORT_GENERATED', (data) => {
-    console.log('📊 Daily report generated:', data);
-});
-
-eventBus.on('TICKET_PRICE_CHANGED', (data) => {
-    logMessage(`🎟️ Ticket price changed to $${data.price}`);
-});
-
-eventBus.on('ANIMAL_TRANSFERRED', (data) => {
-    logMessage(`🔄 Transferred ${data.animalName} from ${data.fromExhibit} to ${data.toExhibit}`);
-});
-
-eventBus.on('GAME_SAVED', (data) => {
-    console.log(`💾 Game saved to: ${data.slot}`);
-});
-
-eventBus.on('GAME_LOADED', (data) => {
-    console.log(`📂 Game loaded from: ${data.slot}`);
-    logMessage(`📂 Loaded save: ${data.slot}`);
-});
-
-eventBus.on('SAVE_DELETED', (data) => {
-    logMessage(`🗑️ Deleted save: ${data.slot}`);
-});
-
-eventBus.on('GAME_IMPORTED', (data) => {
-    logMessage(`📥 Imported save as: ${data.slot}`);
 });
 
 eventBus.on('ECONOMY_PROCESSED', (data) => {
@@ -620,6 +626,48 @@ eventBus.on('TIER_UPGRADED', (data) => {
     logMessage(`🎉 TIER UPGRADED! ${data.emoji} ${data.tier}! Bonus: +$${data.bonus.toLocaleString()}`);
 });
 
+eventBus.on('RESEARCH_STARTED', (data) => {
+    logMessage(`🔬 Started researching ${data.icon} ${data.researchName} ($${data.cost}, ${data.days} days)`);
+});
+
+eventBus.on('RESEARCH_PROGRESS', () => {
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
+        renderResearch();
+    }
+});
+
+eventBus.on('RESEARCH_COMPLETED', (data) => {
+    logMessage(`✅ RESEARCH COMPLETE! ${data.icon} ${data.researchName} - Unlocked: ${data.unlocks.join(', ')}`);
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
+        renderResearch();
+    }
+});
+
+eventBus.on('DAILY_REPORT_GENERATED', (data) => {
+    console.log('📊 Daily report generated:', data);
+});
+
+eventBus.on('ANIMAL_TRANSFERRED', (data) => {
+    logMessage(`🔄 Transferred ${data.animalName} from ${data.fromExhibit} to ${data.toExhibit}`);
+});
+
+eventBus.on('GAME_SAVED', (data) => {
+    console.log(`💾 Game saved to: ${data.slot}`);
+});
+
+eventBus.on('GAME_LOADED', (data) => {
+    console.log(`📂 Game loaded from: ${data.slot}`);
+    logMessage(`📂 Loaded save: ${data.slot}`);
+});
+
+eventBus.on('SAVE_DELETED', (data) => {
+    logMessage(`🗑️ Deleted save: ${data.slot}`);
+});
+
+eventBus.on('GAME_IMPORTED', (data) => {
+    logMessage(`📥 Imported save as: ${data.slot}`);
+});
+
 // =====================================================================
 // BUTTON HANDLERS
 // =====================================================================
@@ -638,113 +686,12 @@ if (buildExhibitBtn) {
 }
 
 // =====================================================================
-// LOG HELPER
+// SAVE/LOAD HANDLERS
 // =====================================================================
-function logMessage(msg) {
-    // Store message with timestamp
-    const timestamp = new Date().toLocaleTimeString();
-    const entry = {
-        text: msg,
-        time: timestamp,
-        fullText: `[${timestamp}] ${msg}`
-    };
-    
-    logMessages.unshift(entry); // Add to beginning (newest first)
-    
-    // Keep only the most recent messages
-    if (logMessages.length > MAX_LOG_MESSAGES) {
-        logMessages.pop();
-    }
-    
-    // If log tab is currently visible, update it immediately
-    const logContent = document.getElementById('logContent');
-    if (logContent) {
-        renderLogContent();
-    }
-}
-
-function renderLogContent() {
-    const logContent = document.getElementById('logContent');
-    if (!logContent) return;
-    
-    if (logMessages.length === 0) {
-        logContent.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No events yet. Start playing to see your zoo\'s history!</div>';
-        return;
-    }
-    
-    logContent.innerHTML = logMessages.map(entry => 
-        `<div style="padding: 4px 0; border-bottom: 1px solid #1e293b; font-size: 0.9rem;">
-            <span style="color: #64748b; font-size: 0.75rem; margin-right: 8px;">${entry.time}</span>
-            <span style="color: #e5e7eb;">${entry.text}</span>
-        </div>`
-    ).join('');
-}
-
-// =====================================================================
-// LOG TAB RENDERER
-// =====================================================================
-function renderLogTab() {
-    const el = document.getElementById('log');
-    if (!el) return;
-
-    el.innerHTML = `
-        <div class="status-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                <h3 style="margin: 0;">📜 Game Log</h3>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <span style="color: #9ca3af; font-size: 0.85rem;">${logMessages.length} events</span>
-                    <button onclick="window.clearLog()" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
-                        🗑️ Clear Log
-                    </button>
-                </div>
-            </div>
-            <p style="color: #9ca3af; margin-bottom: 15px;">A complete history of all events in your zoo.</p>
-            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 600px; overflow-y: auto; font-family: monospace;">
-                <!-- Log messages will be inserted here -->
-            </div>
-        </div>
-    `;
-
-    // Render the log content
-    renderLogContent();
-}
-
-// Expose clear function to window
-window.clearLog = () => {
-    if (confirm('Clear all log messages? This cannot be undone.')) {
-        logMessages.length = 0;
-        renderLogContent();
-    }
-};
-
-function logMessage(msg) {
-    // Create the message element
-    const p = document.createElement('div');
-    p.textContent = msg;
-    p.style.cssText = 'padding: 2px 0; border-bottom: 1px solid #1e293b;';
-    
-    // Add to the old log (for backwards compatibility during transition)
-    if (logEl) {
-        logEl.prepend(p.cloneNode(true));
-        while (logEl.children.length > 100) {
-            logEl.removeChild(logEl.lastChild);
-        }
-    }
-    
-    // 🔥 NEW: Add to the new log tab
-    const logContent = document.getElementById('logContent');
-    if (logContent) {
-        logContent.prepend(p.cloneNode(true));
-        while (logContent.children.length > 500) {
-            logContent.removeChild(logContent.lastChild);
-        }
-    }
-}
-// Expose save/load functions to window for onclick handlers
 window.manualSave = (slot) => {
     if (saveGame(slot)) {
         alert(`Game saved to "${slot}"!`);
-        renderSavesTab(); // Refresh the list
+        renderSavesTab();
     }
 };
 
@@ -752,7 +699,7 @@ window.loadSpecificSave = (slot) => {
     if (confirm(`Load "${slot}"? Any unsaved progress will be lost.`)) {
         if (loadGame(slot)) {
             updateUI();
-            renderShop(); // Refresh current view
+            renderShop();
             alert(`Loaded "${slot}" successfully!`);
         }
     }
@@ -760,28 +707,37 @@ window.loadSpecificSave = (slot) => {
 
 window.deleteSpecificSave = (slot) => {
     deleteSave(slot);
-    renderSavesTab(); // Refresh the list
+    renderSavesTab();
 };
 
 window.exportCurrentSave = () => {
-    // Export the most recent non-autosave, or autosave if that's all there is
     const slots = getSaveSlots();
     const slotToExport = slots.find(s => s.slot !== 'autosave')?.slot || 'autosave';
     exportSave(slotToExport);
 };
 
-// Handle file input change for importing
 const importInput = document.getElementById('importSaveInput');
 if (importInput) {
     importInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             importSave(file);
-            renderSavesTab(); // Refresh list to show new imported save
-            e.target.value = ''; // Reset input
+            renderSavesTab();
+            e.target.value = '';
         }
     });
 }
+
+// =====================================================================
+// RESEARCH UI WRAPPER
+// =====================================================================
+window.startResearch = (researchId) => {
+    const success = startResearch(researchId);
+    if (success) {
+        updateUI();
+        renderResearch();
+    }
+};
 
 // =====================================================================
 // INITIALIZATION
@@ -798,22 +754,11 @@ async function init() {
         updateUI();
         renderShop();
         logMessage("🦁 ZooSmith V2 Engine Initialized!");
-        logMessage("💡 Tip: Click the 👥 Visitors tab to see your zoo rating breakdown.");
+        logMessage("💡 Tip: Click the 📜 Log tab to see your zoo's history.");
     } catch (error) {
         console.error('❌ ERROR in init():', error);
     }
 }
-
-// =====================================================================
-// RESEARCH UI WRAPPER
-// =====================================================================
-window.startResearch = (researchId) => {
-    const success = startResearch(researchId);
-    if (success) {
-        updateUI();       // 🔥 Instantly updates the money in the header
-        renderResearch(); // 🔥 Instantly updates the research tab to show the progress bar
-    }
-};
 
 console.log('🚀 About to call init()...');
 init();
