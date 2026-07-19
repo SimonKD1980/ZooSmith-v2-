@@ -7,21 +7,34 @@ import { processFacilities } from './systems/FacilitySystem.js';
 import { processVisitors } from './systems/VisitorSystem.js';
 import { processStaff } from './systems/StaffSystem.js';
 import { processRating } from './systems/RatingSystem.js';
-import { processResearch } from './systems/ResearchSystem.js'; // 🔥 MUST BE HERE
+import { processResearch } from './systems/ResearchSystem.js';
 
 export function advanceDay() {
     console.log(`--- Advancing to Day ${state.day} ---`);
 
+    // 🔥 CRITICAL FIX: Reset daily report BEFORE processing
+    // This wipes any ghost values from old saves
+    state.dailyReport = {
+        staffExpense: 0,
+        foodExpense: 0,
+        upkeepExpense: 0,
+        maintenanceExpense: 0,
+        animalPurchases: [],
+        researchExpense: 0,
+        neglectFines: 0,
+        neglectDeaths: 0
+    };
+
     const startMoney = state.money;
     const startRating = state.zooRating;
 
-    // 🔥 Order matters! Research must be processed here
+    // Process in order
     processStaff();
     processWildlife();
     processFacilities();
     processVisitors();
     processRating();
-    processResearch();  // 🔥 THIS IS THE ONLY THING THAT COUNTS THE DAYS DOWN
+    processResearch();
     processEconomy();
 
     const endMoney = state.money;
@@ -39,20 +52,22 @@ export function advanceDay() {
             tickets: state.visitorSpending?.tickets || 0,
             amenities: state.visitorSpending?.amenities || 0,
             total: (state.visitorSpending?.tickets || 0) + (state.visitorSpending?.amenities || 0)
-        },        
+        },
         expenses: {
             staff: state.dailyReport?.staffExpense || 0,
             food: state.dailyReport?.foodExpense || 0,
             upkeep: state.dailyReport?.upkeepExpense || 0,
             maintenance: state.dailyReport?.maintenanceExpense || 0,
             animalPurchases: animalPurchaseTotal,
-            research: state.dailyReport?.researchExpense || 0, // 🔥 NEW: Add research expense
+            research: state.dailyReport?.researchExpense || 0,
+            neglectFines: state.dailyReport?.neglectFines || 0,
             total: (state.dailyReport?.staffExpense || 0) + 
                    (state.dailyReport?.foodExpense || 0) + 
                    (state.dailyReport?.upkeepExpense || 0) + 
                    (state.dailyReport?.maintenanceExpense || 0) +
                    animalPurchaseTotal +
-                   (state.dailyReport?.researchExpense || 0) // 🔥 NEW: Add to total
+                   (state.dailyReport?.researchExpense || 0) +
+                   (state.dailyReport?.neglectFines || 0)
         },
         animalPurchases: animalPurchases,
         netProfit: netProfit,
@@ -62,28 +77,22 @@ export function advanceDay() {
         animalBreakdown: animalBreakdown.breakdown,
         staffCount: state.hiredStaff?.length || 0,
         ticketPrice: state.ticketPrice || 20,
-        exhibits: Object.keys(state.exhibits || {}).length
+        exhibits: Object.keys(state.exhibits || {}).length,
+        neglectDeaths: state.dailyReport?.neglectDeaths || 0
     };
     
     state.dailyReports.push(dailyReport);
     if (state.dailyReports.length > state.maxDailyReports) {
         state.dailyReports.shift();
     }
-    
-    state.dailyReport = {
-        staffExpense: 0,
-        foodExpense: 0,
-        upkeepExpense: 0,
-        maintenanceExpense: 0,
-        animalPurchases: [],
-        researchExpense: 0 // 🔥 NEW: Reset research expense for next day
-    };
 
     state.day++;
     state.daysSinceNewAnimal++;
 
     eventBus.emit('DAY_ADVANCED');
     eventBus.emit('DAILY_REPORT_GENERATED', dailyReport);
+    
+    console.log('📊 Final daily report:', dailyReport);
 }
 
 function getAnimalBreakdown() {
