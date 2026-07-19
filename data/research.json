@@ -1,4 +1,15 @@
 [
+    {
+    "id": "basic_staff",
+    "name": "Basic Zoo Staff Training",
+    "icon": "🎓",
+    "description": "Unlock basic staff and start your zoo",
+    "cost": 500,
+    "researchDays": 3,
+    "category": "staff",
+    "unlocks": ["keeper", "janitor"],
+    "requires": []
+  },
   {
     "id": "basic_exotic_mammals",
     "name": "Basic Exotic Mammals",
