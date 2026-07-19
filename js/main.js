@@ -525,6 +525,17 @@ eventBus.on('DAY_ADVANCED', () => {
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
 });
 
+eventBus.on('BABY_NEEDS_NAME', (babyInfo) => {
+    // Import and show the naming modal
+    import('./ui/ExhibitsUI.js').then(module => {
+        module.showBabyNamingModal(babyInfo);
+    });
+});
+
+eventBus.on('BABY_NAMED', (data) => {
+    logMessage(`🏷️ Baby named: ${data.newName}`);
+});
+
 eventBus.on('ECONOMY_PROCESSED', (data) => {
     logMessage(`💰 Economy: Visitors ${data.visitors} | Net Profit $${data.profit}`);
 });
