@@ -3,52 +3,46 @@ import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 
 export function processEconomy() {
-    // 🔥 SAFETY: Ensure money is valid
-    if (typeof state.money !== 'number' || isNaN(state.money)) {
-        console.warn('⚠️ Money was NaN, resetting to 0');
-        state.money = 0;
-    }
-    
-    // 1. Reset daily trackers
-    state.dailyReport.ticketIncome = 0;
-    state.dailyReport.amenityIncome = 0;
-    state.dailyReport.staffExpense = 0;
-    
-    // 2. Calculate Ticket Income
-    const visitorsToday = state.dailyVisitors || 0;
-    const ticketPrice = state.ticketPrice || 20;
-    
-    // 🔥 SAFETY: Ensure these are numbers
-    if (typeof visitorsToday !== 'number' || typeof ticketPrice !== 'number') {
-        console.error('❌ Invalid visitor/ticket data:', { visitorsToday, ticketPrice });
-        return;
-    }
-    
-    const ticketIncome = visitorsToday * ticketPrice;
-    state.money += ticketIncome;
-    state.dailyReport.ticketIncome = ticketIncome;
-    state.dailyReport.amenityIncome = state.visitorSpending?.total || 0;
+    // 1. Calculate total income (already calculated by VisitorSystem)
+    const ticketIncome = state.visitorSpending?.tickets || 0;
+    const amenityIncome = state.visitorSpending?.amenities || 0;
+    const totalIncome = ticketIncome + amenityIncome;
 
-    // 3. Calculate Staff Expenses
-    let staffCost = 0;
-    staffCost = 2 * 50; // Placeholder
-    state.money -= staffCost;
-    state.dailyReport.staffExpense = staffCost;
+    // 2. Read total expenses (already calculated by StaffSystem, FacilitySystem, WildlifeSystem, etc.)
+    // 🔥 NO HARDCODED PLACEHOLDERS! We just read what the other systems wrote to dailyReport.
+    const staffExpense = state.dailyReport?.staffExpense || 0;
+    const foodExpense = state.dailyReport?.foodExpense || 0;
+    const upkeepExpense = state.dailyReport?.upkeepExpense || 0;
+    const maintenanceExpense = state.dailyReport?.maintenanceExpense || 0;
+    const researchExpense = state.dailyReport?.researchExpense || 0;
+    const neglectFines = state.dailyReport?.neglectFines || 0;
+    
+    const totalExpenses = staffExpense + foodExpense + upkeepExpense + maintenanceExpense + researchExpense + neglectFines;
 
-    // 4. Calculate Net Profit
-    state.dailyReport.netProfit = ticketIncome + state.dailyReport.amenityIncome - staffCost;
+    // 3. Calculate net profit
+    const netProfit = totalIncome - totalExpenses;
 
-    // 🔥 SAFETY: Final check before emitting
-    if (isNaN(state.money)) {
-        console.error('❌ Money became NaN after economy processing!');
-        state.money = 0;
-    }
-
-    eventBus.emit('ECONOMY_PROCESSED', { 
-        profit: state.dailyReport.netProfit,
-        totalMoney: state.money,
-        visitors: visitorsToday
+    // 4. Emit event with full breakdown for the log/UI
+    eventBus.emit('ECONOMY_PROCESSED', {
+        visitors: state.dailyVisitors || 0,
+        income: totalIncome,
+        expenses: totalExpenses,
+        profit: netProfit,
+        breakdown: {
+            ticketIncome,
+            amenityIncome,
+            staffExpense,
+            foodExpense,
+            upkeepExpense,
+            maintenanceExpense,
+            researchExpense,
+            neglectFines
+        }
     });
-    
-    console.log(`💰 Economy processed. Visitors: ${visitorsToday}, Net: $${state.dailyReport.netProfit}`);
+
+    return {
+        income: totalIncome,
+        expenses: totalExpenses,
+        profit: netProfit
+    };
 }
