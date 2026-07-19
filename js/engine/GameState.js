@@ -40,7 +40,6 @@ export const state = {
     ticketPriceImpact: 0,
     ticketSatisfactionImpact: 0,
     daysSinceNewAnimal: 0,
-    ticketPrice: 20,
 
     //Reporting
     dailyReports: [],  // Array of daily report objects
