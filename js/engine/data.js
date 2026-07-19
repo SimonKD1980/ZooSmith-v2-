@@ -4,7 +4,8 @@ export const data = {
     amenities: {},
     staff: [],
     exhibitTypes: {},
-    research: []
+    research: [],
+    upgrades: []
 };
 
 console.log('🔧 data.js file loaded!');
@@ -69,6 +70,17 @@ if (researchRes.ok) {
     console.log(`✅ Loaded ${data.research.length} research items`);
 } else {
     console.warn('⚠️ research.json failed to load:', researchRes.status);
+}
+// Load upgrades
+console.log('📦 Fetching upgrades.json...');
+const upgradesRes = await fetch('./data/upgrades.json');
+if (upgradesRes.ok) {
+    const upgradesArr = await upgradesRes.json();
+    data.upgrades = Array.isArray(upgradesArr) ? upgradesArr : [];
+    console.log(`✅ Loaded ${data.upgrades.length} upgrades`);
+} else {
+    console.warn('⚠️ upgrades.json failed to load:', upgradesRes.status);
+    data.upgrades = [];
 }
         
         console.log('✅ All data loaded successfully!');
