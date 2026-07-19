@@ -22,11 +22,11 @@ export const state = {
     
     // Food Inventory
     food: {
-        hay: 30,
-        meat: 20,
-        produce: 15,
+        hay: 0,
+        meat: 0,
+        produce: 0,
 
-    zooRating: 50,
+    zooRating: 0,
     ratingBreakdown: null,
     tiersReached: [] // Tracks which tiers have been awarded bonuses
     },
@@ -47,39 +47,8 @@ export const state = {
     maxDailyReports: 30,  // Keep last 30 days
 
     // Exhibits
-    exhibits: {
-        'exhibit_1': {
-            id: 'exhibit_1',
-            name: 'Savanna',
-            size: 'medium',
-            type: 'terrestrial',
-            animals: [
-                {
-                    id: 'lion', name: 'Leo', gender: 'male',
-                    ageDays: 400, health: 100, sick: false,
-                    diet: 'Carnivore', foodAmount: 3,
-                    requiredExhibitSize: 'medium', attractionValue: 15
-                },
-                {
-                    id: 'lion', name: 'Leah', gender: 'female',
-                    ageDays: 380, health: 100, sick: false,
-                    diet: 'Carnivore', foodAmount: 3,
-                    requiredExhibitSize: 'medium', attractionValue: 15
-                },
-                {
-                    id: 'zebra', name: 'Stripey', gender: 'female',
-                    ageDays: 650, health: 100, sick: false,
-                    diet: 'Herbivore', foodAmount: 2,
-                    requiredExhibitSize: 'small', attractionValue: 10
-                }
-            ],
-            upgrades: [],
-            buildDaysRemaining: 0,
-            fenceCondition: 100,
-            cleanliness: 100
-        }
-    },
-    builtEnclosures: { 'exhibit_1': true },
+    exhibits: {},
+    builtEnclosures: {},
 
     // Staff (NEW!)
     hiredStaff: [],
