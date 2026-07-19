@@ -4,135 +4,72 @@ import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
 
 export function processStaff() {
-    // Calculate staff expenses
     let totalSalary = 0;
     
-    state.hiredStaff.forEach(staffInstance => {
-        const staffData = data.staff.find(s => s.id === staffInstance.typeId);
-        if (staffData) {
-            totalSalary += staffData.salary || 0;
-        }
-    });
-    
-    state.money -= totalSalary;
-    state.dailyReport.staffExpense = totalSalary;
-    
-    if (totalSalary > 0) {
-        eventBus.emit('STAFF_EXPENSE', { amount: totalSalary });
+    // 🔥 ONLY calculate salary if there are ACTUALLY hired staff
+    if (state.hiredStaff && state.hiredStaff.length > 0) {
+        state.hiredStaff.forEach(staffInstance => {
+            const staffData = data.staff.find(s => s.id === staffInstance.typeId);
+            if (staffData && staffData.salary) {
+                totalSalary += staffData.salary;
+            }
+        });
     }
     
-    // Check if understaffed
-    const keeperCapacity = getKeeperCapacity();
-    const keeperDemand = getKeeperDemand();
-    const cleanerCapacity = getCleanerCapacity();
-    const cleanerDemand = getCleanerDemand();
+    // 🔥 Force to exactly 0 if no staff are hired (prevents ghost values)
+    if (!state.hiredStaff || state.hiredStaff.length === 0) {
+        totalSalary = 0;
+    }
+
+    // Deduct salary and track in daily report
+    if (!state.dailyReport) state.dailyReport = {};
     
-    if (keeperDemand > keeperCapacity || cleanerDemand > cleanerCapacity) {
-        eventBus.emit('UNDERSTAFFED', {
-            keeperCapacity,
-            keeperDemand,
-            cleanerCapacity,
-            cleanerDemand
-        });
+    if (totalSalary > 0) {
+        state.money -= totalSalary;
+        state.dailyReport.staffExpense = totalSalary;
+        eventBus.emit('STAFF_EXPENSE', { amount: totalSalary });
+    } else {
+        // Explicitly set to 0 to prevent old save data from lingering
+        state.dailyReport.staffExpense = 0;
     }
 }
 
 export function getKeeperCapacity() {
-    let capacity = 0;
-    state.hiredStaff.forEach(instance => {
-        const staffData = data.staff.find(s => s.id === instance.typeId);
-        const slots = staffData?.keeperSlots ?? 0;
-        if (staffData?.role?.toLowerCase().includes('keeper') || slots > 0) {
-            capacity += slots;
-        }
-    });
-    return capacity;
+    if (!state.hiredStaff || state.hiredStaff.length === 0) return 0;
+    return state.hiredStaff.reduce((sum, staff) => {
+        const staffData = data.staff.find(s => s.id === staff.typeId);
+        return sum + (staffData?.keeperCapacity || 0);
+    }, 0);
+}
+
+export function getCleanerCapacity() {
+    if (!state.hiredStaff || state.hiredStaff.length === 0) return 0;
+    return state.hiredStaff.reduce((sum, staff) => {
+        const staffData = data.staff.find(s => s.id === staff.typeId);
+        return sum + (staffData?.cleanerCapacity || 0);
+    }, 0);
 }
 
 export function getKeeperDemand() {
     let demand = 0;
-    for (const id in state.exhibits) {
-        const exhibit = state.exhibits[id];
-        if (exhibit.buildDaysRemaining > 0) continue;
-        
-        const size = exhibit.size || 'small';
-        if (size === 'large') demand += 3;
-        else if (size === 'medium') demand += 2;
-        else demand += 1;
-    }
-    return demand;
-}
-
-export function getCleanerCapacity() {
-    let capacity = 0;
-    state.hiredStaff.forEach(instance => {
-        const staffData = data.staff.find(s => s.id === instance.typeId);
-        const slots = staffData?.cleanerSlots ?? 0;
-        if (staffData?.role?.toLowerCase().includes('cleaner') || 
-            staffData?.role?.toLowerCase().includes('janitor') || 
-            slots > 0) {
-            capacity += slots;
-        }
+    Object.values(state.exhibits || {}).forEach(exhibit => {
+        demand += exhibit.animals?.length || 0;
     });
-    return capacity;
+    return demand;
 }
 
 export function getCleanerDemand() {
     let demand = 0;
-    
-    // Bins = 1 slot, Toilets = 2 slots
-    if (state.amenities['bin'] > 0) demand += (state.amenities['bin'] * 1);
-    if (state.amenities['restroom'] > 0) demand += (state.amenities['restroom'] * 2);
-    
+    Object.values(state.exhibits || {}).forEach(exhibit => {
+        if (exhibit.buildDaysRemaining === 0) demand += 1;
+    });
+    Object.keys(state.amenities || {}).forEach(amenityId => {
+        const count = state.amenities[amenityId];
+        if (count > 0) demand += count;
+    });
     return demand;
 }
 
 export function isUnderstaffed() {
-    return getKeeperDemand() > getKeeperCapacity() || 
-           getCleanerDemand() > getCleanerCapacity();
-}
-
-export function isKeepersUnderstaffed() {
-    return getKeeperDemand() > getKeeperCapacity();
-}
-
-// 🔥 UPDATED: Added cleanAmenities to effects
-export function getStaffEffects() {
-    const effects = {
-        visitorHappiness: 0,
-        animalHappiness: 0,
-        breedingBonus: 0,
-        cleanPark: 0,
-        cleanExhibits: 0, // ← Keepers only (assigned to specific exhibits)
-        cleanAmenities: 0, // ← NEW: Janitors clean amenities
-        maintenanceLevel: 0
-    };
-    
-    state.hiredStaff.forEach(staffInstance => {
-        const staff = data.staff.find(s => s.id === staffInstance.typeId);
-        if (staff && staff.effects) {
-            for (const effect in staff.effects) {
-                if (effect !== 'maxStaff' && 
-                    effect !== 'keeperSlots' && 
-                    effect !== 'cleanerSlots' && 
-                    effects[effect] !== undefined) {
-                    effects[effect] += staff.effects[effect];
-                }
-            }
-        }
-    });
-    
-    return effects;
-}
-
-export function isKeeperRole(typeId) {
-    const s = data.staff.find(x => x.id === typeId);
-    return s && (s.role?.toLowerCase().includes('keeper') || s.keeperSlots);
-}
-
-export function isCleanerRole(typeId) {
-    const s = data.staff.find(x => x.id === typeId);
-    return s && (s.role?.toLowerCase().includes('cleaner') || 
-                 s.role?.toLowerCase().includes('janitor') || 
-                 s.cleanerSlots);
+    return getKeeperCapacity() < getKeeperDemand() || getCleanerCapacity() < getCleanerDemand();
 }
