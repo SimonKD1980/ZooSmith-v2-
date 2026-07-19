@@ -7,7 +7,7 @@
     "cost": 500,
     "researchDays": 3,
     "category": "staff",
-    "unlocks": ["keeper", "janitor"],
+    "unlocks": ["junior_keeper", "janitor"],
     "requires": []
   },
   {
