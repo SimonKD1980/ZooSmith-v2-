@@ -10,10 +10,11 @@ import { processRating } from './systems/RatingSystem.js';
 import { processResearch } from './systems/ResearchSystem.js';
 
 export function advanceDay() {
-    console.log(`--- Advancing to Day ${state.day} ---`);
+    console.log(`\n========== ADVANCING TO DAY ${state.day} ==========`);
+    console.log('🔍 BEFORE RESET - dailyReport:', JSON.stringify(state.dailyReport));
+    console.log('🔍 BEFORE RESET - hiredStaff:', state.hiredStaff);
 
-    // 🔥 CRITICAL FIX: Reset daily report BEFORE processing
-    // This wipes any ghost values from old saves
+    // 🔥 NUCLEAR RESET: Force everything to 0
     state.dailyReport = {
         staffExpense: 0,
         foodExpense: 0,
@@ -24,18 +25,48 @@ export function advanceDay() {
         neglectFines: 0,
         neglectDeaths: 0
     };
+    
+    console.log('✅ AFTER RESET - dailyReport:', JSON.stringify(state.dailyReport));
 
     const startMoney = state.money;
     const startRating = state.zooRating;
 
-    // Process in order
+    // 🔥 Track each step
+    console.log('\n--- Running processStaff() ---');
     processStaff();
+    console.log('📊 After processStaff - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processWildlife() ---');
     processWildlife();
+    console.log('📊 After processWildlife - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processFacilities() ---');
     processFacilities();
+    console.log('📊 After processFacilities - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processVisitors() ---');
     processVisitors();
+    console.log('📊 After processVisitors - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processRating() ---');
     processRating();
+    console.log('📊 After processRating - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processResearch() ---');
     processResearch();
+    console.log('📊 After processResearch - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processEconomy() ---');
     processEconomy();
+    console.log('📊 After processEconomy - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    // 🔥 FINAL SAFETY CHECK: Force staff to 0 if no staff hired
+    if (!state.hiredStaff || state.hiredStaff.length === 0) {
+        if (state.dailyReport.staffExpense !== 0) {
+            console.log('🚨 BUG DETECTED! staffExpense was', state.dailyReport.staffExpense, 'but no staff hired. FORCING TO 0');
+            state.dailyReport.staffExpense = 0;
+        }
+    }
 
     const endMoney = state.money;
     const netProfit = endMoney - startMoney;
@@ -43,6 +74,10 @@ export function advanceDay() {
     const animalBreakdown = getAnimalBreakdown();
     const animalPurchases = state.dailyReport?.animalPurchases || [];
     const animalPurchaseTotal = animalPurchases.reduce((sum, p) => sum + p.cost, 0);
+    
+    console.log('\n📊 FINAL VALUES:');
+    console.log('  staffExpense:', state.dailyReport.staffExpense);
+    console.log('  hiredStaff.length:', state.hiredStaff?.length);
     
     const dailyReport = {
         day: state.day,
@@ -89,10 +124,11 @@ export function advanceDay() {
     state.day++;
     state.daysSinceNewAnimal++;
 
+    console.log('\n✅ FINAL DAILY REPORT:', JSON.stringify(dailyReport.expenses));
+    console.log('==========================================\n');
+
     eventBus.emit('DAY_ADVANCED');
     eventBus.emit('DAILY_REPORT_GENERATED', dailyReport);
-    
-    console.log('📊 Final daily report:', dailyReport);
 }
 
 function getAnimalBreakdown() {
