@@ -4,6 +4,7 @@ import { eventBus } from '../engine/EventBus.js';
 import { data } from '../engine/data.js';
 import { EXHIBIT_TYPES, getLifeStage } from '../engine/constants.js';
 import { attemptBreeding, renameBaby } from '../engine/systems/WildlifeSystem.js';
+import { getCleanerCapacity } from '../engine/systems/StaffSystem.js';
 
 export function renderExhibits() {
     const exhibitsEl = document.getElementById('exhibits');
@@ -64,6 +65,7 @@ export function renderExhibits() {
             const repairCost = Math.ceil((100 - fence) * 2);
 
             const breedingInfo = getBreedingOpportunities(exhibit);
+            const hasJanitors = getCleanerCapacity() > 0;
 
             html += `
                 <div style="background: #0f172a; border: 1px solid ${isUnderConstruction ? '#f59e0b' : '#334155'}; border-radius: 10px; padding: 15px; margin-bottom: 12px;">
@@ -80,8 +82,9 @@ export function renderExhibits() {
                         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                             ${!isUnderConstruction && fence < 100 ? `
                                 <button onclick="window.repairFence('${id}')" 
-                                    style="padding: 6px 12px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
-                                    🔧 Repair ($${repairCost})
+                                    style="padding: 6px 12px; background: ${hasJanitors ? '#3b82f6' : '#475569'}; color: ${hasJanitors ? '#fff' : '#9ca3af'}; border: none; border-radius: 6px; font-weight: 600; cursor: ${hasJanitors ? 'pointer' : 'not-allowed'}; font-size: 0.85rem;"
+                                    ${!hasJanitors ? 'title="Requires janitor staff"' : ''}>
+                                    🔧 Repair ($${repairCost})${!hasJanitors ? ' ⚠️' : ''}
                                 </button>
                             ` : ''}
                             ${breedingInfo.canBreed ? `
@@ -287,6 +290,12 @@ export function repairFence(exhibitId) {
         return;
     }
 
+    const cleanerCapacity = getCleanerCapacity();
+    if (cleanerCapacity === 0) {
+        alert("You need to hire at least one janitor to repair fences! Go to the Staff tab to hire maintenance workers.");
+        return;
+    }
+
     const repairCost = Math.ceil((100 - fence) * 2);
 
     if (state.money < repairCost) {
@@ -294,7 +303,7 @@ export function repairFence(exhibitId) {
         return;
     }
 
-    if (!confirm(`Repair fence for $${repairCost}?`)) return;
+    if (!confirm(`Repair fence for $${repairCost}?\n\nThis will use one of your ${cleanerCapacity} janitor(s).`)) return;
 
     state.money -= repairCost;
     exhibit.fenceCondition = 100;
