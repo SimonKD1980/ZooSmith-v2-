@@ -4,6 +4,8 @@ import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
 import { getLifeStage } from '../constants.js';
 import { getKeeperCapacity, getKeeperDemand } from './StaffSystem.js';
+import { getExhibitEffects } from './UpgradeSystem.js'; // Add to imports
+
 
 export function processWildlife() {
     // Check keeper capacity
@@ -63,6 +65,17 @@ export function processWildlife() {
             animal.health = Math.max(0, (animal.health || 100) - 5);
             hungryAnimals.push(animal.name);
         }
+
+        if (canFeed && (state.food?.[foodType] || 0) >= foodAmount) {
+    state.food[foodType] -= foodAmount;
+    
+    // 🔥 Apply upgrade happiness bonus
+    const exhibitEffects = getExhibitEffects(exhibit);
+    const healthGain = 1 + Math.floor(exhibitEffects.happiness / 10); // Every 10 happiness = +1 extra health
+    
+    animal.health = Math.min(100, (animal.health || 100) + healthGain);
+    animalsFed++;
+}
 
         // Pregnancy countdown
         if (animal.isPregnant) {
