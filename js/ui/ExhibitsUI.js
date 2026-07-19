@@ -5,6 +5,7 @@ import { data } from '../engine/data.js';
 import { EXHIBIT_TYPES, getLifeStage } from '../engine/constants.js';
 import { attemptBreeding, renameBaby } from '../engine/systems/WildlifeSystem.js';
 import { getCleanerCapacity } from '../engine/systems/StaffSystem.js';
+import { getAvailableUpgrades, canInstallUpgrade, getExhibitEffects } from '../engine/systems/UpgradeSystem.js';
 
 export function renderExhibits() {
     const exhibitsEl = document.getElementById('exhibits');
@@ -67,6 +68,12 @@ export function renderExhibits() {
             const breedingInfo = getBreedingOpportunities(exhibit);
             const hasJanitors = getCleanerCapacity() > 0;
 
+            // 🔥 Get upgrade info
+            const availableUpgrades = getAvailableUpgrades(exhibit);
+            const installedUpgrades = availableUpgrades.filter(u => u.installed);
+            const purchasableUpgrades = availableUpgrades.filter(u => u.available);
+            const exhibitEffects = getExhibitEffects(exhibit);
+
             html += `
                 <div style="background: #0f172a; border: 1px solid ${isUnderConstruction ? '#f59e0b' : '#334155'}; border-radius: 10px; padding: 15px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
@@ -122,7 +129,7 @@ export function renderExhibits() {
                         </div>
                     ` : ''}
                     
-                    <div style="border-top: 1px solid #1e293b; padding-top: 10px;">
+                    <div style="border-top: 1px solid #1e293b; padding-top: 10px; margin-top: 10px;">
                         <div style="font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">🐾 Animals (${exhibit.animals.length})</div>
                         ${exhibit.animals.length === 0 ? 
                             '<p style="color: #9ca3af; font-size: 0.9rem;">No animals yet. Buy some from the Shop!</p>' :
@@ -130,6 +137,78 @@ export function renderExhibits() {
                                 ${exhibit.animals.map(animal => renderAnimalCard(animal, id)).join('')}
                             </div>`
                         }
+                    </div>
+                    
+                    <!-- 🔥 UPGRADES SECTION -->
+                    <div style="border-top: 1px solid #1e293b; padding-top: 12px; margin-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="font-weight: 700; color: #e5e7eb;">⬆️ Upgrades</div>
+                            <div style="font-size: 0.8rem; color: #9ca3af;">${installedUpgrades.length} installed</div>
+                        </div>
+                        
+                        ${installedUpgrades.length > 0 ? `
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                                ${installedUpgrades.map(u => `
+                                    <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 4px; font-size: 0.8rem;" title="${u.name}: ${u.description}">
+                                        <span>${u.icon}</span>
+                                        <span style="color: #e5e7eb;">${u.name}</span>
+                                        <button onclick="event.stopPropagation(); window.removeUpgrade('${id}', '${u.id}')" 
+                                            style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem; padding: 0 2px;" 
+                                            title="Remove (30% refund)">✕</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${exhibitEffects.happiness > 0 || exhibitEffects.attraction > 0 || exhibitEffects.income > 0 ? `
+                            <div style="background: #1e293b; padding: 8px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                ${exhibitEffects.happiness > 0 ? `<span style="color: #22c55e;">😊 +${exhibitEffects.happiness} happiness</span>` : ''}
+                                ${exhibitEffects.attraction > 0 ? `<span style="color: #fbbf24;">⭐ +${exhibitEffects.attraction} attraction</span>` : ''}
+                                ${exhibitEffects.income > 0 ? `<span style="color: #22c55e;">💰 +$${exhibitEffects.income}/day</span>` : ''}
+                                ${exhibitEffects.visitorCapacity > 0 ? `<span style="color: #3b82f6;">👥 +${exhibitEffects.visitorCapacity} visitors</span>` : ''}
+                                ${exhibitEffects.ratingBonus > 0 ? `<span style="color: #a855f7;">📈 +${exhibitEffects.ratingBonus} rating</span>` : ''}
+                                ${exhibitEffects.fenceDecayReduction < 1 ? `<span style="color: #3b82f6;">🛡️ -${Math.round((1-exhibitEffects.fenceDecayReduction)*100)}% fence decay</span>` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${!isUnderConstruction && purchasableUpgrades.length > 0 ? `
+                            <details style="margin-bottom: 8px;">
+                                <summary style="cursor: pointer; color: #3b82f6; font-size: 0.9rem; font-weight: 600; padding: 4px 0;">
+                                    🛒 Browse Upgrades (${purchasableUpgrades.length} available)
+                                </summary>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 8px;">
+                                    ${purchasableUpgrades.map(u => `
+                                        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px;">
+                                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                                <span style="font-size: 1.3rem;">${u.icon}</span>
+                                                <span style="font-weight: 700; color: #e5e7eb; font-size: 0.9rem;">${u.name}</span>
+                                            </div>
+                                            <p style="color: #9ca3af; font-size: 0.75rem; margin: 0 0 6px; line-height: 1.3;">${u.description}</p>
+                                            <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px;">
+                                                ${u.effects.happiness ? `😊+${u.effects.happiness} ` : ''}
+                                                ${u.effects.attraction ? `⭐+${u.effects.attraction} ` : ''}
+                                                ${u.effects.income ? `💰+$${u.effects.income} ` : ''}
+                                                ${u.effects.visitorCapacity ? `👥+${u.effects.visitorCapacity} ` : ''}
+                                                ${u.effects.ratingBonus ? `📈+${u.effects.ratingBonus} ` : ''}
+                                            </div>
+                                            <button onclick="window.buyUpgrade('${id}', '${u.id}')" 
+                                                style="width: 100%; padding: 6px; background: ${state.money >= u.cost ? '#22c55e' : '#475569'}; color: ${state.money >= u.cost ? '#000' : '#9ca3af'}; border: none; border-radius: 6px; font-weight: 700; cursor: ${state.money >= u.cost ? 'pointer' : 'not-allowed'}; font-size: 0.85rem;"
+                                                ${state.money < u.cost ? 'disabled' : ''}>
+                                                💰 $${u.cost.toLocaleString()}
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </details>
+                        ` : ''}
+                        
+                        ${isUnderConstruction ? `
+                            <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">🚧 Upgrades available after construction completes.</div>
+                        ` : purchasableUpgrades.length === 0 && installedUpgrades.length === 0 ? `
+                            <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">No upgrades available for this exhibit type/size.</div>
+                        ` : purchasableUpgrades.length === 0 && installedUpgrades.length > 0 ? `
+                            <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">✅ All available upgrades installed!</div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -596,6 +675,80 @@ export function showBabyNamingModal(babyInfo) {
     }, 100);
 }
 
+// =====================================================================
+// UPGRADE ACTIONS
+// =====================================================================
+
+export function buyUpgrade(exhibitId, upgradeId) {
+    const exhibit = state.exhibits[exhibitId];
+    if (!exhibit) {
+        alert("Exhibit not found!");
+        return;
+    }
+
+    const upgradeData = data.upgrades.find(u => u.id === upgradeId);
+    if (!upgradeData) {
+        alert("Upgrade not found!");
+        return;
+    }
+
+    const check = canInstallUpgrade(exhibit, upgradeId);
+    if (!check.allowed) {
+        alert(`Cannot install: ${check.reason}`);
+        return;
+    }
+
+    if (state.money < upgradeData.cost) {
+        alert(`Not enough money! Need $${upgradeData.cost}`);
+        return;
+    }
+
+    if (!confirm(`Install ${upgradeData.icon} ${upgradeData.name} for $${upgradeData.cost}?`)) {
+        return;
+    }
+
+    state.money -= upgradeData.cost;
+    if (!exhibit.upgrades) exhibit.upgrades = [];
+    exhibit.upgrades.push(upgradeId);
+
+    eventBus.emit('UPGRADE_INSTALLED', {
+        exhibitName: exhibit.name,
+        upgradeName: upgradeData.name,
+        cost: upgradeData.cost
+    });
+
+    renderExhibits();
+}
+
+export function removeUpgrade(exhibitId, upgradeId) {
+    const exhibit = state.exhibits[exhibitId];
+    if (!exhibit) return;
+
+    const upgradeData = data.upgrades.find(u => u.id === upgradeId);
+    if (!upgradeData) return;
+
+    const refund = Math.floor(upgradeData.cost * 0.3);
+
+    if (!confirm(`Remove ${upgradeData.name}?\nYou'll receive a $${refund} refund (30% of cost).`)) {
+        return;
+    }
+
+    exhibit.upgrades = exhibit.upgrades.filter(id => id !== upgradeId);
+    state.money += refund;
+
+    eventBus.emit('UPGRADE_REMOVED', {
+        exhibitName: exhibit.name,
+        upgradeName: upgradeData.name,
+        refund: refund
+    });
+
+    renderExhibits();
+}
+
+// =====================================================================
+// HELPERS
+// =====================================================================
+
 const BABY_MALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Prince', 'Duke', 'Sir'];
 const BABY_FEMALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Princess', 'Duchess', 'Lady'];
 
@@ -637,6 +790,8 @@ window.showAnimalDetails = showAnimalDetails;
 window.openTransferModal = openTransferModal;
 window.transferAnimal = transferAnimal;
 window.showBabyNamingModal = showBabyNamingModal;
+window.buyUpgrade = buyUpgrade;
+window.removeUpgrade = removeUpgrade;
 window.attemptBreeding = (exhibitId) => {
     if (attemptBreeding(exhibitId)) {
         renderExhibits();
