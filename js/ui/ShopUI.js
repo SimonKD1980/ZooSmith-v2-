@@ -90,7 +90,6 @@ function renderShopGrid() {
 
     grid.innerHTML = '';
     filtered.forEach((animal) => {
-        // 🔥 Check if animal is unlocked
         const isLocked = animal.id && !isUnlocked(animal.id);
         
         const slotCost = getAnimalSlotCost(animal);
@@ -102,6 +101,18 @@ function renderShopGrid() {
 
         const actualFoodCost = getActualFoodCost(animal);
         const imageUrl = animal.image || 'https://placehold.co/400x200/1e293b/e5e7eb?text=' + encodeURIComponent(animal.name);
+
+        // 🔥 NEW: Get exhibit requirements
+        const requiredSize = animal.requiredExhibitSize || 'small';
+        const requiredType = animal.requiredExhibitType || 'terrestrial';
+        const sizeEmoji = requiredSize === 'large' ? '🏞️' : requiredSize === 'medium' ? '🏕️' : '🏠';
+        const typeEmoji = requiredType === 'aquatic' ? '🌊' : '🌍';
+        
+        // 🔥 NEW: Get attraction value and food amount
+        const attractionValue = animal.attractionValue || 10;
+        const foodAmount = animal.foodAmount || 1;
+        const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
+        const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
 
         const card = document.createElement("div");
         card.className = "premium-card";
@@ -122,12 +133,39 @@ function renderShopGrid() {
                     </div>
                     ${animal.category ? `<span style="background: #a855f7; color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${animal.category}</span>` : ''}
                 </div>
+                
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0;">
                     <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">${dietEmoji} ${animal.diet}</span>
                     <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🌍 ${animal.habitat}</span>
                     <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">${statusEmoji} ${animal.conservationStatus}</span>
                 </div>
+                
+                ${!isLocked ? `
+                    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin: 10px 0;">
+                        <div style="color: #9ca3af; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">Requirements</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem;">
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 1rem;">${sizeEmoji}</span>
+                                <span style="color: #e5e7eb;">${requiredSize.charAt(0).toUpperCase() + requiredSize.slice(1)} Exhibit</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 1rem;">${typeEmoji}</span>
+                                <span style="color: #e5e7eb;">${requiredType.charAt(0).toUpperCase() + requiredType.slice(1)}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 1rem;">${foodTypeEmoji}</span>
+                                <span style="color: #e5e7eb;">${foodAmount} ${foodType}/day</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 1rem;">⭐</span>
+                                <span style="color: #fbbf24; font-weight: 700;">+${attractionValue} visitors</span>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
                 <p style="color: #9ca3af; font-size: 0.9rem; margin: 10px 0;">${isLocked ? '🔒 Research required to unlock this animal.' : (animal.info || 'No description available.')}</p>
+                
                 <div style="font-size: 1.4rem; font-weight: 800; color: ${isLocked ? '#64748b' : '#22c55e'}; margin: 10px 0; text-align: center; background: ${isLocked ? 'rgba(100, 116, 139, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; padding: 8px; border-radius: 8px; border: 1px solid ${isLocked ? 'rgba(100, 116, 139, 0.2)' : 'rgba(34, 197, 94, 0.2)'};">
                     💰 $${(animal.cost ?? animal.price ?? 0).toLocaleString()}
                 </div>
