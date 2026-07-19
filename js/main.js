@@ -39,9 +39,14 @@ const satisfactionEl = document.getElementById('satisfaction');
 const zooNameEl = document.getElementById('zooName');
 const endDayBtn = document.getElementById('endDayBtn');
 const buildExhibitBtn = document.getElementById('buildExhibitBtn');
-const logEl = document.getElementById('log');
 
 console.log('🚀 main.js loaded!');
+
+// =====================================================================
+// LOG STORAGE
+// =====================================================================
+const logMessages = []; // 🔥 Store all messages in memory
+const MAX_LOG_MESSAGES = 500;
 
 // =====================================================================
 // TAB NAVIGATION
@@ -635,6 +640,46 @@ if (buildExhibitBtn) {
 // =====================================================================
 // LOG HELPER
 // =====================================================================
+function logMessage(msg) {
+    // Store message with timestamp
+    const timestamp = new Date().toLocaleTimeString();
+    const entry = {
+        text: msg,
+        time: timestamp,
+        fullText: `[${timestamp}] ${msg}`
+    };
+    
+    logMessages.unshift(entry); // Add to beginning (newest first)
+    
+    // Keep only the most recent messages
+    if (logMessages.length > MAX_LOG_MESSAGES) {
+        logMessages.pop();
+    }
+    
+    // If log tab is currently visible, update it immediately
+    const logContent = document.getElementById('logContent');
+    if (logContent) {
+        renderLogContent();
+    }
+}
+
+function renderLogContent() {
+    const logContent = document.getElementById('logContent');
+    if (!logContent) return;
+    
+    if (logMessages.length === 0) {
+        logContent.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No events yet. Start playing to see your zoo\'s history!</div>';
+        return;
+    }
+    
+    logContent.innerHTML = logMessages.map(entry => 
+        `<div style="padding: 4px 0; border-bottom: 1px solid #1e293b; font-size: 0.9rem;">
+            <span style="color: #64748b; font-size: 0.75rem; margin-right: 8px;">${entry.time}</span>
+            <span style="color: #e5e7eb;">${entry.text}</span>
+        </div>`
+    ).join('');
+}
+
 // =====================================================================
 // LOG TAB RENDERER
 // =====================================================================
@@ -644,24 +689,33 @@ function renderLogTab() {
 
     el.innerHTML = `
         <div class="status-panel">
-            <h3>📜 Game Log</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin: 0;">📜 Game Log</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="color: #9ca3af; font-size: 0.85rem;">${logMessages.length} events</span>
+                    <button onclick="window.clearLog()" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+                        🗑️ Clear Log
+                    </button>
+                </div>
+            </div>
             <p style="color: #9ca3af; margin-bottom: 15px;">A complete history of all events in your zoo.</p>
-            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
+            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 600px; overflow-y: auto; font-family: monospace;">
                 <!-- Log messages will be inserted here -->
             </div>
         </div>
     `;
 
-    // Move existing log messages to the new location
-    const logContent = document.getElementById('logContent');
-    if (logContent && logEl) {
-        // Copy existing messages
-        const messages = Array.from(logEl.children);
-        messages.forEach(msg => {
-            logContent.appendChild(msg.cloneNode(true));
-        });
-    }
+    // Render the log content
+    renderLogContent();
 }
+
+// Expose clear function to window
+window.clearLog = () => {
+    if (confirm('Clear all log messages? This cannot be undone.')) {
+        logMessages.length = 0;
+        renderLogContent();
+    }
+};
 
 function logMessage(msg) {
     // Create the message element
