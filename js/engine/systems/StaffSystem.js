@@ -4,9 +4,12 @@ import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
 
 export function processStaff() {
+    console.log('🔍 STAFF DEBUG - hiredStaff:', state.hiredStaff);
+    console.log('🔍 STAFF DEBUG - hiredStaff length:', state.hiredStaff?.length);
+    
     let totalSalary = 0;
     
-    // 🔥 ONLY calculate salary if there are ACTUALLY hired staff
+    // ONLY calculate if there are ACTUALLY hired staff
     if (state.hiredStaff && state.hiredStaff.length > 0) {
         state.hiredStaff.forEach(staffInstance => {
             const staffData = data.staff.find(s => s.id === staffInstance.typeId);
@@ -16,21 +19,27 @@ export function processStaff() {
         });
     }
     
-    // 🔥 Force to exactly 0 if no staff are hired (prevents ghost values)
+    // 🔥 CRITICAL: Force to 0 if no staff
     if (!state.hiredStaff || state.hiredStaff.length === 0) {
         totalSalary = 0;
     }
-
-    // Deduct salary and track in daily report
-    if (!state.dailyReport) state.dailyReport = {};
     
+    console.log('💰 STAFF DEBUG - Calculated salary:', totalSalary);
+
+    // 🔥 CRITICAL: Initialize dailyReport if it doesn't exist
+    if (!state.dailyReport) {
+        state.dailyReport = {};
+    }
+    
+    // 🔥 CRITICAL: Explicitly set staffExpense (overwrites any ghost values)
+    state.dailyReport.staffExpense = totalSalary;
+    
+    console.log('📊 STAFF DEBUG - dailyReport.staffExpense set to:', state.dailyReport.staffExpense);
+
+    // Deduct salary if > 0
     if (totalSalary > 0) {
         state.money -= totalSalary;
-        state.dailyReport.staffExpense = totalSalary;
         eventBus.emit('STAFF_EXPENSE', { amount: totalSalary });
-    } else {
-        // Explicitly set to 0 to prevent old save data from lingering
-        state.dailyReport.staffExpense = 0;
     }
 }
 
