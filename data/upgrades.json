@@ -1,0 +1,170 @@
+[
+  {
+    "id": "shade_trees",
+    "name": "Shade Trees",
+    "icon": "🌳",
+    "description": "Provides shelter from the sun. Animals are happier and visitors stay longer.",
+    "cost": 800,
+    "category": "enrichment",
+    "effects": {
+      "happiness": 10,
+      "attraction": 3
+    },
+    "compatibleTypes": ["terrestrial"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "climbing_frame",
+    "name": "Climbing Frame",
+    "icon": "🪜",
+    "description": "A wooden structure for primates and active animals to play on.",
+    "cost": 1200,
+    "category": "enrichment",
+    "effects": {
+      "happiness": 15,
+      "attraction": 5
+    },
+    "compatibleTypes": ["terrestrial"],
+    "compatibleSizes": ["medium", "large"]
+  },
+  {
+    "id": "water_pool",
+    "name": "Water Pool",
+    "icon": "💧",
+    "description": "A refreshing pool for animals to swim and cool off.",
+    "cost": 1500,
+    "category": "enrichment",
+    "effects": {
+      "happiness": 12,
+      "attraction": 6
+    },
+    "compatibleTypes": ["terrestrial", "aquatic"],
+    "compatibleSizes": ["medium", "large"]
+  },
+  {
+    "id": "rock_formation",
+    "name": "Rock Formation",
+    "icon": "🪨",
+    "description": "Natural-looking rocks that provide hiding spots and climbing surfaces.",
+    "cost": 1000,
+    "category": "enrichment",
+    "effects": {
+      "happiness": 10,
+      "attraction": 4
+    },
+    "compatibleTypes": ["terrestrial"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "viewing_platform",
+    "name": "Viewing Platform",
+    "icon": "🔭",
+    "description": "An elevated platform for visitors to get a better view of the animals.",
+    "cost": 2000,
+    "category": "visitor",
+    "effects": {
+      "attraction": 8,
+      "visitorCapacity": 20
+    },
+    "compatibleTypes": ["terrestrial", "aquatic"],
+    "compatibleSizes": ["medium", "large"]
+  },
+  {
+    "id": "photo_op",
+    "name": "Photo Opportunity Spot",
+    "icon": "📸",
+    "description": "A designated photo area. Visitors pay extra for great shots!",
+    "cost": 1800,
+    "category": "visitor",
+    "effects": {
+      "attraction": 5,
+      "income": 10
+    },
+    "compatibleTypes": ["terrestrial", "aquatic"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "heating",
+    "name": "Heated Shelter",
+    "icon": "🔥",
+    "description": "Keeps tropical animals warm in cold weather. Required for some species.",
+    "cost": 2500,
+    "category": "infrastructure",
+    "effects": {
+      "happiness": 8,
+      "temperatureControl": "heating"
+    },
+    "compatibleTypes": ["terrestrial"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "air_conditioning",
+    "name": "Air Conditioning",
+    "icon": "❄️",
+    "description": "Keeps animals comfortable in hot weather. Required for arctic species.",
+    "cost": 2500,
+    "category": "infrastructure",
+    "effects": {
+      "happiness": 8,
+      "temperatureControl": "cooling"
+    },
+    "compatibleTypes": ["terrestrial", "aquatic"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "reinforced_fence",
+    "name": "Reinforced Fence",
+    "icon": "🛡️",
+    "description": "Stronger fencing that decays slower and prevents escapes.",
+    "cost": 1500,
+    "category": "safety",
+    "effects": {
+      "fenceDecayReduction": 0.5,
+      "escapePrevention": 10
+    },
+    "compatibleTypes": ["terrestrial"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "underwater_tunnel",
+    "name": "Underwater Viewing Tunnel",
+    "icon": "🐠",
+    "description": "A glass tunnel through the aquatic exhibit. Visitors love it!",
+    "cost": 4000,
+    "category": "visitor",
+    "effects": {
+      "attraction": 15,
+      "income": 20
+    },
+    "compatibleTypes": ["aquatic"],
+    "compatibleSizes": ["large"]
+  },
+  {
+    "id": "night_lighting",
+    "name": "Night Lighting",
+    "icon": "💡",
+    "description": "Beautiful lighting allows evening viewing. Boosts night visitor income.",
+    "cost": 1200,
+    "category": "visitor",
+    "effects": {
+      "attraction": 4,
+      "income": 8
+    },
+    "compatibleTypes": ["terrestrial", "aquatic"],
+    "compatibleSizes": ["small", "medium", "large"]
+  },
+  {
+    "id": "education_sign",
+    "name": "Educational Signs",
+    "icon": "📚",
+    "description": "Informative plaques about the animals. Boosts zoo rating.",
+    "cost": 500,
+    "category": "visitor",
+    "effects": {
+      "ratingBonus": 2,
+      "attraction": 2
+    },
+    "compatibleTypes": ["terrestrial", "aquatic"],
+    "compatibleSizes": ["small", "medium", "large"]
+  }
+]
