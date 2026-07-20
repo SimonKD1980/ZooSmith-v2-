@@ -88,20 +88,24 @@ function renderShopGrid() {
         const isLocked = animal.id && !isUnlocked(animal.id);
         const cost = animal.cost ?? animal.price ?? 0;
         
-        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
+        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '';
         const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' :
             animal.conservationStatus === 'Vulnerable' ? '🟡' :
-            animal.conservationStatus === 'Critically Endangered' ? '⚫' : '';
+            animal.conservationStatus === 'Critically Endangered' ? '' : '';
 
         const requiredSize = animal.requiredExhibitSize || 'small';
         const requiredType = animal.requiredExhibitType || 'terrestrial';
-        const sizeEmoji = requiredSize === 'large' ? '🏞️' : requiredSize === 'medium' ? '🏕️' : '🏠';
+        const sizeEmoji = requiredSize === 'large' ? '🏞️' : requiredSize === 'medium' ? '🏕️' : '';
         const typeEmoji = requiredType === 'aquatic' ? '🌊' : '🌍';
         
         const attractionValue = animal.attractionValue || 10;
         const foodAmount = animal.foodAmount || 1;
         const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
         const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
+
+        // 🔥 NEW: Image path logic
+        const imagePath = `./images/animals/${animal.id}.png`;
+        const fallbackImage = `https://placehold.co/400x200/0f172a/e5e7eb?text=${encodeURIComponent(animal.name)}`;
 
         const card = document.createElement("div");
         card.style.cssText = `
@@ -121,8 +125,11 @@ function renderShopGrid() {
         card.innerHTML = `
             ${isLocked ? `<div style="position:absolute; top:12px; right:12px; background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.8rem; z-index:10;">🔒 LOCKED</div>` : ''}
             
-            <img src="${animal.image || 'https://placehold.co/400x200/0f172a/e5e7eb?text=' + encodeURIComponent(animal.name)}" 
-                alt="${animal.name}" style="width:100%; height:180px; object-fit:cover; background:#0f172a; ${isLocked ? 'filter:grayscale(100%);' : ''}" />
+            <!-- 🔥 NEW: Image with local folder check and fallback -->
+            <img src="${imagePath}" 
+                alt="${animal.name}" 
+                style="width:100%; height:180px; object-fit:cover; background:#0f172a; ${isLocked ? 'filter:grayscale(100%);' : ''}"
+                onerror="this.onerror=null; this.src='${fallbackImage}';" />
             
             <div style="padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
@@ -258,7 +265,7 @@ function openBuyModal(animal) {
                     <select id="ageSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
                         onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
                         <option value="baby">🍼 Baby</option>
-                        <option value="juvenile">🐾 Juvenile</option>
+                        <option value="juvenile"> Juvenile</option>
                         <option value="adult" selected>🦁 Adult</option>
                         <option value="senior">👴 Senior</option>
                     </select>
@@ -271,7 +278,7 @@ function openBuyModal(animal) {
                     <button onclick="window.closeBuyModal()" style="padding:10px 20px; background:#ef4444; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Cancel</button>
                     <button onclick="window.confirmBuyAnimal()" style="padding:10px 20px; background:#22c55e; color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer;">✅ Confirm</button>
                 </div>
-            </div each>
+            </div>
         </div>
     `;
 
@@ -292,7 +299,8 @@ export function closeBuyModal() {
     const modalOverlay = document.getElementById("dynamicBuyModal");
     if (modalOverlay) {
         modalOverlay.style.opacity = '0';
-        document.getElementById('modalContent').style.transform = 'scale(0.95)';
+        const content = document.getElementById('modalContent');
+        if (content) content.style.transform = 'scale(0.95)';
         setTimeout(() => {
             modalOverlay.remove();
             state.pendingAnimal = null;
