@@ -51,13 +51,16 @@
             50% { transform: translateY(-3px); }
         }
 
-        .brand-name {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #e5e7eb;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
+        <div class="header-brand tooltip-wrapper">
+    <span class="brand-icon">🦁</span>
+    <span class="brand-name" id="zooName">
+        My Zoo <span class="edit-icon">✏️</span>
+    </span>
+    <div class="tooltip-text">
+        <strong>️ Zoo Name</strong>
+        Click the name to rename your zoo!
+    </div>
+</div>
 
         /* Stats Container */
         .header-stats {
