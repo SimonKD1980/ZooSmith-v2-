@@ -16,10 +16,9 @@ export function renderShop() {
 
     if (!data.animals || data.animals.length === 0) {
         shop.innerHTML = `
-            <div class="card" style="text-align:center; padding:40px; color: var(--danger);">
+            <div style="text-align:center; padding:40px; background:#1e293b; border-radius:12px; border:1px solid #ef4444; color:#fca5a5;">
                 <h3>❌ No Animal Data Found</h3>
-                <p>Check your browser console (F12) for details.</p>
-                <p style="font-size:0.9rem;">Make sure data/animals.json exists and has data.</p>
+                <p style="color:#9ca3af;">Check your browser console (F12) for details.</p>
             </div>
         `;
         return;
@@ -28,25 +27,27 @@ export function renderShop() {
     const categories = [...new Set(data.animals.map(a => a.category || 'Other'))].sort();
     
     shop.innerHTML = `
-        <div class="card" style="margin-bottom: 24px;">
-            <div style="margin-bottom: 16px;">
-                <input type="text" id="animalSearch" placeholder="🔍 Search animals by name, species, or habitat..." value="${currentSearch}" 
-                    class="search-input" />
-            </div>
-            <div class="flex flex-wrap gap-2" style="margin-bottom: 10px;">
-                <button class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="window.filterByCategory('all')">
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:12px; padding:20px; margin-bottom:24px;">
+            <input type="text" id="animalSearch" placeholder="🔍 Search animals by name, species, or habitat..." value="${currentSearch}" 
+                style="width:100%; padding:12px 16px; font-size:1rem; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; margin-bottom:16px; outline:none; transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'" />
+            
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button onclick="window.filterByCategory('all')" 
+                    style="padding:8px 16px; background:${currentCategory === 'all' ? '#22c55e' : '#0f172a'}; color:${currentCategory === 'all' ? '#000' : '#e5e7eb'}; border:1px solid ${currentCategory === 'all' ? '#22c55e' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s;">
                     🌍 All (${data.animals.length})
                 </button>
                 ${categories.map(cat => {
                     const count = data.animals.filter(a => a.category === cat).length;
                     const isActive = currentCategory === cat;
-                    return `<button class="category-tab ${isActive ? 'active' : ''}" onclick="window.filterByCategory('${cat}')">
+                    return `<button onclick="window.filterByCategory('${cat}')" 
+                        style="padding:8px 16px; background:${isActive ? '#22c55e' : '#0f172a'}; color:${isActive ? '#000' : '#e5e7eb'}; border:1px solid ${isActive ? '#22c55e' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s;">
                         ${cat} (${count})
                     </button>`;
                 }).join('')}
             </div>
         </div>
-        <div class="grid-layout" id="shopGrid"></div>
+        <div id="shopGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:20px;"></div>
     `;
 
     const searchInput = document.getElementById('animalSearch');
@@ -78,13 +79,14 @@ function renderShopGrid() {
     }
 
     if (filtered.length === 0) {
-        grid.innerHTML = '<div class="card" style="text-align:center; padding:40px; grid-column: 1/-1;"><h3>No animals found</h3></div>';
+        grid.innerHTML = '<div style="text-align:center; padding:40px; background:#1e293b; border-radius:12px; grid-column:1/-1; color:#9ca3af;"><h3>No animals found</h3></div>';
         return;
     }
 
     grid.innerHTML = '';
     filtered.forEach((animal) => {
         const isLocked = animal.id && !isUnlocked(animal.id);
+        const cost = animal.cost ?? animal.price ?? 0;
         
         const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
         const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' :
@@ -100,61 +102,76 @@ function renderShopGrid() {
         const foodAmount = animal.foodAmount || 1;
         const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
         const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
-        const cost = animal.cost ?? animal.price ?? 0;
 
         const card = document.createElement("div");
-        card.className = `card premium-card ${isLocked ? 'locked' : ''}`;
+        card.style.cssText = `
+            background: #1e293b; 
+            border: 1px solid ${isLocked ? '#475569' : '#334155'}; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            position: relative; 
+            transition: transform 0.2s, box-shadow 0.2s;
+            ${isLocked ? 'opacity: 0.7;' : 'cursor: pointer;'}
+        `;
+        if (!isLocked) {
+            card.onmouseenter = () => { card.style.transform = 'translateY(-4px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)'; };
+            card.onmouseleave = () => { card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
+        }
         
         card.innerHTML = `
-            ${isLocked ? `
-                <div class="badge badge-danger" style="position: absolute; top: 12px; right: 12px; z-index: 10;">
-                    🔒 LOCKED
-                </div>
-            ` : ''}
-            <img src="${animal.image || 'https://placehold.co/400x200/1e293b/e5e7eb?text=' + encodeURIComponent(animal.name)}" 
-                alt="${animal.name}" class="animal-image ${isLocked ? 'grayscale' : ''}" />
+            ${isLocked ? `<div style="position:absolute; top:12px; right:12px; background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.8rem; z-index:10;">🔒 LOCKED</div>` : ''}
             
-            <div class="card-body">
-                <div class="card-header">
+            <img src="${animal.image || 'https://placehold.co/400x200/0f172a/e5e7eb?text=' + encodeURIComponent(animal.name)}" 
+                alt="${animal.name}" style="width:100%; height:180px; object-fit:cover; background:#0f172a; ${isLocked ? 'filter:grayscale(100%);' : ''}" />
+            
+            <div style="padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
                     <div>
-                        <h3 class="card-title">${animal.name}</h3>
-                        <p class="card-subtitle">${animal.scienceName || ''}</p>
+                        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:#e5e7eb;">${animal.name}</h3>
+                        <p style="margin:4px 0 0; font-size:0.85rem; color:#9ca3af; font-style:italic;">${animal.scienceName || ''}</p>
                     </div>
-                    ${animal.category ? `<span class="badge badge-info">${animal.category}</span>` : ''}
+                    ${animal.category ? `<span style="background:#a855f7; color:#fff; padding:3px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">${animal.category}</span>` : ''}
                 </div>
                 
-                <div class="flex flex-wrap gap-2" style="margin: 12px 0;">
-                    <span class="badge badge-warning">${dietEmoji} ${animal.diet}</span>
-                    <span class="badge badge-secondary">🌍 ${animal.habitat}</span>
-                    <span class="badge badge-secondary">${statusEmoji} ${animal.conservationStatus}</span>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin:12px 0;">
+                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">${dietEmoji} ${animal.diet}</span>
+                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">🌍 ${animal.habitat}</span>
+                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">${statusEmoji} ${animal.conservationStatus}</span>
                 </div>
                 
                 ${!isLocked ? `
-                    <div class="requirements-box">
-                        <div class="requirements-title">Requirements</div>
-                        <div class="requirements-grid">
-                            <div class="req-item"><span class="req-icon">${sizeEmoji}</span> ${requiredSize.charAt(0).toUpperCase() + requiredSize.slice(1)} Exhibit</div>
-                            <div class="req-item"><span class="req-icon">${typeEmoji}</span> ${requiredType.charAt(0).toUpperCase() + requiredType.slice(1)}</div>
-                            <div class="req-item"><span class="req-icon">${foodTypeEmoji}</span> ${foodAmount} ${foodType}/day</div>
-                            <div class="req-item"><span class="req-icon">⭐</span> <span class="text-success">+${attractionValue} visitors</span></div>
+                    <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px; margin:12px 0;">
+                        <div style="color:#64748b; font-size:0.75rem; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Requirements</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem; color:#e5e7eb;">
+                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${sizeEmoji}</span> ${requiredSize.charAt(0).toUpperCase() + requiredSize.slice(1)} Exhibit</div>
+                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${typeEmoji}</span> ${requiredType.charAt(0).toUpperCase() + requiredType.slice(1)}</div>
+                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${foodTypeEmoji}</span> ${foodAmount} ${foodType}/day</div>
+                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">⭐</span> <span style="color:#fbbf24; font-weight:700;">+${attractionValue} visitors</span></div>
                         </div>
                     </div>
                 ` : ''}
                 
-                <p class="card-description">${isLocked ? '🔒 Research required to unlock this animal.' : (animal.info || 'No description available.')}</p>
+                <p style="color:#9ca3af; font-size:0.9rem; margin:12px 0; line-height:1.4;">${isLocked ? '🔒 Research required to unlock this animal.' : (animal.info || 'No description available.')}</p>
                 
-                <div class="price-tag ${isLocked ? 'locked' : ''}">
+                <div style="font-size:1.3rem; font-weight:800; color:${isLocked ? '#64748b' : '#22c55e'}; text-align:center; background:${isLocked ? 'rgba(100,116,139,0.1)' : 'rgba(34,197,94,0.1)'}; padding:10px; border-radius:8px; border:1px solid ${isLocked ? 'rgba(100,116,139,0.2)' : 'rgba(34,197,94,0.2)'}; margin-bottom:12px;">
                     💰 $${cost.toLocaleString()}
                 </div>
                 
-                <button class="btn-primary buy-animal-btn" style="width: 100%;" ${isLocked ? 'disabled' : ''}>
+                <button class="buy-animal-btn" 
+                    style="width:100%; padding:12px; background:${isLocked ? '#475569' : '#22c55e'}; color:${isLocked ? '#9ca3af' : '#000'}; border:none; border-radius:8px; font-weight:700; cursor:${isLocked ? 'not-allowed' : 'pointer'}; font-size:1rem; transition:filter 0.2s;"
+                    ${isLocked ? 'disabled' : ''}
+                    onmouseover="if(!${isLocked}) this.style.filter='brightness(1.1)'" 
+                    onmouseout="if(!${isLocked}) this.style.filter='brightness(1)'">
                     ${isLocked ? '🔒 Locked' : '🛒 Add to Zoo'}
                 </button>
             </div>
         `;
 
         if (!isLocked) {
-            card.querySelector(".buy-animal-btn").onclick = () => openBuyModal(animal);
+            card.querySelector(".buy-animal-btn").onclick = (e) => {
+                e.stopPropagation();
+                openBuyModal(animal);
+            };
         }
 
         grid.appendChild(card);
@@ -162,125 +179,125 @@ function renderShopGrid() {
 }
 
 function openBuyModal(animal) {
-    const modal = document.getElementById("buyModal");
-    if (!modal) return;
-    
-    const select = document.getElementById("exhibitSelect");
-    if (!select) return;
-    
-    select.innerHTML = "";
+    // Create modal overlay dynamically to guarantee it looks good
+    let modalOverlay = document.getElementById("dynamicBuyModal");
+    if (!modalOverlay) {
+        modalOverlay = document.createElement("div");
+        modalOverlay.id = "dynamicBuyModal";
+        modalOverlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); z-index:1000; display:flex; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;";
+        document.body.appendChild(modalOverlay);
+        
+        // Close on background click
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeBuyModal();
+        });
+    }
+
     const ids = Object.keys(state.exhibits);
     let compatibleExhibits = 0;
-    let underConstruction = 0;
-    let wrongType = 0;
-    let wrongSize = 0;
-
     const requiredType = animal.requiredExhibitType || 'terrestrial';
+    let exhibitOptions = '';
 
     for (const id of ids) {
         const exhibit = state.exhibits[id];
-        if (exhibit.buildDaysRemaining > 0) { underConstruction++; continue; }
-        if (exhibit.type !== requiredType) { wrongType++; continue; }
-        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) { wrongSize++; continue; }
+        if (exhibit.buildDaysRemaining > 0) continue;
+        if (exhibit.type !== requiredType) continue;
+        
+        const SIZE_RANK = { small: 1, medium: 2, large: 3 };
+        if (SIZE_RANK[exhibit.size] < SIZE_RANK[animal.requiredExhibitSize || "small"]) continue;
 
-        const opt = document.createElement("option");
-        opt.value = id;
         const exhibitType = data.exhibitTypes?.[exhibit.type] || { emoji: '🏞️', name: 'Exhibit' };
-        opt.textContent = `${exhibitType.emoji} ${exhibit.name} (${exhibit.size})`;
-        select.appendChild(opt);
+        exhibitOptions += `<option value="${id}">${exhibitType.emoji} ${exhibit.name} (${exhibit.size})</option>`;
         compatibleExhibits++;
     }
 
     if (compatibleExhibits === 0) {
-        let message = `No compatible exhibits available!\n\n`;
-        if (underConstruction > 0) message += `🚧 ${underConstruction} exhibit(s) under construction\n`;
-        if (wrongType > 0) message += `❌ ${wrongType} exhibit(s) wrong type\n`;
-        if (wrongSize > 0) message += `❌ ${wrongSize} exhibit(s) wrong size\n`;
-        message += `\nRequired: ${requiredType} exhibit, ${animal.requiredExhibitSize || 'small'} size or larger.`;
-        alert(message);
+        alert(`No compatible exhibits available!\n\nRequired: ${requiredType} exhibit, ${animal.requiredExhibitSize || 'small'} size or larger.`);
         return;
     }
 
     const defaultName = generateRandomAnimalName(animal.name);
     const cost = animal.cost ?? animal.price ?? 0;
 
-    const modalContent = modal.querySelector('.modal-content');
-    modalContent.innerHTML = `
-        <div class="modal-header">
-            <h3>🦁 Add ${animal.name} to Zoo</h3>
-            <button class="modal-close" onclick="window.closeBuyModal()">✕</button>
-        </div>
-        <p style="color: var(--text-secondary); margin-bottom: 20px;">Customize your new animal:</p>
-        
-        <div class="form-group">
-            <label>🏷️ Animal Name</label>
-            <div class="flex gap-2">
-                <input type="text" id="animalNameInput" value="${defaultName}" class="form-input" placeholder="Enter a name..." maxlength="20" style="flex: 1;">
-                <button class="btn-secondary btn-small" onclick="window.randomizeAnimalName('${animal.name}')" style="white-space: nowrap;">🎲 Randomize</button>
+    modalOverlay.innerHTML = `
+        <div style="background:#1e293b; border:2px solid #334155; border-radius:16px; width:90%; max-width:500px; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.95); transition:transform 0.2s;" id="modalContent">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0; color:#e5e7eb; font-size:1.4rem;">🦁 Add ${animal.name}</h3>
+                <button onclick="window.closeBuyModal()" style="background:#ef4444; color:#fff; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">✕</button>
             </div>
-        </div>
-        
-        <div class="form-group">
-            <label>🏞️ Exhibit</label>
-            <select id="exhibitSelect" class="form-input"></select>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group" style="flex: 1;">
-                <label>⚧️ Gender</label>
-                <select id="genderSelect" class="form-input">
-                    <option value="male">♂️ Male</option>
-                    <option value="female">♀️ Female</option>
+            
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">🏷️ Animal Name</label>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="animalNameInput" value="${defaultName}" maxlength="20" 
+                        style="flex:1; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                        onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
+                    <button onclick="window.randomizeAnimalName('${animal.name}')" style="padding:10px 16px; background:#334155; color:#e5e7eb; border:none; border-radius:8px; cursor:pointer; font-weight:600;">🎲</button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">🏞️ Exhibit</label>
+                <select id="exhibitSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                    onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
+                    ${exhibitOptions}
                 </select>
             </div>
-            <div class="form-group" style="flex: 1;">
-                <label>🎂 Life Stage</label>
-                <select id="ageSelect" class="form-input">
-                    <option value="baby">🍼 Baby</option>
-                    <option value="juvenile">🐾 Juvenile</option>
-                    <option value="adult" selected>🦁 Adult</option>
-                    <option value="senior">👴 Senior</option>
-                </select>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+                <div>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">⚧️ Gender</label>
+                    <select id="genderSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                        onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
+                        <option value="male">♂️ Male</option>
+                        <option value="female">♀️ Female</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">🎂 Life Stage</label>
+                    <select id="ageSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                        onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
+                        <option value="baby">🍼 Baby</option>
+                        <option value="juvenile">🐾 Juvenile</option>
+                        <option value="adult" selected>🦁 Adult</option>
+                        <option value="senior">👴 Senior</option>
+                    </select>
+                </div>
             </div>
-        </div>
-        
-        <div class="modal-footer">
-            <div class="price-tag" style="margin-bottom: 0;">Total: 💰 $${cost.toLocaleString()}</div>
-            <div class="flex gap-2" style="flex: 1; justify-content: flex-end;">
-                <button class="btn-danger" onclick="window.closeBuyModal()">Cancel</button>
-                <button class="btn-primary" onclick="window.confirmBuyAnimal()">✅ Confirm Purchase</button>
-            </div>
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; padding-top:16px; border-top:2px solid #334155;">
+                <div style="font-size:1.3rem; font-weight:800; color:#22c55e;">💰 $${cost.toLocaleString()}</div>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="window.closeBuyModal()" style="padding:10px 20px; background:#ef4444; color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Cancel</button>
+                    <button onclick="window.confirmBuyAnimal()" style="padding:10px 20px; background:#22c55e; color:#000; border:none; border-radius:8px; font-weight:700; cursor:pointer;">✅ Confirm</button>
+                </div>
+            </div each>
         </div>
     `;
 
-    // Re-populate the exhibit select
-    const newSelect = document.getElementById("exhibitSelect");
-    for (const id of ids) {
-        const exhibit = state.exhibits[id];
-        if (exhibit.buildDaysRemaining > 0) continue;
-        if (exhibit.type !== requiredType) continue;
-        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) continue;
-
-        const opt = document.createElement("option");
-        opt.value = id;
-        const exhibitType = data.exhibitTypes?.[exhibit.type] || { emoji: '🏞️', name: 'Exhibit' };
-        opt.textContent = `${exhibitType.emoji} ${exhibit.name} (${exhibit.size})`;
-        newSelect.appendChild(opt);
-    }
-
     state.pendingAnimal = animal;
-    modal.classList.add("active");
-}
-
-function exhibitSizeOk(exhibitSize, requiredSize) {
-    const SIZE_RANK = { small: 1, medium: 2, large: 3 };
-    return SIZE_RANK[exhibitSize] >= SIZE_RANK[requiredSize];
+    document.body.appendChild(modalOverlay);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        modalOverlay.style.opacity = '1';
+        document.getElementById('modalContent').style.transform = 'scale(1)';
+    });
+    
+    // Focus name input
+    setTimeout(() => document.getElementById('animalNameInput')?.focus(), 100);
 }
 
 export function closeBuyModal() {
-    const modal = document.getElementById("buyModal");
-    if (modal) modal.classList.remove("active");
-    state.pendingAnimal = null;
+    const modalOverlay = document.getElementById("dynamicBuyModal");
+    if (modalOverlay) {
+        modalOverlay.style.opacity = '0';
+        document.getElementById('modalContent').style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            modalOverlay.remove();
+            state.pendingAnimal = null;
+        }, 200);
+    }
 }
 
 function confirmBuyAnimal() {
@@ -381,6 +398,7 @@ function randomizeAnimalName(speciesName) {
     const input = document.getElementById('animalNameInput');
     if (input) {
         input.value = generateRandomAnimalName(speciesName);
+        input.focus();
     }
 }
 
