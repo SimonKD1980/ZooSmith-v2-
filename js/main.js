@@ -28,6 +28,7 @@ import {
 import { renderReports } from './ui/ReportsUI.js';
 import { renderResearch } from './ui/ResearchUI.js';
 import { startResearch } from './engine/systems/ResearchSystem.js';
+import { showNotification } from './ui/NotificationUI.js';
 
 // =====================================================================
 // UI REFERENCES
