@@ -1,10 +1,11 @@
 // js/engine/GameState.js
 export const state = {
-    // Core
+    // Core Time
     money: 10000,
     day: 1,
     month: 1,
     year: 1,
+    daysInMonth: 30, // Simplified: 30 days per month, 360 days per year
 
     // Zoo Data
     zooName: "My Zoo",
@@ -13,43 +14,40 @@ export const state = {
     unnaturalDeaths: 0,
     totalDeaths: 0,
     bredAnimals: 0,
+    ratingBreakdown: null,
+    tiersReached: [], 
 
     // Research Objects
-    researchCompleted: [],  // Array of research IDs that are completed
-    researchInProgress: null,  // Current research being worked on
-    researchDaysRemaining: 0,  // Days until current research completes
+    researchCompleted: [],
+    researchInProgress: null,
+    researchDaysRemaining: 0,
 
-    
-    // Food Inventory
+    // Food Inventory (FIXED: closed properly now!)
     food: {
         hay: 0,
         meat: 0,
-        produce: 0,
-
-    zooRating: 0,
-    ratingBreakdown: null,
-    tiersReached: [] // Tracks which tiers have been awarded bonuses
+        produce: 0
     },
 
     // Visitor Data
     dailyVisitors: 0,
     guestHappiness: 0,
-    visitorSpending: { food: 0, gifts: 0, total: 0 },
+    visitorSpending: { tickets: 0, amenities: 0, food: 0, gifts: 0, total: 0 },
     visitorComplaints: [],
     ticketPrice: 20,
     ticketPriceImpact: 0,
     ticketSatisfactionImpact: 0,
     daysSinceNewAnimal: 0,
 
-    //Reporting
-    dailyReports: [],  // Array of daily report objects
-    maxDailyReports: 30,  // Keep last 30 days
+    // Reporting
+    dailyReports: [],
+    maxDailyReports: 30,
 
     // Exhibits
     exhibits: {},
     builtEnclosures: {},
 
-    // Staff (NEW!)
+    // Staff
     hiredStaff: [],
 
     // Amenities
@@ -70,6 +68,32 @@ export const state = {
         staffExpense: 0,
         upkeepExpense: 0,
         maintenanceExpense: 0,
+        researchExpense: 0,
+        neglectFines: 0,
+        neglectDeaths: 0,
+        animalPurchases: [],
         netProfit: 0
     }
 };
+
+// =====================================================================
+// 🌸☀️🍂❄️ SEASONAL HELPERS
+// =====================================================================
+export function getSeason() {
+    const m = state.month;
+    if (m === 12 || m === 1 || m === 2) return 'winter';
+    if (m === 3 || m === 4 || m === 5) return 'spring';
+    if (m === 6 || m === 7 || m === 8) return 'summer';
+    return 'fall';
+}
+
+export function getSeasonEmoji() {
+    const season = getSeason();
+    const emojis = {
+        winter: '❄️',
+        spring: '🌸',
+        summer: '☀️',
+        fall: '🍂'
+    };
+    return emojis[season];
+}
