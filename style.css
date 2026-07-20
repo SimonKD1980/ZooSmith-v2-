@@ -1067,3 +1067,24 @@ input:focus, select:focus, textarea:focus {
         padding: 10px 12px;
     }
 }
+
+/* Zoo Name Click-to-Edit Styles */
+.brand-name {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.brand-name:hover {
+    color: #22c55e; /* Turns green on hover */
+}
+
+.edit-icon {
+    opacity: 0; /* Hidden by default */
+    font-size: 1rem;
+    margin-left: 6px;
+    transition: opacity 0.2s;
+}
+
+.brand-name:hover .edit-icon {
+    opacity: 1; /* Shows on hover */
+}
