@@ -4,37 +4,234 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZooSmith V2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
             background: #0f172a; 
             color: #e5e7eb; 
             padding: 20px; 
             min-height: 100vh;
         }
         
-        /* Header */
-        .header { 
-            display: flex; 
-            gap: 15px; 
-            margin-bottom: 20px; 
-            font-size: 1.1rem; 
-            flex-wrap: wrap;
+        /* ===== PROFESSIONAL RESPONSIVE HEADER ===== */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 2px solid #334155;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            gap: 24px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* Brand Section */
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .brand-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #e5e7eb;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        /* Stats Container */
+        .header-stats {
+            display: flex;
+            gap: 16px;
             align-items: center;
         }
-        .stat { 
-            background: #1e293b; 
-            padding: 10px 15px; 
-            border-radius: 8px; 
-            font-weight: 600;
+
+        /* Individual Stat Card */
+        .stat-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            cursor: default;
         }
-        .zoo-name {
-            background: linear-gradient(135deg, #1e293b, #334155);
-            padding: 10px 15px;
-            border-radius: 8px;
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-icon {
+            font-size: 1.8rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .stat-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             font-weight: 700;
-            font-size: 1.2rem;
+        }
+
+        .stat-value {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #e5e7eb;
+            white-space: nowrap;
+        }
+
+        /* Stat Colors */
+        .stat-card.money .stat-value { color: #22c55e; }
+        .stat-card.rating .stat-value { color: #fbbf24; }
+        .stat-card.satisfaction .stat-value { color: #3b82f6; }
+        .stat-card.date .stat-label { color: #a855f7; }
+
+        /* TABLET (768px - 1024px) */
+        @media (max-width: 1024px) {
+            .game-header {
+                padding: 14px 20px;
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .header-stats {
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+            }
+            
+            .stat-card {
+                padding: 10px 14px;
+                min-width: 130px;
+            }
+        }
+
+        /* MOBILE (640px - 767px) */
+        @media (max-width: 767px) {
+            .game-header {
+                padding: 12px 16px;
+            }
+            
+            .brand-icon {
+                font-size: 2rem;
+            }
+            
+            .brand-name {
+                font-size: 1.4rem;
+            }
+            
+            .header-stats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                width: 100%;
+            }
+            
+            .stat-card {
+                padding: 10px 12px;
+                min-width: auto;
+                justify-content: center;
+            }
+            
+            .stat-icon {
+                font-size: 1.5rem;
+            }
+            
+            .stat-details {
+                min-width: auto;
+            }
+            
+            .stat-label {
+                font-size: 0.65rem;
+            }
+            
+            .stat-value {
+                font-size: 0.95rem;
+            }
+        }
+
+        /* SMALL MOBILE (< 640px) */
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            
+            .game-header {
+                padding: 10px 12px;
+                margin-bottom: 12px;
+            }
+            
+            .brand-icon {
+                font-size: 1.8rem;
+            }
+            
+            .brand-name {
+                font-size: 1.2rem;
+            }
+            
+            .header-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            .stat-card {
+                padding: 8px 10px;
+            }
+            
+            .stat-icon {
+                font-size: 1.3rem;
+            }
+            
+            .stat-label {
+                font-size: 0.6rem;
+            }
+            
+            .stat-value {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* TINY PHONES (< 380px) */
+        @media (max-width: 380px) {
+            .header-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-card {
+                padding: 10px 12px;
+            }
         }
         
         /* Navigation */
@@ -103,22 +300,6 @@
         .status-panel h3 {
             margin: 0 0 10px 0;
             font-size: 1.1rem;
-        }
-        
-        /* Log */
-        #log { 
-            margin-top: 20px; 
-            background: #000; 
-            padding: 15px; 
-            border-radius: 8px; 
-            height: 200px; 
-            overflow-y: auto; 
-            font-family: monospace; 
-            font-size: 0.9rem;
-        }
-        #log div {
-            padding: 2px 0;
-            border-bottom: 1px solid #1e293b;
         }
         
         /* Modal */
@@ -223,63 +404,87 @@
             visibility: visible;
             opacity: 1;
         }
+
+        /* Mobile: Disable tooltips (useless on touch) */
+        @media (max-width: 767px) {
+            .tooltip-text { display: none; }
+        }
     </style>
 </head>
 <body>
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
-    <!-- Header -->
-    <div class="header">
-        <div class="tooltip-wrapper">
-            <div class="zoo-name">🏞️ <span id="zooName">My Zoo</span></div>
+    <!-- ===== NEW PROFESSIONAL HEADER ===== -->
+    <header class="game-header">
+        <div class="header-brand tooltip-wrapper">
+            <span class="brand-icon">🦁</span>
+            <span class="brand-name" id="zooName">My Zoo</span>
             <div class="tooltip-text">
-                <strong>🏞️ Zoo Name</strong>
+                <strong>️ Zoo Name</strong>
                 The name of your zoo. Click the Visitors tab to see your rating breakdown and track your progress!
             </div>
         </div>
         
-        <div class="tooltip-wrapper">
-            <div class="stat">💰 $<span id="money">10,000</span></div>
-            <div class="tooltip-text">
-                <strong>💰 Money</strong>
-                Your zoo's current funds. Used to buy animals, hire staff, build exhibits, and pay daily salaries and upkeep.
+        <div class="header-stats">
+            <div class="stat-card money tooltip-wrapper">
+                <span class="stat-icon"></span>
+                <div class="stat-details">
+                    <span class="stat-label">Funds</span>
+                    <span class="stat-value" id="money">$10,000</span>
+                </div>
+                <div class="tooltip-text">
+                    <strong>💰 Money</strong>
+                    Your zoo's current funds. Used to buy animals, hire staff, build exhibits, and pay daily salaries and upkeep.
+                </div>
+            </div>
+            
+            <div class="stat-card date tooltip-wrapper">
+                <span class="stat-icon">📅</span>
+                <div class="stat-details">
+                    <span class="stat-label" id="season">Winter</span>
+                    <span class="stat-value" id="day">Jan 1, Y1</span>
+                </div>
+                <div class="tooltip-text">
+                    <strong>📅 Day Counter</strong>
+                    Current date of your zoo. Click "End Day" to advance time — animals eat, staff get paid, and visitors arrive!
+                </div>
+            </div>
+            
+            <div class="stat-card rating tooltip-wrapper">
+                <span class="stat-icon">⭐</span>
+                <div class="stat-details">
+                    <span class="stat-label">Rating</span>
+                    <span class="stat-value" id="rating">0</span>
+                </div>
+                <div class="tooltip-text">
+                    <strong>⭐ Zoo Rating</strong>
+                    Your zoo's reputation score (0-100). Based on animal care, variety, visitor experience, and facility quality. Reach higher tiers for cash bonuses!
+                </div>
+            </div>
+            
+            <div class="stat-card satisfaction tooltip-wrapper">
+                <span class="stat-icon">😊</span>
+                <div class="stat-details">
+                    <span class="stat-label">Happy</span>
+                    <span class="stat-value" id="satisfaction">0%</span>
+                </div>
+                <div class="tooltip-text">
+                    <strong>😊 Visitor Satisfaction</strong>
+                    How happy your visitors are. Build amenities (restrooms, food stands, gift shops) to keep them smiling and spending!
+                </div>
             </div>
         </div>
-        
-        <div class="tooltip-wrapper">
-            <div class="stat">📅 Day <span id="day">1</span></div>
-            <div class="tooltip-text">
-                <strong>📅 Day Counter</strong>
-                Current day of your zoo. Click "End Day" to advance time — animals eat, staff get paid, and visitors arrive!
-            </div>
-        </div>
-        
-        <div class="tooltip-wrapper">
-            <div class="stat">⭐ <span id="rating">50</span></div>
-            <div class="tooltip-text">
-                <strong>⭐ Zoo Rating</strong>
-                Your zoo's reputation score (0-100). Based on animal care, variety, visitor experience, and facility quality. Reach higher tiers for cash bonuses!
-            </div>
-        </div>
-        
-        <div class="tooltip-wrapper">
-            <div class="stat">😊 <span id="satisfaction">80</span>%</div>
-            <div class="tooltip-text">
-                <strong>😊 Visitor Satisfaction</strong>
-                How happy your visitors are. Build amenities (restrooms, food stands, gift shops) to keep them smiling and spending!
-            </div>
-        </div>
-    </div>
+    </header>
 
     <!-- Navigation -->
     <div class="nav">
         <button class="nav-btn active" data-section="shop">🛒 Shop</button>
         <button class="nav-btn" data-section="exhibits">🏞️ Exhibits</button>
         <button class="nav-btn" data-section="staff">👷 Staff</button>
-        <button class="nav-btn" data-section="supplies">🍽️ Supplies</button>
-        <button class="nav-btn" data-section="amenities">🏪 Amenities</button>
-        <button class="nav-btn" data-section="visitors"> Visitors</button>
+        <button class="nav-btn" data-section="supplies">️ Supplies</button>
+        <button class="nav-btn" data-section="amenities"> Amenities</button>
+        <button class="nav-btn" data-section="visitors">👥 Visitors</button>
         <button class="nav-btn" data-section="reports">📊 Reports</button>
         <button class="nav-btn" data-section="research">🔬 Research</button>
         <button class="nav-btn" data-section="saves">💾 Saves</button>
