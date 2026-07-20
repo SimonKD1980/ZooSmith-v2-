@@ -29,6 +29,7 @@ import { renderReports } from './ui/ReportsUI.js';
 import { renderResearch } from './ui/ResearchUI.js';
 import { startResearch } from './engine/systems/ResearchSystem.js';
 import { showNotification } from './ui/NotificationUI.js';
+import { getSeasonEmoji } from './engine/GameState.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -87,7 +88,13 @@ function updateUI() {
     }
     
     if (moneyEl) moneyEl.textContent = state.money.toLocaleString();
-    if (dayEl) dayEl.textContent = state.day;
+    
+    // 🔥 NEW: Display Date and Season Emoji
+    if (dayEl) {
+        const seasonEmoji = getSeasonEmoji();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        dayEl.textContent = `${seasonEmoji} ${monthNames[state.month - 1]} ${state.day}, Year ${state.year}`;
+    }
     
     const tier = getTier(state.zooRating || 0);
     if (ratingEl) ratingEl.textContent = `${tier.emoji} ${state.zooRating}`;
@@ -524,6 +531,17 @@ eventBus.on('DAY_ADVANCED', () => {
     const activeTab = document.querySelector('.nav-btn.active');
     if (activeTab) activeTab.click();
     logMessage(`--- Day ${state.day} Complete (Auto-Saved) ---`);
+});
+
+eventBus.on('MONTH_ADVANCED', (data) => {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const seasonNames = { winter: '❄️ Winter', spring: '🌸 Spring', summer: '☀️ Summer', fall: '🍂 Fall' };
+    
+    logMessage(`📅 It is now ${monthNames[data.month - 1]}! Welcome to ${seasonNames[data.season]}.`);
+});
+
+eventBus.on('YEAR_ADVANCED', (data) => {
+    logMessage(`🎉 Happy New Year! Welcome to Year ${data.year}!`);
 });
 
 eventBus.on('BABY_NEEDS_NAME', (babyInfo) => {
