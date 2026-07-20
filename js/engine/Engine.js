@@ -8,6 +8,7 @@ import { processVisitors } from './systems/VisitorSystem.js';
 import { processStaff } from './systems/StaffSystem.js';
 import { processRating } from './systems/RatingSystem.js';
 import { processResearch } from './systems/ResearchSystem.js';
+import { getSeason } from './GameState.js';
 
 export function advanceDay() {
     console.log(`\n========== ADVANCING TO DAY ${state.day} ==========`);
@@ -123,6 +124,29 @@ export function advanceDay() {
 
     state.day++;
     state.daysSinceNewAnimal++;
+
+    // 🔥 NEW: Handle Month and Year rollovers
+    if (state.day > state.daysInMonth) {
+        state.day = 1;
+        state.month++;
+
+        // New Year!
+        if (state.month > 12) {
+            state.month = 1;
+            state.year++;
+            eventBus.emit('YEAR_ADVANCED', { year: state.year });
+        }
+        
+        // New Month / Season Change!
+        eventBus.emit('MONTH_ADVANCED', { 
+            month: state.month, 
+            season: getSeason() 
+        });
+    }
+
+    eventBus.emit('DAY_ADVANCED');
+    eventBus.emit('DAILY_REPORT_GENERATED', dailyReport);
+}
 
     console.log('\n✅ FINAL DAILY REPORT:', JSON.stringify(dailyReport.expenses));
     console.log('==========================================\n');
