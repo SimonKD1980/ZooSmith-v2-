@@ -17,6 +17,18 @@ export const state = {
     ratingBreakdown: null,
     tiersReached: [], 
 
+    // Marketing
+    marketing: {
+    weeklyBudget: 0,
+    totalSpent: 0,
+    onlineReach: 0,
+    socialMediaFollowers: 0,
+    websiteVisitors: 0,
+    brandAwareness: 0,
+    activeCampaigns: [],
+    campaignHistory: []
+},
+
     // Research Objects
     researchCompleted: [],
     researchInProgress: null,
