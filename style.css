@@ -845,3 +845,225 @@ input:focus, select:focus, textarea:focus {
 .flex-wrap { flex-wrap: wrap; }
 .gap-2 { gap: 8px; }
 .text-success { color: var(--success); }
+
+/* ===== RESPONSIVE GAME HEADER ===== */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 2px solid #334155;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Brand Section */
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.brand-icon {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.brand-name {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #e5e7eb;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* Stats Container */
+.header-stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+/* Individual Stat Card */
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.stat-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.stat-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.stat-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 80px;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+.stat-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #e5e7eb;
+    white-space: nowrap;
+}
+
+/* Stat Colors */
+.stat-card.money .stat-value { color: #22c55e; }
+.stat-card.rating .stat-value { color: #fbbf24; }
+.stat-card.satisfaction .stat-value { color: #3b82f6; }
+.stat-card.date .stat-label { color: #a855f7; }
+
+/* ==================== */
+/* TABLET (768px - 1024px) */
+/* ==================== */
+@media (max-width: 1024px) {
+    .game-header {
+        padding: 14px 20px;
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .header-stats {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .stat-card {
+        padding: 10px 14px;
+        min-width: 130px;
+    }
+}
+
+/* ==================== */
+/* MOBILE (640px - 767px) */
+/* ==================== */
+@media (max-width: 767px) {
+    .game-header {
+        padding: 12px 16px;
+    }
+    
+    .brand-icon {
+        font-size: 2rem;
+    }
+    
+    .brand-name {
+        font-size: 1.4rem;
+    }
+    
+    .header-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2x2 grid */
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .stat-card {
+        padding: 10px 12px;
+        min-width: auto;
+        justify-content: center;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem;
+    }
+    
+    .stat-details {
+        min-width: auto;
+    }
+    
+    .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    .stat-value {
+        font-size: 0.95rem;
+    }
+}
+
+/* ==================== */
+/* SMALL MOBILE (< 640px) */
+/* ==================== */
+@media (max-width: 640px) {
+    .game-header {
+        padding: 10px 12px;
+    }
+    
+    .brand-icon {
+        font-size: 1.8rem;
+    }
+    
+    .brand-name {
+        font-size: 1.2rem;
+    }
+    
+    .header-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    
+    .stat-card {
+        padding: 8px 10px;
+    }
+    
+    .stat-icon {
+        font-size: 1.3rem;
+    }
+    
+    .stat-label {
+        font-size: 0.6rem;
+    }
+    
+    .stat-value {
+        font-size: 0.85rem;
+    }
+}
+
+/* ==================== */
+/* TINY PHONES (< 380px) */
+/* ==================== */
+@media (max-width: 380px) {
+    .header-stats {
+        grid-template-columns: 1fr; /* Stack vertically */
+    }
+    
+    .stat-card {
+        padding: 10px 12px;
+    }
+}
