@@ -634,3 +634,214 @@ input:focus, select:focus, textarea:focus {
 .notification.success { border-left-color: var(--success); }
 .notification.error { border-left-color: var(--danger); }
 .notification.warning { border-left-color: var(--warning); }
+
+/* ===== SHOP SPECIFIC STYLES ===== */
+
+/* Search Input */
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Category Tabs */
+.category-tab {
+    padding: 8px 16px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+.category-tab:hover {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+
+.category-tab.active {
+    background: var(--primary);
+    color: #000;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-glow);
+}
+
+/* Premium Animal Card */
+.premium-card {
+    position: relative;
+    overflow: hidden;
+    padding: 0; /* Remove default card padding for full-bleed image */
+    display: flex;
+    flex-direction: column;
+}
+
+.premium-card.locked {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.animal-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: var(--bg-dark);
+    border-bottom: 2px solid var(--border);
+}
+
+.animal-image.grayscale {
+    filter: grayscale(100%);
+}
+
+.card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.card-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.badge-secondary {
+    background: rgba(100, 116, 139, 0.2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+/* Requirements Box */
+.requirements-box {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin: 12px 0;
+}
+
+.requirements-title {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.requirements-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.req-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.req-icon {
+    font-size: 1.1rem;
+}
+
+.card-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 12px 0;
+    flex: 1; /* Pushes price/button to bottom */
+}
+
+/* Price Tag */
+.price-tag {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--primary);
+    text-align: center;
+    background: rgba(34, 197, 94, 0.1);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    margin-bottom: 12px;
+}
+
+.price-tag.locked {
+    color: var(--text-muted);
+    background: rgba(100, 116, 139, 0.1);
+    border-color: rgba(100, 116, 139, 0.2);
+}
+
+/* Modal Form Styling */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-glow);
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 2px solid var(--border);
+}
+
+/* Utility Overrides */
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-2 { gap: 8px; }
+.text-success { color: var(--success); }
