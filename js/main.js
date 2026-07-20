@@ -49,6 +49,25 @@ console.log('🚀 main.js loaded!');
 const logMessages = [];
 const MAX_LOG_MESSAGES = 500;
 
+// 🔥 NEW: Zoo Rename Click Listener
+if (zooNameEl) {
+    zooNameEl.addEventListener('click', () => {
+        const newName = prompt('️ Enter a new name for your zoo:', state.zooName);
+        
+        if (newName && newName.trim() !== '') {
+            state.zooName = newName.trim();
+            updateUI(); // Instantly updates the header
+            logMessage(`🏷️ Zoo renamed to "${state.zooName}"!`);
+            
+            // Optional: Auto-save so the name persists
+            if (typeof saveGame === 'function') {
+                saveGame('autosave'); 
+            }
+        }
+    });
+}
+
+
 // =====================================================================
 // TAB NAVIGATION
 // =====================================================================
