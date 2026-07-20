@@ -2,8 +2,12 @@
 import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
+import { getMarketingMultiplier } from './systems/MarketingSystem.js';
 
 export function processVisitors() {
+
+    const marketingMultiplier = getMarketingMultiplier();
+const finalVisitors = Math.round(baseVisitors * marketingMultiplier * otherMultipliers);
     // Calculate base visitor attraction from animals
     let baseAttraction = 0;
     let animalCount = 0;
