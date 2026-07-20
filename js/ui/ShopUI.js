@@ -125,11 +125,12 @@ function renderShopGrid() {
         card.innerHTML = `
             ${isLocked ? `<div style="position:absolute; top:12px; right:12px; background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.8rem; z-index:10;">🔒 LOCKED</div>` : ''}
             
-            <!-- 🔥 NEW: Image with local folder check and fallback -->
-            <img src="${imagePath}" 
-                alt="${animal.name}" 
-                style="width:100%; height:180px; object-fit:cover; background:#0f172a; ${isLocked ? 'filter:grayscale(100%);' : ''}"
-                onerror="this.onerror=null; this.src='${fallbackImage}';" />
+<div style="width:100%; height:200px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); display:flex; align-items:center; justify-content:center; overflow:hidden; border-bottom: 1px solid #334155;">
+    <img src="${imagePath}" 
+        alt="${animal.name}" 
+        style="width:100%; height:100%; object-fit:contain; ${isLocked ? 'filter:grayscale(100%);' : ''}"
+        onerror="this.onerror=null; this.src='${fallbackImage}';" />
+</div>
             
             <div style="padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
