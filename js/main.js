@@ -28,6 +28,7 @@ import {
 import { renderReports } from './ui/ReportsUI.js';
 import { renderResearch } from './ui/ResearchUI.js';
 import { startResearch } from './engine/systems/ResearchSystem.js';
+import { renderMarketing } from './ui/MarketingUI.js';
 
 // =====================================================================
 // UI REFERENCES
@@ -93,6 +94,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         else if (sectionId === 'reports') renderReports();
         else if (sectionId === 'research') renderResearch();
         else if (sectionId === 'log') renderLogTab();
+        else if (sectionId === 'marketing') renderMarketing();
     });
 });
 
@@ -498,6 +500,18 @@ eventBus.on('RESEARCH_PROGRESS', () => {
 
 eventBus.on('GAME_LOADED', (data) => {
     logMessage(`📂 Loaded save: ${data.slot}`);
+});
+
+eventBus.on('MARKETING_BUDGET_CHANGED', (data) => {
+    logMessage(`📊 Marketing budget set to $${data.budget}/week`);
+});
+
+eventBus.on('MARKETING_CAMPAIGN_LAUNCHED', (data) => {
+    logMessage(`🚀 Launched campaign: ${data.campaign} ($${data.cost}, ${data.duration} days)`);
+});
+
+eventBus.on('MARKETING_EXPENSE', (data) => {
+    logMessage(`💸 Weekly marketing expense: $${data.amount} (Week ${data.week})`);
 });
 
 // =====================================================================
