@@ -14,15 +14,12 @@ export function renderShop() {
         return;
     }
 
-    console.log('🔍 DEBUG: data.animals =', data.animals);
-    console.log('🔍 DEBUG: data.animals length =', data.animals?.length);
-
     if (!data.animals || data.animals.length === 0) {
         shop.innerHTML = `
-            <div style="text-align:center; padding:40px; color:#fca5a5;">
+            <div class="card" style="text-align:center; padding:40px; color: var(--danger);">
                 <h3>❌ No Animal Data Found</h3>
-                <p style="color:#9ca3af;">Check your browser console (F12) for details.</p>
-                <p style="color:#9ca3af; font-size:0.9rem;">Make sure data/animals.json exists and has data.</p>
+                <p>Check your browser console (F12) for details.</p>
+                <p style="font-size:0.9rem;">Make sure data/animals.json exists and has data.</p>
             </div>
         `;
         return;
@@ -30,30 +27,26 @@ export function renderShop() {
 
     const categories = [...new Set(data.animals.map(a => a.category || 'Other'))].sort();
     
-    console.log('🔍 DEBUG: Categories found =', categories);
-    
     shop.innerHTML = `
-        <div style="margin-bottom: 20px;">
-            <div style="margin-bottom: 15px;">
-                <input type="text" id="animalSearch" placeholder="🔍 Search animals..." value="${currentSearch}" 
-                    style="width: 100%; padding: 12px; font-size: 16px; background: #1e293b; color: #e5e7eb; border: 1px solid #334155; border-radius: 10px;"/>
+        <div class="card" style="margin-bottom: 24px;">
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="animalSearch" placeholder="🔍 Search animals by name, species, or habitat..." value="${currentSearch}" 
+                    class="search-input" />
             </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-                <button class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="window.filterByCategory('all')" 
-                    style="padding: 8px 16px; background: ${currentCategory === 'all' ? '#22c55e' : '#1e293b'}; color: ${currentCategory === 'all' ? '#000' : '#e5e7eb'}; border: 1px solid #334155; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <div class="flex flex-wrap gap-2" style="margin-bottom: 10px;">
+                <button class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="window.filterByCategory('all')">
                     🌍 All (${data.animals.length})
                 </button>
                 ${categories.map(cat => {
                     const count = data.animals.filter(a => a.category === cat).length;
                     const isActive = currentCategory === cat;
-                    return `<button class="category-tab ${isActive ? 'active' : ''}" onclick="window.filterByCategory('${cat}')" 
-                        style="padding: 8px 16px; background: ${isActive ? '#22c55e' : '#1e293b'}; color: ${isActive ? '#000' : '#e5e7eb'}; border: 1px solid #334155; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    return `<button class="category-tab ${isActive ? 'active' : ''}" onclick="window.filterByCategory('${cat}')">
                         ${cat} (${count})
                     </button>`;
                 }).join('')}
             </div>
         </div>
-        <div class="grid-layout" id="shopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;"></div>
+        <div class="grid-layout" id="shopGrid"></div>
     `;
 
     const searchInput = document.getElementById('animalSearch');
@@ -67,6 +60,7 @@ export function renderShop() {
 
     renderShopGrid();
 }
+
 function renderShopGrid() {
     const grid = document.getElementById('shopGrid');
     if (!grid) return;
@@ -84,7 +78,7 @@ function renderShopGrid() {
     }
 
     if (filtered.length === 0) {
-        grid.innerHTML = '<div style="text-align:center; padding:40px; color:#9ca3af; grid-column: 1/-1;"><h3>No animals found</h3></div>';
+        grid.innerHTML = '<div class="card" style="text-align:center; padding:40px; grid-column: 1/-1;"><h3>No animals found</h3></div>';
         return;
     }
 
@@ -92,87 +86,69 @@ function renderShopGrid() {
     filtered.forEach((animal) => {
         const isLocked = animal.id && !isUnlocked(animal.id);
         
-        const slotCost = getAnimalSlotCost(animal);
-        const slotColor = slotCost >= 3 ? '#ef4444' : slotCost >= 2 ? '#f59e0b' : '#3b82f6';
         const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
         const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' :
             animal.conservationStatus === 'Vulnerable' ? '🟡' :
             animal.conservationStatus === 'Critically Endangered' ? '⚫' : '';
 
-        const actualFoodCost = getActualFoodCost(animal);
-        const imageUrl = animal.image || 'https://placehold.co/400x200/1e293b/e5e7eb?text=' + encodeURIComponent(animal.name);
-
-        // 🔥 NEW: Get exhibit requirements
         const requiredSize = animal.requiredExhibitSize || 'small';
         const requiredType = animal.requiredExhibitType || 'terrestrial';
         const sizeEmoji = requiredSize === 'large' ? '🏞️' : requiredSize === 'medium' ? '🏕️' : '🏠';
         const typeEmoji = requiredType === 'aquatic' ? '🌊' : '🌍';
         
-        // 🔥 NEW: Get attraction value and food amount
         const attractionValue = animal.attractionValue || 10;
         const foodAmount = animal.foodAmount || 1;
         const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
         const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
+        const cost = animal.cost ?? animal.price ?? 0;
 
         const card = document.createElement("div");
-        card.className = "premium-card";
-        card.style.cssText = `background: #1e293b; border: 1px solid ${isLocked ? '#64748b' : '#334155'}; border-radius: 12px; overflow: hidden; position: relative; ${isLocked ? 'opacity: 0.7;' : ''}`;
+        card.className = `card premium-card ${isLocked ? 'locked' : ''}`;
         
         card.innerHTML = `
             ${isLocked ? `
-                <div style="position: absolute; top: 10px; right: 10px; background: #64748b; color: #fff; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 0.85rem; z-index: 10;">
+                <div class="badge badge-danger" style="position: absolute; top: 12px; right: 12px; z-index: 10;">
                     🔒 LOCKED
                 </div>
             ` : ''}
-            <img src="${imageUrl}" alt="${animal.name}" style="width: 100%; height: 200px; object-fit: cover; background: #0f172a; ${isLocked ? 'filter: grayscale(100%);' : ''}" />
-            <div style="padding: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+            <img src="${animal.image || 'https://placehold.co/400x200/1e293b/e5e7eb?text=' + encodeURIComponent(animal.name)}" 
+                alt="${animal.name}" class="animal-image ${isLocked ? 'grayscale' : ''}" />
+            
+            <div class="card-body">
+                <div class="card-header">
                     <div>
-                        <h3 style="margin:0; font-size:1.3rem; font-weight:800; color: #e5e7eb;">${animal.name}</h3>
-                        <p style="margin:0 0 4px; font-size:0.85rem; color:#9ca3af; font-style:italic;">${animal.scienceName || ''}</p>
+                        <h3 class="card-title">${animal.name}</h3>
+                        <p class="card-subtitle">${animal.scienceName || ''}</p>
                     </div>
-                    ${animal.category ? `<span style="background: #a855f7; color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${animal.category}</span>` : ''}
+                    ${animal.category ? `<span class="badge badge-info">${animal.category}</span>` : ''}
                 </div>
                 
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0;">
-                    <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">${dietEmoji} ${animal.diet}</span>
-                    <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">🌍 ${animal.habitat}</span>
-                    <span style="background: #0f172a; color: #e5e7eb; padding: 4px 8px; border-radius: 8px; font-size: 0.8rem;">${statusEmoji} ${animal.conservationStatus}</span>
+                <div class="flex flex-wrap gap-2" style="margin: 12px 0;">
+                    <span class="badge badge-warning">${dietEmoji} ${animal.diet}</span>
+                    <span class="badge badge-secondary">🌍 ${animal.habitat}</span>
+                    <span class="badge badge-secondary">${statusEmoji} ${animal.conservationStatus}</span>
                 </div>
                 
                 ${!isLocked ? `
-                    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin: 10px 0;">
-                        <div style="color: #9ca3af; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">Requirements</div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem;">
-                            <div style="display: flex; align-items: center; gap: 4px;">
-                                <span style="font-size: 1rem;">${sizeEmoji}</span>
-                                <span style="color: #e5e7eb;">${requiredSize.charAt(0).toUpperCase() + requiredSize.slice(1)} Exhibit</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 4px;">
-                                <span style="font-size: 1rem;">${typeEmoji}</span>
-                                <span style="color: #e5e7eb;">${requiredType.charAt(0).toUpperCase() + requiredType.slice(1)}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 4px;">
-                                <span style="font-size: 1rem;">${foodTypeEmoji}</span>
-                                <span style="color: #e5e7eb;">${foodAmount} ${foodType}/day</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 4px;">
-                                <span style="font-size: 1rem;">⭐</span>
-                                <span style="color: #fbbf24; font-weight: 700;">+${attractionValue} visitors</span>
-                            </div>
+                    <div class="requirements-box">
+                        <div class="requirements-title">Requirements</div>
+                        <div class="requirements-grid">
+                            <div class="req-item"><span class="req-icon">${sizeEmoji}</span> ${requiredSize.charAt(0).toUpperCase() + requiredSize.slice(1)} Exhibit</div>
+                            <div class="req-item"><span class="req-icon">${typeEmoji}</span> ${requiredType.charAt(0).toUpperCase() + requiredType.slice(1)}</div>
+                            <div class="req-item"><span class="req-icon">${foodTypeEmoji}</span> ${foodAmount} ${foodType}/day</div>
+                            <div class="req-item"><span class="req-icon">⭐</span> <span class="text-success">+${attractionValue} visitors</span></div>
                         </div>
                     </div>
                 ` : ''}
                 
-                <p style="color: #9ca3af; font-size: 0.9rem; margin: 10px 0;">${isLocked ? '🔒 Research required to unlock this animal.' : (animal.info || 'No description available.')}</p>
+                <p class="card-description">${isLocked ? '🔒 Research required to unlock this animal.' : (animal.info || 'No description available.')}</p>
                 
-                <div style="font-size: 1.4rem; font-weight: 800; color: ${isLocked ? '#64748b' : '#22c55e'}; margin: 10px 0; text-align: center; background: ${isLocked ? 'rgba(100, 116, 139, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; padding: 8px; border-radius: 8px; border: 1px solid ${isLocked ? 'rgba(100, 116, 139, 0.2)' : 'rgba(34, 197, 94, 0.2)'};">
-                    💰 $${(animal.cost ?? animal.price ?? 0).toLocaleString()}
+                <div class="price-tag ${isLocked ? 'locked' : ''}">
+                    💰 $${cost.toLocaleString()}
                 </div>
-                <button class="buy-animal-btn" 
-                    style="width: 100%; padding: 10px; background: ${isLocked ? '#475569' : '#22c55e'}; color: ${isLocked ? '#9ca3af' : '#000'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; font-size: 1rem;"
-                    ${isLocked ? 'disabled' : ''}>
-                    ${isLocked ? '🔒 Locked' : 'Add to Zoo'}
+                
+                <button class="btn-primary buy-animal-btn" style="width: 100%;" ${isLocked ? 'disabled' : ''}>
+                    ${isLocked ? '🔒 Locked' : '🛒 Add to Zoo'}
                 </button>
             </div>
         `;
@@ -183,30 +159,6 @@ function renderShopGrid() {
 
         grid.appendChild(card);
     });
-}
-
-function getAnimalSlotCost(animal) {
-    const size = animal.requiredExhibitSize || "small";
-    if (size === "large") return 3;
-    if (size === "medium") return 2;
-    return 1;
-}
-
-function getActualFoodCost(animal) {
-    const foodTypes = {
-        hay: { costPerUnit: 2, diet: "Herbivore" },
-        meat: { costPerUnit: 5, diet: "Carnivore" },
-        produce: { costPerUnit: 3, diet: "Omnivore" }
-    };
-    
-    const diet = animal.diet;
-    let foodType = 'hay';
-    if (diet === "Carnivore") foodType = "meat";
-    else if (diet === "Omnivore") foodType = "produce";
-    
-    const foodData = foodTypes[foodType];
-    const baseAmount = animal.foodAmount || 1;
-    return foodData.costPerUnit * baseAmount;
 }
 
 function openBuyModal(animal) {
@@ -227,21 +179,9 @@ function openBuyModal(animal) {
 
     for (const id of ids) {
         const exhibit = state.exhibits[id];
-        
-        if (exhibit.buildDaysRemaining > 0) {
-            underConstruction++;
-            continue;
-        }
-        
-        if (exhibit.type !== requiredType) {
-            wrongType++;
-            continue;
-        }
-        
-        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) {
-            wrongSize++;
-            continue;
-        }
+        if (exhibit.buildDaysRemaining > 0) { underConstruction++; continue; }
+        if (exhibit.type !== requiredType) { wrongType++; continue; }
+        if (!exhibitSizeOk(exhibit.size, animal.requiredExhibitSize || "small")) { wrongSize++; continue; }
 
         const opt = document.createElement("option");
         opt.value = id;
@@ -261,46 +201,59 @@ function openBuyModal(animal) {
         return;
     }
 
-    // 🔥 NEW: Generate a random default name
     const defaultName = generateRandomAnimalName(animal.name);
+    const cost = animal.cost ?? animal.price ?? 0;
 
-    // Update modal content to include Name input
     const modalContent = modal.querySelector('.modal-content');
     modalContent.innerHTML = `
-        <h3>🦁 Add ${animal.name} to Zoo</h3>
-        <p style="color: #9ca3af; margin-bottom: 15px;">Customize your new animal:</p>
+        <div class="modal-header">
+            <h3>🦁 Add ${animal.name} to Zoo</h3>
+            <button class="modal-close" onclick="window.closeBuyModal()">✕</button>
+        </div>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">Customize your new animal:</p>
         
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">🏷️ Animal Name:</label>
-        <input type="text" id="animalNameInput" value="${defaultName}" 
-            style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;"
-            placeholder="Enter a name..." maxlength="20">
-        <button onclick="window.randomizeAnimalName('${animal.name}')" style="margin-bottom: 15px; padding: 6px 12px; background: #334155; color: #e5e7eb; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">🎲 Randomize Name</button>
+        <div class="form-group">
+            <label>🏷️ Animal Name</label>
+            <div class="flex gap-2">
+                <input type="text" id="animalNameInput" value="${defaultName}" class="form-input" placeholder="Enter a name..." maxlength="20" style="flex: 1;">
+                <button class="btn-secondary btn-small" onclick="window.randomizeAnimalName('${animal.name}')" style="white-space: nowrap;">🎲 Randomize</button>
+            </div>
+        </div>
         
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">🏞️ Exhibit:</label>
-        <select id="exhibitSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
-        </select>
+        <div class="form-group">
+            <label>🏞️ Exhibit</label>
+            <select id="exhibitSelect" class="form-input"></select>
+        </div>
         
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">⚧️ Gender:</label>
-        <select id="genderSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
-            <option value="male">♂️ Male</option>
-            <option value="female">♀️ Female</option>
-        </select>
-
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #e5e7eb;">🎂 Life Stage:</label>
-        <select id="ageSelect" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; font-size: 1rem;">
-            <option value="baby">🍼 Baby (0-30 days) - Lower attraction, grows over time</option>
-            <option value="juvenile">🐾 Juvenile (31-90 days) - Moderate attraction</option>
-            <option value="adult" selected>🦁 Adult (91-365 days) - Full attraction value</option>
-            <option value="senior">👴 Senior (365+ days) - Full attraction, higher health risks</option>
-        </select>
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label>⚧️ Gender</label>
+                <select id="genderSelect" class="form-input">
+                    <option value="male">♂️ Male</option>
+                    <option value="female">♀️ Female</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>🎂 Life Stage</label>
+                <select id="ageSelect" class="form-input">
+                    <option value="baby">🍼 Baby</option>
+                    <option value="juvenile">🐾 Juvenile</option>
+                    <option value="adult" selected>🦁 Adult</option>
+                    <option value="senior">👴 Senior</option>
+                </select>
+            </div>
+        </div>
         
-        <div class="modal-buttons" style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="confirm-btn" style="flex: 1; padding: 12px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="confirmBuyAnimal()">✅ Confirm Purchase</button>
-            <button class="cancel-btn" style="flex: 1; padding: 12px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;" onclick="closeBuyModal()">❌ Cancel</button>
+        <div class="modal-footer">
+            <div class="price-tag" style="margin-bottom: 0;">Total: 💰 $${cost.toLocaleString()}</div>
+            <div class="flex gap-2" style="flex: 1; justify-content: flex-end;">
+                <button class="btn-danger" onclick="window.closeBuyModal()">Cancel</button>
+                <button class="btn-primary" onclick="window.confirmBuyAnimal()">✅ Confirm Purchase</button>
+            </div>
         </div>
     `;
 
-    // Re-populate the exhibit select since we overwrote the innerHTML
+    // Re-populate the exhibit select
     const newSelect = document.getElementById("exhibitSelect");
     for (const id of ids) {
         const exhibit = state.exhibits[id];
@@ -334,7 +287,7 @@ function confirmBuyAnimal() {
     const exhibitId = document.getElementById("exhibitSelect").value;
     const gender = document.getElementById("genderSelect").value;
     const ageStage = document.getElementById("ageSelect").value;
-    const customName = document.getElementById("animalNameInput").value.trim(); // 🔥 NEW
+    const customName = document.getElementById("animalNameInput").value.trim();
     const animal = state.pendingAnimal;
     
     if (!exhibitId || !animal) {
@@ -342,7 +295,6 @@ function confirmBuyAnimal() {
         return;
     }
 
-    // 🔥 NEW: Validate name
     if (!customName || customName.length === 0) {
         alert("Please enter a name for your animal!");
         return;
@@ -355,41 +307,36 @@ function confirmBuyAnimal() {
     }
 
     const cost = animal.cost ?? animal.price ?? 0;
-    
     if (state.money < cost) {
         alert(`Not enough money! Need $${cost}`);
         return;
     }
 
-    // Determine ageDays based on selection
     let ageDays = 365;
     if (ageStage === 'baby') ageDays = Math.floor(Math.random() * 30);
     else if (ageStage === 'juvenile') ageDays = 30 + Math.floor(Math.random() * 60);
     else if (ageStage === 'adult') ageDays = 90 + Math.floor(Math.random() * 275);
     else if (ageStage === 'senior') ageDays = 365 + Math.floor(Math.random() * 400);
 
-    // Deduct money
     state.money -= cost;
 
-    // Track animal purchase in daily report
     if (!state.dailyReport) state.dailyReport = {};
     if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
     
     state.dailyReport.animalPurchases.push({
-        name: customName, // 🔥 CHANGED: Use custom name
-        species: animal.name, // 🔥 NEW: Track species separately
+        name: customName,
+        species: animal.name,
         cost: cost,
         exhibit: exhibit.name,
         gender: gender,
         ageStage: ageStage
     });
 
-    // Create animal instance with chosen age and custom name
     const newAnimal = {
         uid: 'animal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-        id: animal.id, // 🔥 Species ID (for grouping)
-        speciesName: animal.name, // 🔥 NEW: Species name (for display/grouping)
-        name: customName, // 🔥 CHANGED: Custom individual name
+        id: animal.id,
+        speciesName: animal.name,
+        name: customName,
         gender: gender,
         ageDays: ageDays,
         health: 100,
@@ -404,8 +351,8 @@ function confirmBuyAnimal() {
     exhibit.animals.push(newAnimal);
 
     eventBus.emit('ANIMAL_PURCHASED', {
-        animal: customName, // 🔥 CHANGED: Use custom name
-        species: animal.name, // 🔥 NEW: Track species
+        animal: customName,
+        species: animal.name,
         cost: cost,
         exhibit: exhibit.name,
         gender: gender,
@@ -417,28 +364,15 @@ function confirmBuyAnimal() {
     eventBus.emit('DAY_ADVANCED');
 }
 
-function getNextAnimalName(speciesName) {
-    if (!state.animalCounters) state.animalCounters = {};
-    if (!state.animalCounters[speciesName]) state.animalCounters[speciesName] = 1;
-    const suggestedName = `${speciesName} ${state.animalCounters[speciesName]}`;
-    state.animalCounters[speciesName]++;
-    return suggestedName;
-}
-
-// =====================================================================
-// NAME GENERATION HELPERS
-// =====================================================================
 const MALE_NAMES = ['Leo', 'Max', 'Charlie', 'Rocky', 'Zeus', 'Thor', 'Simba', 'Rex', 'Oscar', 'Felix', 'Milo', 'Buddy', 'Duke', 'Titan', 'Apollo', 'Loki', 'Kong', 'Rango', 'Diego', 'Alex'];
 const FEMALE_NAMES = ['Luna', 'Bella', 'Daisy', 'Cleo', 'Nala', 'Zara', 'Willow', 'Mia', 'Ruby', 'Stella', 'Ginger', 'Lola', 'Pepper', 'Ivy', 'Athena', 'Freya', 'Kali', 'Suki', 'Maya', 'Aria'];
 const GENDER_NEUTRAL_NAMES = ['Shadow', 'Storm', 'Blaze', 'Spirit', 'Misty', 'Thunder', 'Sunny', 'Pepper', 'Scout', 'Raven', 'Phoenix', 'Echo', 'Sage', 'Jasper', 'Indigo'];
 
 function generateRandomAnimalName(speciesName) {
-    // 50% chance of gendered name, 50% chance of species-based name
     if (Math.random() < 0.5) {
         const allNames = [...MALE_NAMES, ...FEMALE_NAMES, ...GENDER_NEUTRAL_NAMES];
         return allNames[Math.floor(Math.random() * allNames.length)];
     } else {
-        // Use species-based name
         return speciesName + ' ' + (Math.floor(Math.random() * 99) + 1);
     }
 }
@@ -450,13 +384,10 @@ function randomizeAnimalName(speciesName) {
     }
 }
 
-// Expose to window
 window.randomizeAnimalName = randomizeAnimalName;
-// Expose functions to window for onclick handlers
 window.filterByCategory = (category) => {
     currentCategory = category;
     renderShop();
 };
-
 window.closeBuyModal = closeBuyModal;
 window.confirmBuyAnimal = confirmBuyAnimal;
