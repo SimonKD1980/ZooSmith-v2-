@@ -1,5 +1,5 @@
 // js/main.js
-import { state } from './engine/GameState.js';
+import { state, getSeason } from './engine/GameState.js';
 import { eventBus } from './engine/EventBus.js';
 import { advanceDay } from './engine/Engine.js';
 import { loadAllData, data } from './engine/data.js';
@@ -28,14 +28,13 @@ import {
 import { renderReports } from './ui/ReportsUI.js';
 import { renderResearch } from './ui/ResearchUI.js';
 import { startResearch } from './engine/systems/ResearchSystem.js';
-import { showNotification } from './ui/NotificationUI.js';
-import { getSeasonEmoji } from './engine/GameState.js';
 
 // =====================================================================
 // UI REFERENCES
 // =====================================================================
 const moneyEl = document.getElementById('money');
 const dayEl = document.getElementById('day');
+const seasonEl = document.getElementById('season'); // 🔥 NEW
 const ratingEl = document.getElementById('rating');
 const satisfactionEl = document.getElementById('satisfaction');
 const zooNameEl = document.getElementById('zooName');
@@ -87,21 +86,32 @@ function updateUI() {
         state.money = 0;
     }
     
-    if (moneyEl) moneyEl.textContent = state.money.toLocaleString();
+    if (moneyEl) moneyEl.textContent = `$${state.money.toLocaleString()}`;
     
-    // 🔥 NEW: Display Date and Season Emoji
+    // 🔥 NEW: Date and Season
     if (dayEl) {
-        const seasonEmoji = getSeasonEmoji();
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        dayEl.textContent = `${seasonEmoji} ${monthNames[state.month - 1]} ${state.day}, Year ${state.year}`;
+        dayEl.textContent = `${monthNames[state.month - 1]} ${state.day}, Y${state.year}`;
+    }
+    if (seasonEl) {
+        const seasonNames = {
+            winter: '❄️ Winter',
+            spring: '🌸 Spring',
+            summer: '☀️ Summer',
+            fall: '🍂 Fall'
+        };
+        seasonEl.textContent = seasonNames[getSeason()];
     }
     
     const tier = getTier(state.zooRating || 0);
     if (ratingEl) ratingEl.textContent = `${tier.emoji} ${state.zooRating}`;
-    if (satisfactionEl) satisfactionEl.textContent = state.visitorSatisfaction;
+    if (satisfactionEl) satisfactionEl.textContent = `${state.visitorSatisfaction}%`;
     if (zooNameEl) zooNameEl.textContent = state.zooName || 'My Zoo';
 }
 
+// =====================================================================
+// SAVES TAB
+// =====================================================================
 function renderSavesTab() {
     const el = document.getElementById('saves');
     if (!el) return;
@@ -136,7 +146,7 @@ function renderSavesTab() {
                 <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <div>
                         <div style="font-weight: 700; color: #e5e7eb; font-size: 1.1rem;">
-                            ${isAutosave ? '🔄 ' : '💾 '}${slot.slot}
+                            ${isAutosave ? '🔄 ' : ' '}${slot.slot}
                         </div>
                         <div style="font-size: 0.85rem; color: #9ca3af; margin-top: 4px;">
                             📅 Day ${slot.day} • 💰 $${slot.money.toLocaleString()} • ⭐ ${slot.rating}/100 • 🕒 ${dateStr}
@@ -175,26 +185,6 @@ function renderVisitorsTab() {
                     <input type="range" id="ticketPriceSlider" min="5" max="50" value="${currentPrice}" 
                         style="width: 100%; height: 8px; border-radius: 4px; background: #1e293b; outline: none; -webkit-appearance: none;"
                         oninput="window.updateTicketPrice(this.value)">
-                    <style>
-                        input[type=range]::-webkit-slider-thumb {
-                            -webkit-appearance: none;
-                            appearance: none;
-                            width: 24px;
-                            height: 24px;
-                            border-radius: 50%;
-                            background: #3b82f6;
-                            cursor: pointer;
-                            border: 3px solid #0f172a;
-                        }
-                        input[type=range]::-moz-range-thumb {
-                            width: 24px;
-                            height: 24px;
-                            border-radius: 50%;
-                            background: #3b82f6;
-                            cursor: pointer;
-                            border: 3px solid #0f172a;
-                        }
-                    </style>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="color: #9ca3af; font-size: 0.9rem;">$</span>
@@ -234,7 +224,7 @@ function renderVisitorsTab() {
     
     if (state.visitorComplaints && state.visitorComplaints.length > 0) {
         html += '<div style="margin-top: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 6px;">';
-        html += '<div style="font-size: 0.8rem; color: #fca5a5; margin-bottom: 6px; font-weight: 700;">⚠️ Complaints:</div>';
+        html += '<div style="font-size: 0.8rem; color: #fca5a5; margin-bottom: 6px; font-weight: 700;">️ Complaints:</div>';
         state.visitorComplaints.forEach(c => {
             html += `<div style="font-size: 0.85rem; color: #e5e7eb; margin-bottom: 4px;">${c.icon} ${c.text}</div>`;
         });
@@ -247,91 +237,28 @@ function renderVisitorsTab() {
 
 function getTicketPriceFeedback(price) {
     price = parseInt(price) || 20;
+    let impact = '', color = '', advice = '';
     
-    let impact = '';
-    let color = '';
-    let advice = '';
-    
-    if (price < 10) {
-        impact = ' Very High Visitor Count';
-        color = '#22c55e';
-        advice = 'Tickets are very cheap! You\'ll get lots of visitors, but they may perceive low quality. Consider raising prices to $15-25.';
-    } else if (price < 15) {
-        impact = ' High Visitor Count';
-        color = '#22c55e';
-        advice = 'Good value pricing! Visitors are happy with the price. Great for building reputation.';
-    } else if (price <= 25) {
-        impact = '✅ Balanced';
-        color = '#3b82f6';
-        advice = 'Optimal pricing! Good balance between profit and visitor satisfaction.';
-    } else if (price <= 35) {
-        impact = '📉 Moderate Visitor Count';
-        color = '#f59e0b';
-        advice = 'Premium pricing. Fewer visitors but higher profit per person. Make sure your amenities are excellent!';
-    } else {
-        impact = ' Low Visitor Count';
-        color = '#ef4444';
-        advice = 'Very expensive! Visitors are complaining about prices. Consider lowering to $20-30 or adding premium amenities.';
-    }
+    if (price < 10) { impact = ' Very High Visitor Count'; color = '#22c55e'; advice = 'Tickets are very cheap! Consider raising prices to $15-25.'; } 
+    else if (price < 15) { impact = ' High Visitor Count'; color = '#22c55e'; advice = 'Good value pricing! Great for building reputation.'; } 
+    else if (price <= 25) { impact = '✅ Balanced'; color = '#3b82f6'; advice = 'Optimal pricing! Good balance between profit and satisfaction.'; } 
+    else if (price <= 35) { impact = ' Moderate Visitor Count'; color = '#f59e0b'; advice = 'Premium pricing. Make sure your amenities are excellent!'; } 
+    else { impact = ' Low Visitor Count'; color = '#ef4444'; advice = 'Very expensive! Consider lowering to $20-30.'; }
     
     return `
         <div style="margin-bottom: 10px;">
             <div style="font-weight: 700; color: ${color}; margin-bottom: 4px;">${impact}</div>
             <div style="font-size: 0.9rem; color: #9ca3af;">${advice}</div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 0.85rem;">
-            <div style="background: #1e293b; padding: 8px; border-radius: 6px;">
-                <div style="color: #9ca3af;">Est. Visitors</div>
-                <div style="font-weight: 700; color: #e5e7eb;">${estimateVisitors(price)}</div>
-            </div>
-            <div style="background: #1e293b; padding: 8px; border-radius: 6px;">
-                <div style="color: #9ca3af;">Est. Satisfaction</div>
-                <div style="font-weight: 700; color: #e5e7eb;">${estimateSatisfaction(price)}%</div>
-            </div>
-            <div style="background: #1e293b; padding: 8px; border-radius: 6px;">
-                <div style="color: #9ca3af;">Est. Daily Revenue</div>
-                <div style="font-weight: 700; color: #22c55e;">$${estimateRevenue(price)}</div>
-            </div>
-        </div>
     `;
 }
 
 function getPriceFeedbackColor(price) {
     price = parseInt(price) || 20;
-    if (price < 10) return '#22c55e';
     if (price < 15) return '#22c55e';
     if (price <= 25) return '#3b82f6';
     if (price <= 35) return '#f59e0b';
     return '#ef4444';
-}
-
-function estimateVisitors(price) {
-    const baseAttraction = 100;
-    const optimalPrice = 20;
-    let priceMultiplier = 1;
-    if (price > optimalPrice) {
-        priceMultiplier = Math.max(0.3, 1 - ((price - optimalPrice) / 100));
-    } else {
-        priceMultiplier = 1 + ((optimalPrice - price) / 40);
-    }
-    return Math.round((50 + (baseAttraction * 2)) * priceMultiplier);
-}
-
-function estimateSatisfaction(price) {
-    let impact = 0;
-    if (price > 30) impact = -20;
-    else if (price > 25) impact = -10;
-    else if (price < 10) impact = -5;
-    else if (price >= 15 && price <= 25) impact = 5;
-    
-    const baseSatisfaction = 50;
-    const amenityBonus = 10;
-    return Math.max(0, Math.min(100, baseSatisfaction + impact + amenityBonus));
-}
-
-function estimateRevenue(price) {
-    const visitors = estimateVisitors(price);
-    return (visitors * price).toLocaleString();
 }
 
 window.updateTicketPrice = (value) => {
@@ -347,10 +274,6 @@ window.updateTicketPrice = (value) => {
     if (feedbackDiv) {
         feedbackDiv.innerHTML = getTicketPriceFeedback(state.ticketPrice);
         feedbackDiv.style.borderLeftColor = getPriceFeedbackColor(state.ticketPrice);
-    }
-    
-    if (document.querySelector('.nav-btn.active')?.dataset.section === 'visitors') {
-        renderVisitorsTab();
     }
 };
 
@@ -373,12 +296,6 @@ function renderRatingBreakdown() {
                     <h3 style="margin: 0;">${tier.emoji} Zoo Rating: ${state.zooRating}/100</h3>
                     <div style="color: ${tier.color}; font-weight: 700; font-size: 1.1rem;">${tier.name}</div>
                 </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.85rem; color: #9ca3af;">Next Tier Bonus</div>
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #22c55e;">
-                        ${getNextTierBonus()}
-                    </div>
-                </div>
             </div>
             
             <div style="height: 10px; background: #0f172a; border-radius: 5px; overflow: hidden; margin-bottom: 20px;">
@@ -396,11 +313,6 @@ function renderRatingBreakdown() {
                     `🦁 Species: ${d.zooQuality.uniqueSpecies} (+${d.zooQuality.varietyPoints})`,
                     `🍼 Babies Born: ${d.zooQuality.babiesBorn} (+${d.zooQuality.breedingPoints})`
                 ], '#3b82f6')}
-                
-                ${renderFactorCard('🎟️ Visitor Experience', d.visitorExperience.total, d.visitorExperience.max, [
-                    `😊 Satisfaction: ${d.visitorExperience.satisfaction}% (+${d.visitorExperience.satisfactionPoints})`,
-                    `🏪 Amenities: ${d.visitorExperience.presentAmenities}/${d.visitorExperience.totalEssential} (+${d.visitorExperience.amenityPoints})`
-                ], '#a855f7')}
             </div>
             
             <h4 style="color: #ef4444; margin: 0 0 10px 0;">❌ Negative Factors (-${breakdown.negative})</h4>
@@ -409,23 +321,15 @@ function renderRatingBreakdown() {
                     `☠️ Deaths: ${d.neglect.deaths} (-${d.neglect.deathPenalty})`,
                     `😢 Unhappy Animals: ${d.neglect.unhappyCount} (-${d.neglect.unhappyPenalty})`
                 ], '#ef4444')}
-                
-                ${renderFactorCard('🏚️ Poor Facilities', d.poorFacilities.total, null, [
-                    `🧹 Dirty Exhibits: ${d.poorFacilities.dirtyExhibits} (-${d.poorFacilities.dirtyExhibits * 3})`,
-                    `🗑️ Dirty Amenities: ${d.poorFacilities.dirtyAmenities} (-${d.poorFacilities.dirtyAmenities * 3})`,
-                    `❌ Missing Essentials: ${d.poorFacilities.missingEssentials} (-${d.poorFacilities.missingEssentials * 5})`
-                ], '#f59e0b')}
             </div>
         </div>
     `;
-    
     return html;
 }
 
 function renderFactorCard(title, value, max, details, color) {
     const maxText = max !== null ? `/${max}` : '';
     const isNegative = color === '#ef4444' || color === '#f59e0b';
-    
     return `
         <div style="background: #0f172a; border: 1px solid ${color}33; border-left: 4px solid ${color}; border-radius: 8px; padding: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
@@ -441,34 +345,18 @@ function renderFactorCard(title, value, max, details, color) {
     `;
 }
 
-function getNextTierBonus() {
-    const currentTier = getTier(state.zooRating || 0);
-    const nextTier = RATING_TIERS.find(t => t.min > currentTier.min);
-    if (!nextTier) return '🏆 MAX TIER!';
-    return `$${nextTier.bonus.toLocaleString()} at ${nextTier.min} pts`;
-}
-
 // =====================================================================
-// LOG HELPER
+// LOG HELPER & TAB
 // =====================================================================
 function logMessage(msg) {
     const timestamp = new Date().toLocaleTimeString();
-    const entry = {
-        text: msg,
-        time: timestamp,
-        fullText: `[${timestamp}] ${msg}`
-    };
+    const entry = { text: msg, time: timestamp };
     
     logMessages.unshift(entry);
-    
-    if (logMessages.length > MAX_LOG_MESSAGES) {
-        logMessages.pop();
-    }
+    if (logMessages.length > MAX_LOG_MESSAGES) logMessages.pop();
     
     const logContent = document.getElementById('logContent');
-    if (logContent) {
-        renderLogContent();
-    }
+    if (logContent) renderLogContent();
 }
 
 function renderLogContent() {
@@ -476,7 +364,7 @@ function renderLogContent() {
     if (!logContent) return;
     
     if (logMessages.length === 0) {
-        logContent.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No events yet. Start playing to see your zoo\'s history!</div>';
+        logContent.innerHTML = '<div style="color: #9ca3af; text-align: center; padding: 20px;">No events yet.</div>';
         return;
     }
     
@@ -488,9 +376,6 @@ function renderLogContent() {
     ).join('');
 }
 
-// =====================================================================
-// LOG TAB RENDERER
-// =====================================================================
 function renderLogTab() {
     const el = document.getElementById('log');
     if (!el) return;
@@ -498,25 +383,20 @@ function renderLogTab() {
     el.innerHTML = `
         <div class="status-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                <h3 style="margin: 0;">📜 Game Log</h3>
+                <h3 style="margin: 0;"> Game Log</h3>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <span style="color: #9ca3af; font-size: 0.85rem;">${logMessages.length} events</span>
-                    <button onclick="window.clearLog()" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
-                        🗑️ Clear Log
-                    </button>
+                    <button onclick="window.clearLog()" style="padding: 8px 16px; background: #ef4444; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">🗑️ Clear Log</button>
                 </div>
             </div>
-            <p style="color: #9ca3af; margin-bottom: 15px;">A complete history of all events in your zoo.</p>
-            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 600px; overflow-y: auto; font-family: monospace;">
-            </div>
+            <div id="logContent" style="background: #000; padding: 15px; border-radius: 8px; height: 600px; overflow-y: auto; font-family: monospace;"></div>
         </div>
     `;
-
     renderLogContent();
 }
 
 window.clearLog = () => {
-    if (confirm('Clear all log messages? This cannot be undone.')) {
+    if (confirm('Clear all log messages?')) {
         logMessages.length = 0;
         renderLogContent();
     }
@@ -536,23 +416,11 @@ eventBus.on('DAY_ADVANCED', () => {
 eventBus.on('MONTH_ADVANCED', (data) => {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const seasonNames = { winter: '❄️ Winter', spring: '🌸 Spring', summer: '☀️ Summer', fall: '🍂 Fall' };
-    
     logMessage(`📅 It is now ${monthNames[data.month - 1]}! Welcome to ${seasonNames[data.season]}.`);
 });
 
 eventBus.on('YEAR_ADVANCED', (data) => {
     logMessage(`🎉 Happy New Year! Welcome to Year ${data.year}!`);
-});
-
-eventBus.on('BABY_NEEDS_NAME', (babyInfo) => {
-    // Import and show the naming modal
-    import('./ui/ExhibitsUI.js').then(module => {
-        module.showBabyNamingModal(babyInfo);
-    });
-});
-
-eventBus.on('BABY_NAMED', (data) => {
-    logMessage(`🏷️ Baby named: ${data.newName}`);
 });
 
 eventBus.on('ECONOMY_PROCESSED', (data) => {
@@ -562,140 +430,55 @@ eventBus.on('ECONOMY_PROCESSED', (data) => {
 eventBus.on('ANIMAL_DIED', (data) => {
     const emoji = data.cause === 'old age' ? '⚰️' : '💀';
     logMessage(`${emoji} ${data.animal.name} died of ${data.cause} in ${data.exhibitName}`);
+    
+    if (data.cause === 'neglect' && data.fineAmount > 0) {
+        state.money -= data.fineAmount;
+        logMessage(`💸 NEGLECT FINE: -$${data.fineAmount.toLocaleString()} for ${data.animal.name}'s death`);
+        updateUI();
+    }
 });
 
 eventBus.on('ANIMALS_HUNGRY', (data) => {
-    logMessage(`⚠️ HUNGRY: ${data.animals.slice(0, 3).join(', ')}${data.animals.length > 3 ? ` +${data.animals.length - 3} more` : ''}`);
-});
-
-eventBus.on('ANIMAL_SICK', (data) => {
-    logMessage(`🤒 ${data.animal.name} has fallen ill in ${data.exhibitName}!`);
-});
-
-eventBus.on('ANIMAL_RECOVERED', (data) => {
-    logMessage(`💚 ${data.animal.name} has recovered!`);
-});
-
-eventBus.on('PREGNANCY_STARTED', (data) => {
-    logMessage(`🤰 ${data.mother.name} is pregnant! Baby due in ${data.gestationDays} days (father: ${data.father})`);
+    logMessage(`️ HUNGRY: ${data.animals.slice(0, 3).join(', ')}${data.animals.length > 3 ? ` +${data.animals.length - 3} more` : ''}`);
 });
 
 eventBus.on('ANIMAL_BORN', (data) => {
     logMessage(`🍼 ${data.baby.name} was born to ${data.mother.name} in ${data.exhibitName}!`);
 });
 
-eventBus.on('LIFE_STAGE', (data) => {
-    const stageEmoji = { baby: '🍼', juvenile: '🐾', adult: '🦁', senior: '👴' };
-    logMessage(`${stageEmoji[data.stage]} ${data.animal.name} is now a ${data.stage}!`);
+eventBus.on('BABY_NEEDS_NAME', (babyInfo) => {
+    import('./ui/ExhibitsUI.js').then(module => {
+        module.showBabyNamingModal(babyInfo);
+    });
+});
+
+eventBus.on('BABY_NAMED', (data) => {
+    logMessage(`🏷️ Baby named: ${data.newName}`);
 });
 
 eventBus.on('EXHIBIT_COMPLETED', (data) => {
     logMessage(`✅ ${data.name} finished building!`);
 });
 
-eventBus.on('MAINTENANCE_COST', (data) => {
-    logMessage(`🧹 Maintenance cost: -$${data.amount}`);
-});
-
-eventBus.on('UPKEEP_COST', (data) => {
-    logMessage(`🧾 Facility upkeep: -$${data.amount}`);
-});
-
-eventBus.on('ANIMAL_ESCAPED', (data) => {
-    logMessage(`🚨 ${data.animal.name} escaped from ${data.exhibitName}!`);
-});
-
-eventBus.on('VISITORS_PROCESSED', (data) => {
-    logMessage(`👥 Visitors: ${data.visitors} | Spending: $${data.spending.total}`);
-});
-
-eventBus.on('STAFF_EXPENSE', (data) => {
-    logMessage(`💰 Staff salaries: -$${data.amount}`);
-});
-
-eventBus.on('UNDERSTAFFED', (data) => {
-    logMessage(`⚠️ UNDERSTAFFED! Keepers: ${data.keeperCapacity}/${data.keeperDemand} | Cleaners: ${data.cleanerCapacity}/${data.cleanerDemand}`);
-});
-
 eventBus.on('ANIMAL_PURCHASED', (data) => {
-    const stageEmoji = { baby: '🍼', juvenile: '🐾', adult: '🦁', senior: '👴' };
-    const emoji = stageEmoji[data.ageStage] || '🦁';
-    logMessage(`🎉 Welcome ${data.animal} the ${emoji} ${data.ageStage} ${data.species}! (Cost: $${data.cost})`);
-});
-
-eventBus.on('FOOD_PURCHASED', (data) => {
-    const food = FOOD_TYPES[data.foodType];
-    logMessage(`🍽️ Bought ${data.amount} ${food.name} for $${data.cost}`);
-});
-
-eventBus.on('STAFF_HIRED', (data) => {
-    logMessage(`✅ Hired ${data.staffName} for $${data.cost}`);
-});
-
-eventBus.on('STAFF_FIRED', (data) => {
-    logMessage(`❌ Fired ${data.staffName} (severance: $${data.refund})`);
-});
-
-eventBus.on('AMENITY_BUILT', (data) => {
-    logMessage(`🏪 Built ${data.amenityName} for $${data.cost}`);
-});
-
-eventBus.on('EXHIBIT_BUILD_STARTED', (data) => {
-    logMessage(`🏗️ Started building ${data.name} (${data.size}) for $${data.cost} - ${data.days} days`);
-});
-
-eventBus.on('FENCE_REPAIRED', (data) => {
-    logMessage(`🔧 Repaired fence at ${data.exhibitName} for $${data.cost}`);
-});
-
-eventBus.on('RATING_UPDATED', (data) => {
-    console.log(`⭐ Rating: ${data.score}/100 (${data.tier.name})`);
-});
-
-eventBus.on('TIER_UPGRADED', (data) => {
-    logMessage(`🎉 TIER UPGRADED! ${data.emoji} ${data.tier}! Bonus: +$${data.bonus.toLocaleString()}`);
+    logMessage(`🎉 Welcome ${data.animal} the ${data.species}! (Cost: $${data.cost})`);
 });
 
 eventBus.on('RESEARCH_STARTED', (data) => {
     logMessage(`🔬 Started researching ${data.icon} ${data.researchName} ($${data.cost}, ${data.days} days)`);
 });
 
-eventBus.on('RESEARCH_PROGRESS', () => {
-    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
-        renderResearch();
-    }
-});
-
 eventBus.on('RESEARCH_COMPLETED', (data) => {
     logMessage(`✅ RESEARCH COMPLETE! ${data.icon} ${data.researchName} - Unlocked: ${data.unlocks.join(', ')}`);
-    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') {
-        renderResearch();
-    }
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') renderResearch();
 });
 
-eventBus.on('DAILY_REPORT_GENERATED', (data) => {
-    console.log('📊 Daily report generated:', data);
-});
-
-eventBus.on('ANIMAL_TRANSFERRED', (data) => {
-    logMessage(`🔄 Transferred ${data.animalName} from ${data.fromExhibit} to ${data.toExhibit}`);
-});
-
-eventBus.on('GAME_SAVED', (data) => {
-    console.log(`💾 Game saved to: ${data.slot}`);
+eventBus.on('RESEARCH_PROGRESS', () => {
+    if (document.querySelector('.nav-btn.active')?.dataset.section === 'research') renderResearch();
 });
 
 eventBus.on('GAME_LOADED', (data) => {
-    console.log(`📂 Game loaded from: ${data.slot}`);
     logMessage(`📂 Loaded save: ${data.slot}`);
-});
-
-eventBus.on('SAVE_DELETED', (data) => {
-    logMessage(`🗑️ Deleted save: ${data.slot}`);
-});
-
-eventBus.on('GAME_IMPORTED', (data) => {
-    logMessage(`📥 Imported save as: ${data.slot}`);
 });
 
 // =====================================================================
@@ -776,15 +559,16 @@ async function init() {
     console.log('🚀 init() function called!');
     
     try {
-        console.log('🚀 About to call loadAllData()...');
         await loadAllData();
         console.log('✅ loadAllData() completed!');
-        console.log('📊 data.animals length:', data.animals.length);
         
         updateUI();
         renderShop();
         logMessage("🦁 ZooSmith V2 Engine Initialized!");
-        logMessage("💡 Tip: Click the 📜 Log tab to see your zoo's history.");
+        
+        // Expose for debugging
+        window.state = state;
+        window.data = data;
     } catch (error) {
         console.error('❌ ERROR in init():', error);
     }
