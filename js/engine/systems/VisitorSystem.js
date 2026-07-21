@@ -2,13 +2,10 @@
 import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
-import { getMarketingMultiplier } from './systems/MarketingSystem.js';
+import { getMarketingMultiplier } from './MarketingSystem.js'; // 🔥 NEW: Import marketing
 
 export function processVisitors() {
-
-    const marketingMultiplier = getMarketingMultiplier();
-const finalVisitors = Math.round(baseVisitors * marketingMultiplier * otherMultipliers);
-    // Calculate base visitor attraction from animals
+    // 1. Calculate base visitor attraction from animals
     let baseAttraction = 0;
     let animalCount = 0;
     
@@ -23,7 +20,7 @@ const finalVisitors = Math.round(baseVisitors * marketingMultiplier * otherMulti
     // 🔥 FIX: No animals = almost no visitors (only 5 base curiosity visitors)
     const baseVisitors = animalCount > 0 ? (10 + (baseAttraction * 2)) : 5;
 
-    // Calculate ticket price impact
+    // 2. Calculate ticket price impact
     const ticketPrice = state.ticketPrice || 20;
     const optimalPrice = 20;
     
@@ -34,7 +31,7 @@ const finalVisitors = Math.round(baseVisitors * marketingMultiplier * otherMulti
         priceMultiplier = 1 + ((optimalPrice - ticketPrice) / 40);
     }
 
-    // Calculate ticket satisfaction impact from price
+    // 3. Calculate ticket satisfaction impact from price
     let priceSatisfactionImpact = 0;
     if (ticketPrice > 30) {
         priceSatisfactionImpact = -20;
@@ -46,46 +43,44 @@ const finalVisitors = Math.round(baseVisitors * marketingMultiplier * otherMulti
         priceSatisfactionImpact = 5;
     }
 
-    // 🔥 FIX: Calculate amenities impact with stronger penalties
+    // 4. Calculate amenities impact with stronger penalties
     let amenityBonus = 0;
     const amenityCount = Object.values(state.amenities || {}).reduce((sum, count) => sum + count, 0);
     amenityBonus += Math.min(20, amenityCount * 2);
 
-    // Check for essential amenities
     const hasRestroom = (state.amenities?.restroom || 0) > 0;
     const hasFood = (state.amenities?.food_stand || 0) > 0 || (state.amenities?.cafe || 0) > 0;
     const hasBin = (state.amenities?.bin || 0) > 0;
     
-    // 🔥 STRONGER PENALTIES for missing essentials
-    if (!hasRestroom) amenityBonus -= 25; // Was -15
-    if (!hasFood) amenityBonus -= 15;     // Was -10
-    if (!hasBin) amenityBonus -= 10;      // Was -5
+    if (!hasRestroom) amenityBonus -= 25; 
+    if (!hasFood) amenityBonus -= 15;     
+    if (!hasBin) amenityBonus -= 10;      
 
-    // 🔥 FIX: If no animals AND no amenities, heavy penalty
     if (animalCount === 0 && amenityCount === 0) {
         amenityBonus -= 30; // Empty zoo penalty
     }
 
-    // Calculate final visitor satisfaction
+    // 5. Calculate final visitor satisfaction
     const baseSatisfaction = 50;
     let finalSatisfaction = baseSatisfaction + priceSatisfactionImpact + amenityBonus;
     finalSatisfaction = Math.max(0, Math.min(100, finalSatisfaction));
     state.visitorSatisfaction = Math.round(finalSatisfaction);
     state.guestHappiness = Math.round(finalSatisfaction);
 
-    // 🔥 FIX: Apply satisfaction to visitor count
+    // 6. 🔥 COMBINED MULTIPLIERS (Fixes the duplicate variable error)
     const satisfactionMultiplier = finalSatisfaction / 100;
+    const marketingMultiplier = getMarketingMultiplier(); // Get marketing boost
     
-    // Calculate visitor count
-    const adjustedVisitors = Math.round(baseVisitors * priceMultiplier * satisfactionMultiplier);
-    const finalVisitors = Math.max(0, Math.min(500, adjustedVisitors));
+    // Apply ALL multipliers at once
+    const adjustedVisitors = Math.round(baseVisitors * priceMultiplier * satisfactionMultiplier * marketingMultiplier);
+    const finalVisitors = Math.max(0, Math.min(500, adjustedVisitors)); // Declare finalVisitors ONLY ONCE
     
     state.dailyVisitors = finalVisitors;
 
-    // Calculate ticket revenue
+    // 7. Calculate ticket revenue
     const ticketRevenue = finalVisitors * ticketPrice;
 
-    // Calculate amenity spending
+    // 8. Calculate amenity spending
     const amenitySpending = calculateAmenitySpending(finalVisitors, finalSatisfaction);
     
     state.visitorSpending = {
@@ -94,33 +89,13 @@ const finalVisitors = Math.round(baseVisitors * marketingMultiplier * otherMulti
         total: ticketRevenue + amenitySpending
     };
 
-    // Generate complaints if satisfaction is low
+    // 9. Generate complaints if satisfaction is low
     state.visitorComplaints = [];
     if (finalSatisfaction < 40) {
-        if (!hasRestroom) {
-            state.visitorComplaints.push({
-                icon: '🚻',
-                text: 'No restrooms available!'
-            });
-        }
-        if (!hasFood) {
-            state.visitorComplaints.push({
-                icon: '🍔',
-                text: 'No food options!'
-            });
-        }
-        if (ticketPrice > 30) {
-            state.visitorComplaints.push({
-                icon: '💸',
-                text: 'Tickets are too expensive!'
-            });
-        }
-        if (animalCount === 0) {
-            state.visitorComplaints.push({
-                icon: '🦁',
-                text: 'No animals to see!'
-            });
-        }
+        if (!hasRestroom) state.visitorComplaints.push({ icon: '🚻', text: 'No restrooms available!' });
+        if (!hasFood) state.visitorComplaints.push({ icon: '', text: 'No food options!' });
+        if (ticketPrice > 30) state.visitorComplaints.push({ icon: '💸', text: 'Tickets are too expensive!' });
+        if (animalCount === 0) state.visitorComplaints.push({ icon: '🦁', text: 'No animals to see!' });
     }
 
     eventBus.emit('VISITORS_PROCESSED', {
@@ -141,7 +116,6 @@ function calculateAmenitySpending(visitors, satisfaction) {
     if (visitors === 0) return 0;
 
     let spending = 0;
-    
     const baseSpending = 5 + (satisfaction / 10);
     
     const foodStands = (state.amenities?.food_stand || 0) + 
