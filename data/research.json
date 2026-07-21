@@ -75,5 +75,21 @@
     "category": "animals",
     "unlocks": ["panda", "snow_leopard", "orangutan"],
     "requires": ["big_cats", "marine_life"]
+  },
+  {
+    "id": "basic_marketing",
+    "name": "Basic Marketing",
+    "description": "Unlock local advertising and basic promotional campaigns to increase zoo visibility.",
+    "cost": 1500,
+    "days": 10,
+    "unlocks": []
+  },
+  {
+    "id": "advanced_marketing",
+    "name": "Advanced Marketing",
+    "description": "Unlock national campaigns, social media blitzes, and influencer partnerships.",
+    "cost": 5000,
+    "days": 20,
+    "unlocks": []
   }
 ]
