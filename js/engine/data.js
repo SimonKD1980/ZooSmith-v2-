@@ -5,7 +5,8 @@ export const data = {
     staff: [],
     exhibitTypes: {},
     research: [],
-    upgrades: []
+    upgrades: [],
+    marketingData: { weeklyTiers: [], campaigns: [] }
 };
 
 console.log('🔧 data.js file loaded!');
@@ -61,6 +62,14 @@ export async function loadAllData() {
             console.warn('⚠️ staff.json failed to load:', staffRes.status);
         }
 
+        console.log(' Fetching marketing.json...');
+const marketingRes = await fetch('./data/marketing.json');
+if (marketingRes.ok) {
+    data.marketingData = await marketingRes.json();
+    console.log(`✅ Loaded ${data.marketingData.weeklyTiers.length} marketing tiers and ${data.marketingData.campaigns.length} campaigns`);
+} else {
+    console.warn('⚠️ marketing.json failed to load');
+}
         // Add this to the loadAllData() function, after loading staff
 console.log('📦 Fetching research.json...');
 const researchRes = await fetch('./data/research.json');
