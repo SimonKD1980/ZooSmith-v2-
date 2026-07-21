@@ -3,46 +3,33 @@ import { state } from '../GameState.js';
 import { eventBus } from '../EventBus.js';
 import { data } from '../data.js';
 import { getLifeStage } from '../constants.js';
-import { getKeeperCapacity, getKeeperDemand } from './StaffSystem.js';
-import { getExhibitEffects } from './UpgradeSystem.js'; // Add to imports
-
+import { getKeeperCapacity } from './StaffSystem.js';
 
 export function processWildlife() {
-    // Check keeper capacity
     const keeperCapacity = getKeeperCapacity();
     let animalsFed = 0;
     const hungryAnimals = [];
 
-    // Collect all animals across all exhibits
     const allAnimals = [];
     Object.values(state.exhibits).forEach(exhibit => {
         if (exhibit.buildDaysRemaining > 0) return;
-        
         exhibit.animals.forEach(animal => {
             allAnimals.push({ animal, exhibit });
         });
     });
 
-    // Sort animals - prioritize sick and hungry ones
     allAnimals.sort((a, b) => {
-        // Sick animals first
         if (a.animal.sick && !b.animal.sick) return -1;
         if (!a.animal.sick && b.animal.sick) return 1;
-        // Then hungry animals
         if (a.animal.wasHungry && !b.animal.wasHungry) return -1;
         if (!a.animal.wasHungry && b.animal.wasHungry) return 1;
         return 0;
     });
 
-    // Process each animal
     allAnimals.forEach(({ animal, exhibit }) => {
-        // Age the animal
         animal.ageDays = (animal.ageDays || 0) + 1;
 
-        // Check if we have keeper capacity to feed this animal
         const canFeed = animalsFed < keeperCapacity;
-
-        // Feed the animal (only if we have capacity)
         const speciesData = data.animals.find(a => a.id === animal.id);
         const foodAmount = speciesData?.foodAmount || 1;
         const foodType = getFoodTypeForDiet(animal.diet);
@@ -50,34 +37,20 @@ export function processWildlife() {
         animal.wasHungry = false;
         
         if (canFeed && (state.food?.[foodType] || 0) >= foodAmount) {
-            // Keeper is available AND we have food
             state.food[foodType] -= foodAmount;
             animal.health = Math.min(100, (animal.health || 100) + 1);
             animalsFed++;
         } else if (!canFeed) {
-            // No keeper capacity - animal goes hungry
             animal.wasHungry = true;
             animal.health = Math.max(0, (animal.health || 100) - 5);
             hungryAnimals.push(animal.name);
         } else {
-            // No food available
             animal.wasHungry = true;
             animal.health = Math.max(0, (animal.health || 100) - 5);
             hungryAnimals.push(animal.name);
         }
 
-        if (canFeed && (state.food?.[foodType] || 0) >= foodAmount) {
-    state.food[foodType] -= foodAmount;
-    
-    // 🔥 Apply upgrade happiness bonus
-    const exhibitEffects = getExhibitEffects(exhibit);
-    const healthGain = 1 + Math.floor(exhibitEffects.happiness / 10); // Every 10 happiness = +1 extra health
-    
-    animal.health = Math.min(100, (animal.health || 100) + healthGain);
-    animalsFed++;
-}
-
-        // Pregnancy countdown
+        //  PREGNANCY COUNTDOWN
         if (animal.isPregnant) {
             animal.daysUntilBirth--;
             if (animal.daysUntilBirth <= 0) {
@@ -88,15 +61,23 @@ export function processWildlife() {
         // Death check
         if (animal.health <= 0) {
             const cause = animal.ageDays > 3650 ? 'old age' : 'neglect';
+            let fineAmount = 0;
+            if (cause === 'neglect') {
+                fineAmount = Math.max(500, Math.round((speciesData?.cost || 0) * 0.2));
+                if (!state.dailyReport) state.dailyReport = {};
+                state.dailyReport.neglectFines = (state.dailyReport.neglectFines || 0) + fineAmount;
+                state.dailyReport.neglectDeaths = (state.dailyReport.neglectDeaths || 0) + 1;
+            }
+            
             eventBus.emit('ANIMAL_DIED', {
                 animal: animal,
                 cause: cause,
-                exhibitName: exhibit.name
+                exhibitName: exhibit.name,
+                fineAmount: fineAmount
             });
         }
     });
 
-    // Emit hungry animals warning
     if (hungryAnimals.length > 0) {
         eventBus.emit('ANIMALS_HUNGRY', {
             animals: hungryAnimals,
@@ -104,7 +85,6 @@ export function processWildlife() {
         });
     }
 
-    // Remove dead animals
     Object.values(state.exhibits).forEach(exhibit => {
         exhibit.animals = exhibit.animals.filter(a => a.health > 0);
     });
@@ -118,7 +98,7 @@ function getFoodTypeForDiet(diet) {
 
 function giveBirth(exhibit, mother) {
     const speciesData = data.animals.find(a => a.id === mother.id);
-    const speciesName = speciesData?.name || mother.name;
+    const speciesName = speciesData?.name || mother.speciesName || 'Animal';
     
     const babyGender = Math.random() < 0.5 ? 'male' : 'female';
     const baby = {
@@ -164,6 +144,7 @@ function giveBirth(exhibit, mother) {
     eventBus.emit('BABY_NEEDS_NAME', state.pendingBaby);
 }
 
+// 🔥 BREEDING ACTION
 export function attemptBreeding(exhibitId) {
     const exhibit = state.exhibits[exhibitId];
     if (!exhibit) {
@@ -192,9 +173,7 @@ export function attemptBreeding(exhibitId) {
             const father = males[0];
             const mother = females[0];
             
-            if (mother.isPregnant) {
-                continue;
-            }
+            if (mother.isPregnant) continue;
             
             const gestationDays = 30 + Math.floor(Math.random() * 30);
             mother.isPregnant = true;
