@@ -88,22 +88,22 @@ function renderShopGrid() {
         const isLocked = animal.id && !isUnlocked(animal.id);
         const cost = animal.cost ?? animal.price ?? 0;
         
-        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '';
+        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
         const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' :
             animal.conservationStatus === 'Vulnerable' ? '🟡' :
-            animal.conservationStatus === 'Critically Endangered' ? '' : '';
+            animal.conservationStatus === 'Critically Endangered' ? '⚫' : '';
 
         const requiredSize = animal.requiredExhibitSize || 'small';
         const requiredType = animal.requiredExhibitType || 'terrestrial';
-        const sizeEmoji = requiredSize === 'large' ? '🏞️' : requiredSize === 'medium' ? '🏕️' : '';
+        const sizeEmoji = requiredSize === 'large' ? '️' : requiredSize === 'medium' ? '🏕️' : '🏠';
         const typeEmoji = requiredType === 'aquatic' ? '🌊' : '🌍';
         
         const attractionValue = animal.attractionValue || 10;
         const foodAmount = animal.foodAmount || 1;
         const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
-        const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
+        const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '';
 
-        // 🔥 NEW: Image path logic
+        // Image path logic
         const imagePath = `./images/animals/${animal.id}.png`;
         const fallbackImage = `https://placehold.co/400x200/0f172a/e5e7eb?text=${encodeURIComponent(animal.name)}`;
 
@@ -125,12 +125,12 @@ function renderShopGrid() {
         card.innerHTML = `
             ${isLocked ? `<div style="position:absolute; top:12px; right:12px; background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.8rem; z-index:10;">🔒 LOCKED</div>` : ''}
             
-<div style="width:100%; height:200px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); display:flex; align-items:center; justify-content:center; overflow:hidden; border-bottom: 1px solid #334155;">
-    <img src="${imagePath}" 
-        alt="${animal.name}" 
-        style="width:100%; height:100%; object-fit:contain; ${isLocked ? 'filter:grayscale(100%);' : ''}"
-        onerror="this.onerror=null; this.src='${fallbackImage}';" />
-</div>
+            <div style="width:100%; height:200px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); display:flex; align-items:center; justify-content:center; overflow:hidden; border-bottom: 1px solid #334155;">
+                <img src="${imagePath}" 
+                    alt="${animal.name}" 
+                    style="width:100%; height:100%; object-fit:contain; ${isLocked ? 'filter:grayscale(100%);' : ''}"
+                    onerror="this.onerror=null; this.src='${fallbackImage}';" />
+            </div>
             
             <div style="padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
@@ -170,7 +170,7 @@ function renderShopGrid() {
                     ${isLocked ? 'disabled' : ''}
                     onmouseover="if(!${isLocked}) this.style.filter='brightness(1.1)'" 
                     onmouseout="if(!${isLocked}) this.style.filter='brightness(1)'">
-                    ${isLocked ? '🔒 Locked' : '🛒 Add to Zoo'}
+                    ${isLocked ? ' Locked' : '🛒 Add to Zoo'}
                 </button>
             </div>
         `;
@@ -187,7 +187,7 @@ function renderShopGrid() {
 }
 
 function openBuyModal(animal) {
-    // Create modal overlay dynamically to guarantee it looks good
+    // Create modal overlay dynamically
     let modalOverlay = document.getElementById("dynamicBuyModal");
     if (!modalOverlay) {
         modalOverlay = document.createElement("div");
@@ -230,14 +230,14 @@ function openBuyModal(animal) {
     modalOverlay.innerHTML = `
         <div style="background:#1e293b; border:2px solid #334155; border-radius:16px; width:90%; max-width:500px; padding:24px; box-shadow:0 20px 50px rgba(0,0,0,0.5); transform:scale(0.95); transition:transform 0.2s;" id="modalContent">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="margin:0; color:#e5e7eb; font-size:1.4rem;">🦁 Add ${animal.name}</h3>
+                <h3 style="margin:0; color:#e5e7eb; font-size:1.4rem;"> Add ${animal.name}</h3>
                 <button onclick="window.closeBuyModal()" style="background:#ef4444; color:#fff; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">✕</button>
             </div>
             
             <div style="margin-bottom:16px;">
                 <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">🏷️ Animal Name</label>
                 <div style="display:flex; gap:8px;">
-                    <input type="text" id="animalNameInput" value="${defaultName}" maxlength="20" 
+                    <input type="text" id="dynamicAnimalNameInput" value="${defaultName}" maxlength="20" 
                         style="flex:1; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
                         onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
                     <button onclick="window.randomizeAnimalName('${animal.name}')" style="padding:10px 16px; background:#334155; color:#e5e7eb; border:none; border-radius:8px; cursor:pointer; font-weight:600;">🎲</button>
@@ -246,7 +246,7 @@ function openBuyModal(animal) {
             
             <div style="margin-bottom:16px;">
                 <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">🏞️ Exhibit</label>
-                <select id="exhibitSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                <select id="dynamicExhibitSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
                     onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
                     ${exhibitOptions}
                 </select>
@@ -255,15 +255,15 @@ function openBuyModal(animal) {
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
                 <div>
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">⚧️ Gender</label>
-                    <select id="genderSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                    <select id="dynamicGenderSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
                         onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
                         <option value="male">♂️ Male</option>
                         <option value="female">♀️ Female</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">🎂 Life Stage</label>
-                    <select id="ageSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;"> Life Stage</label>
+                    <select id="dynamicAgeSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
                         onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
                         <option value="baby">🍼 Baby</option>
                         <option value="juvenile"> Juvenile</option>
@@ -293,7 +293,7 @@ function openBuyModal(animal) {
     });
     
     // Focus name input
-    setTimeout(() => document.getElementById('animalNameInput')?.focus(), 100);
+    setTimeout(() => document.getElementById('dynamicAnimalNameInput')?.focus(), 100);
 }
 
 export function closeBuyModal() {
@@ -310,10 +310,11 @@ export function closeBuyModal() {
 }
 
 function confirmBuyAnimal() {
-    const exhibitId = document.getElementById("exhibitSelect").value;
-    const gender = document.getElementById("genderSelect").value;
-    const ageStage = document.getElementById("ageSelect").value;
-    const customName = document.getElementById("animalNameInput").value.trim();
+    // Updated IDs to match the dynamic modal
+    const exhibitId = document.getElementById("dynamicExhibitSelect").value;
+    const gender = document.getElementById("dynamicGenderSelect").value;
+    const ageStage = document.getElementById("dynamicAgeSelect").value;
+    const customName = document.getElementById("dynamicAnimalNameInput").value.trim();
     const animal = state.pendingAnimal;
     
     if (!exhibitId || !animal) {
@@ -404,7 +405,8 @@ function generateRandomAnimalName(speciesName) {
 }
 
 function randomizeAnimalName(speciesName) {
-    const input = document.getElementById('animalNameInput');
+    // Updated ID to match the dynamic modal
+    const input = document.getElementById('dynamicAnimalNameInput');
     if (input) {
         input.value = generateRandomAnimalName(speciesName);
         input.focus();
