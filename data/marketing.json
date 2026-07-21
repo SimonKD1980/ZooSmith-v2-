@@ -1,0 +1,87 @@
+{
+  "weeklyTiers": [
+    {
+      "id": "none",
+      "name": "No Advertising",
+      "weeklyCost": 0,
+      "reachMultiplier": 1.0,
+      "description": "Rely on word of mouth only.",
+      "requiredResearch": null
+    },
+    {
+      "id": "local",
+      "name": "Local Flyers",
+      "weeklyCost": 200,
+      "reachMultiplier": 1.2,
+      "description": "Basic local newspapers and community boards.",
+      "requiredResearch": "basic_marketing"
+    },
+    {
+      "id": "regional",
+      "name": "Regional Billboards",
+      "weeklyCost": 500,
+      "reachMultiplier": 1.5,
+      "description": "Highway billboards and regional radio ads.",
+      "requiredResearch": "basic_marketing"
+    },
+    {
+      "id": "social",
+      "name": "Social Media Blitz",
+      "weeklyCost": 800,
+      "reachMultiplier": 1.8,
+      "description": "Targeted online ads and influencer partnerships.",
+      "requiredResearch": "advanced_marketing"
+    },
+    {
+      "id": "national",
+      "name": "National TV Campaign",
+      "weeklyCost": 1500,
+      "reachMultiplier": 2.2,
+      "description": "Prime time television commercials.",
+      "requiredResearch": "advanced_marketing"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "weekend_special",
+      "name": "Weekend Special",
+      "icon": "",
+      "cost": 300,
+      "duration": 3,
+      "visitorMultiplier": 1.3,
+      "description": "Boost visitors by 30% for 3 days.",
+      "requiredResearch": null
+    },
+    {
+      "id": "school_holiday",
+      "name": "School Holiday Promo",
+      "icon": "🎓",
+      "cost": 600,
+      "duration": 7,
+      "visitorMultiplier": 1.5,
+      "description": "Boost visitors by 50% for 7 days.",
+      "requiredResearch": "basic_marketing"
+    },
+    {
+      "id": "influencer_visit",
+      "name": "Influencer Visit",
+      "icon": "📸",
+      "cost": 1000,
+      "duration": 5,
+      "visitorMultiplier": 1.6,
+      "description": "Boost visitors by 60% for 5 days.",
+      "requiredResearch": "advanced_marketing"
+    },
+    {
+      "id": "conservation_campaign",
+      "name": "Conservation Awareness",
+      "icon": "🌍",
+      "cost": 500,
+      "duration": 14,
+      "visitorMultiplier": 1.2,
+      "description": "Boost visitors by 20% and gain +5 Zoo Rating.",
+      "ratingBonus": 5,
+      "requiredResearch": "advanced_marketing"
+    }
+  ]
+}
