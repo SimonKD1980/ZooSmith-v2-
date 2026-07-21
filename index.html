@@ -51,16 +51,30 @@
             50% { transform: translateY(-3px); }
         }
 
-        <div class="header-brand tooltip-wrapper">
-    <span class="brand-icon">🦁</span>
-    <span class="brand-name" id="zooName">
-        My Zoo <span class="edit-icon">✏️</span>
-    </span>
-    <div class="tooltip-text">
-        <strong>️ Zoo Name</strong>
-        Click the name to rename your zoo!
-    </div>
-</div>
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #e5e7eb;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .brand-name:hover {
+            color: #22c55e;
+        }
+
+        .edit-icon {
+            opacity: 0;
+            font-size: 1rem;
+            margin-left: 6px;
+            transition: opacity 0.2s;
+        }
+
+        .brand-name:hover .edit-icon {
+            opacity: 1;
+        }
 
         /* Stats Container */
         .header-stats {
@@ -130,13 +144,11 @@
                 flex-direction: column;
                 gap: 16px;
             }
-            
             .header-stats {
                 flex-wrap: wrap;
                 justify-content: center;
                 width: 100%;
             }
-            
             .stat-card {
                 padding: 10px 14px;
                 min-width: 130px;
@@ -145,96 +157,43 @@
 
         /* MOBILE (640px - 767px) */
         @media (max-width: 767px) {
-            .game-header {
-                padding: 12px 16px;
-            }
-            
-            .brand-icon {
-                font-size: 2rem;
-            }
-            
-            .brand-name {
-                font-size: 1.4rem;
-            }
-            
+            .game-header { padding: 12px 16px; }
+            .brand-icon { font-size: 2rem; }
+            .brand-name { font-size: 1.4rem; }
             .header-stats {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 10px;
                 width: 100%;
             }
-            
             .stat-card {
                 padding: 10px 12px;
                 min-width: auto;
                 justify-content: center;
             }
-            
-            .stat-icon {
-                font-size: 1.5rem;
-            }
-            
-            .stat-details {
-                min-width: auto;
-            }
-            
-            .stat-label {
-                font-size: 0.65rem;
-            }
-            
-            .stat-value {
-                font-size: 0.95rem;
-            }
+            .stat-icon { font-size: 1.5rem; }
+            .stat-details { min-width: auto; }
+            .stat-label { font-size: 0.65rem; }
+            .stat-value { font-size: 0.95rem; }
         }
 
         /* SMALL MOBILE (< 640px) */
         @media (max-width: 640px) {
             body { padding: 10px; }
-            
-            .game-header {
-                padding: 10px 12px;
-                margin-bottom: 12px;
-            }
-            
-            .brand-icon {
-                font-size: 1.8rem;
-            }
-            
-            .brand-name {
-                font-size: 1.2rem;
-            }
-            
-            .header-stats {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-            
-            .stat-card {
-                padding: 8px 10px;
-            }
-            
-            .stat-icon {
-                font-size: 1.3rem;
-            }
-            
-            .stat-label {
-                font-size: 0.6rem;
-            }
-            
-            .stat-value {
-                font-size: 0.85rem;
-            }
+            .game-header { padding: 10px 12px; margin-bottom: 12px; }
+            .brand-icon { font-size: 1.8rem; }
+            .brand-name { font-size: 1.2rem; }
+            .header-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .stat-card { padding: 8px 10px; }
+            .stat-icon { font-size: 1.3rem; }
+            .stat-label { font-size: 0.6rem; }
+            .stat-value { font-size: 0.85rem; }
         }
 
         /* TINY PHONES (< 380px) */
         @media (max-width: 380px) {
-            .header-stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .stat-card {
-                padding: 10px 12px;
-            }
+            .header-stats { grid-template-columns: 1fr; }
+            .stat-card { padding: 10px 12px; }
         }
         
         /* Navigation */
@@ -418,20 +377,22 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
-    <!-- ===== NEW PROFESSIONAL HEADER ===== -->
+    <!-- ===== PROFESSIONAL HEADER ===== -->
     <header class="game-header">
         <div class="header-brand tooltip-wrapper">
             <span class="brand-icon">🦁</span>
-            <span class="brand-name" id="zooName">My Zoo</span>
+            <span class="brand-name" id="zooName">
+                My Zoo <span class="edit-icon">✏️</span>
+            </span>
             <div class="tooltip-text">
-                <strong>️ Zoo Name</strong>
-                The name of your zoo. Click the Visitors tab to see your rating breakdown and track your progress!
+                <strong>🏞️ Zoo Name</strong>
+                Click the name to rename your zoo!
             </div>
         </div>
         
         <div class="header-stats">
             <div class="stat-card money tooltip-wrapper">
-                <span class="stat-icon"></span>
+                <span class="stat-icon">💰</span>
                 <div class="stat-details">
                     <span class="stat-label">Funds</span>
                     <span class="stat-value" id="money">$10,000</span>
@@ -485,12 +446,13 @@
         <button class="nav-btn active" data-section="shop">🛒 Shop</button>
         <button class="nav-btn" data-section="exhibits">🏞️ Exhibits</button>
         <button class="nav-btn" data-section="staff">👷 Staff</button>
-        <button class="nav-btn" data-section="supplies">️ Supplies</button>
-        <button class="nav-btn" data-section="amenities"> Amenities</button>
+        <button class="nav-btn" data-section="supplies">🍽️ Supplies</button>
+        <button class="nav-btn" data-section="amenities">🏪 Amenities</button>
         <button class="nav-btn" data-section="marketing">📢 Marketing</button>
         <button class="nav-btn" data-section="visitors">👥 Visitors</button>
         <button class="nav-btn" data-section="reports">📊 Reports</button>
         <button class="nav-btn" data-section="research">🔬 Research</button>
+        <button class="nav-btn" data-section="leaderboard">🏆 Leaderboard</button>
         <button class="nav-btn" data-section="saves">💾 Saves</button>
         <button class="nav-btn" data-section="log">📜 Log</button>
     </div>
@@ -511,6 +473,7 @@
     <div id="visitors" class="section"></div>
     <div id="reports" class="section"></div>
     <div id="research" class="section"></div>
+    <div id="leaderboard" class="section"></div>
     <div id="saves" class="section"></div>
     <div id="log" class="section"></div>
 
