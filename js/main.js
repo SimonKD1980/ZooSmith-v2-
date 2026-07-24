@@ -1,164 +1,153 @@
 // js/main.js
-
-// =====================================================================
-// 1. IMPORTS
-// =====================================================================
-import { state } from './engine/GameState.js';
+import { state, getSeason } from './engine/GameState.js';
 import { eventBus } from './engine/EventBus.js';
-import { advanceDay, loadGameData, animalsData } from './engine/Engine.js';
+import { advanceDay } from './engine/Engine.js';
+import { loadAllData, data } from './engine/data.js';
+import { FOOD_TYPES } from './engine/constants.js';
+import { 
+    getKeeperCapacity, 
+    getKeeperDemand, 
+    getCleanerCapacity, 
+    getCleanerDemand,
+    isUnderstaffed 
+} from './engine/systems/StaffSystem.js';
+import { RATING_TIERS, getTier } from './engine/systems/RatingSystem.js';
+import { renderShop } from './ui/ShopUI.js';
+import { renderSupplies } from './ui/SuppliesUI.js';
+import { renderStaff } from './ui/StaffUI.js';
+import { renderAmenities } from './ui/AmenitiesUI.js';
+import { renderExhibits } from './ui/ExhibitsUI.js';
+import { 
+    saveGame, 
+    loadGame, 
+    getSaveSlots, 
+    deleteSave, 
+    exportSave, 
+    importSave 
+} from './engine/SaveSystem.js';
+import { renderReports } from './ui/ReportsUI.js';
+import { renderResearch } from './ui/ResearchUI.js';
+import { startResearch } from './engine/systems/ResearchSystem.js';
+import { renderMarketing } from './ui/MarketingUI.js';
+
+// 🆕 ADDITION 1: Import HouseUI
 import { HouseUI } from './ui/HouseUI.js';
 
-// 🆕 GLOBAL ASSET PATH FIX FOR GITHUB PAGES
-const isGitHubPages = window.location.hostname.includes('github.io');
-const BASE_PATH = isGitHubPages ? '/ZooSmith-v2-/' : './';
-window.BASE_PATH = BASE_PATH;
+// =====================================================================
+// UI REFERENCES
+// =====================================================================
+const moneyEl = document.getElementById('money');
+const dayEl = document.getElementById('day');
+const seasonEl = document.getElementById('season');
+const ratingEl = document.getElementById('rating');
+const satisfactionEl = document.getElementById('satisfaction');
+const zooNameEl = document.getElementById('zooName');
+const endDayBtn = document.getElementById('endDayBtn');
+const buildExhibitBtn = document.getElementById('buildExhibitBtn');
+
+console.log('🚀 main.js loaded!');
 
 // =====================================================================
-// 2. INITIALIZATION
+// LOG STORAGE
 // =====================================================================
+const logMessages = [];
+const MAX_LOG_MESSAGES = 500;
 
-async function initGame() {
-    console.log('🦁 ZooSmith V2 Initializing...');
-    
-    // 1. WAIT for all JSON data to load
-    await loadGameData(); 
-    
-    // 2. Initialize UI modules
-    renderShop();      // Your original shop rendering
-    HouseUI.init();    // New House UI
-    
-    // 3. Initial UI render
-    updateHeaderUI();
-    
-    console.log('✅ Game Ready!');
+if (zooNameEl) {
+    zooNameEl.addEventListener('click', () => {
+        const newName = prompt('Enter a new name for your zoo:', state.zooName);
+        if (newName && newName.trim() !== '') {
+            state.zooName = newName.trim();
+            updateUI();
+            logMessage(`🏷️ Zoo renamed to "${state.zooName}"!`);
+            if (typeof saveGame === 'function') saveGame('autosave'); 
+        }
+    });
 }
 
-document.addEventListener('DOMContentLoaded', initGame);
-
 // =====================================================================
-// 3. EVENT LISTENERS
+// TAB NAVIGATION
 // =====================================================================
-
 document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.addEventListener('click', () => {
+        const sectionId = btn.dataset.section;
         
-        e.target.classList.add('active');
-        const sectionId = e.target.dataset.section;
-        document.getElementById(sectionId).classList.add('active');
-
-        if (sectionId === 'houses') {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        const section = document.getElementById(sectionId);
+        if (section) section.classList.add('active');
+        
+        if (sectionId === 'shop') renderShop();
+        else if (sectionId === 'supplies') renderSupplies();
+        else if (sectionId === 'staff') renderStaff();
+        else if (sectionId === 'amenities') renderAmenities();
+        else if (sectionId === 'exhibits') renderExhibits();
+        else if (sectionId === 'visitors') renderVisitorsTab();
+        else if (sectionId === 'saves') renderSavesTab();
+        else if (sectionId === 'reports') renderReports();
+        else if (sectionId === 'research') renderResearch();
+        else if (sectionId === 'log') renderLogTab();
+        else if (sectionId === 'marketing') renderMarketing();
+        // 🆕 ADDITION 2: Handle Houses tab click
+        else if (sectionId === 'houses') {
             HouseUI.renderHouseShop();
             HouseUI.renderBuiltHouses();
         }
-        if (sectionId === 'shop') {
-            renderShop();
-        }
     });
 });
 
-const endDayBtn = document.getElementById('endDayBtn');
-if (endDayBtn) {
-    endDayBtn.addEventListener('click', () => {
-        advanceDay();
-        updateHeaderUI();
-    });
-}
-
-eventBus.on('MONEY_CHANGED', () => {
-    updateHeaderUI();
-});
-
-eventBus.on('DAY_ADVANCED', () => {
-    updateHeaderUI();
-});
-
 // =====================================================================
-// 4. SHOP RENDERING (Your Original Logic Restored)
+// MAIN UI UPDATE
 // =====================================================================
-
-function renderShop() {
-    const shopContainer = document.getElementById('shop');
-    if (!shopContainer || !window.animalsData) return;
-    
-    shopContainer.innerHTML = '';
-    
-    const grid = document.createElement('div');
-    grid.className = 'exhibit-grid';
-    grid.style.marginTop = '0';
-    
-    window.animalsData.forEach(animal => {
-        const item = document.createElement('div');
-        item.className = 'exhibit-slot empty';
-        item.style.cursor = 'pointer';
-        
-        // 🎯 YOUR ORIGINAL LOGIC: Use animal.id + '.png'
-        const imgSrc = `${window.BASE_PATH}images/animals/${animal.id}.png`;
-        
-        item.innerHTML = `
-            <img src="${imgSrc}" 
-                 alt="${animal.name}" 
-                 style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px;"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            <div style="font-size: 2.5rem; margin-bottom: 8px; display: none;">${animal.icon || '🐾'}</div>
-            <div class="slot-title">${animal.name}</div>
-            <div class="slot-subtitle">${animal.category || 'Animal'}</div>
-            <div class="slot-subtitle">Cost: $${animal.cost}</div>
-            <button class="btn-small primary" onclick="openBuyAnimalModal('${animal.id}')">Buy</button>
-        `;
-        grid.appendChild(item);
-    });
-    
-    shopContainer.appendChild(grid);
-}
-
-// =====================================================================
-// 5. HEADER UI
-// =====================================================================
-
-function updateHeaderUI() {
-    const moneyEl = document.getElementById('money');
-    if (moneyEl) moneyEl.innerText = `$${state.money.toLocaleString()}`;
-
-    const dayEl = document.getElementById('day');
-    if (dayEl) dayEl.innerText = `Day ${state.day}, M${state.month}, Y${state.year}`;
-
-    const ratingEl = document.getElementById('rating');
-    if (ratingEl) ratingEl.innerText = state.zooRating;
-
-    const satisfactionEl = document.getElementById('satisfaction');
-    if (satisfactionEl) satisfactionEl.innerText = `${state.visitorSatisfaction}%`;
-}
-
-// =====================================================================
-// 6. GLOBAL MODAL HANDLERS
-// =====================================================================
-
-window.openBuyAnimalModal = function(animalId) {
-    window.animalToBuy = animalId;
-    const select = document.getElementById('exhibitSelect');
-    select.innerHTML = '<option value="default">Default Exhibit</option>';
-    document.getElementById('buyModal').classList.add('active');
-};
-
-window.confirmBuyAnimal = function() {
-    const animalId = window.animalToBuy;
-    const animal = window.animalsData.find(a => a.id === animalId);
-    
-    if (!animal) return;
-
-    if (state.money >= animal.cost) {
-        state.money -= animal.cost;
-        eventBus.emit('MONEY_CHANGED');
-        closeBuyModal();
-        console.log(`✅ Bought ${animal.name}`);
-    } else {
-        alert("Not enough money!");
+function updateUI() {
+    if (typeof state.money !== 'number' || isNaN(state.money)) {
+        console.error('❌ state.money is invalid:', state.money);
+        state.money = 0;
     }
-};
+    
+    if (moneyEl) moneyEl.textContent = `$${state.money.toLocaleString()}`;
+    
+    if (dayEl) {
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        dayEl.textContent = `${monthNames[state.month - 1]} ${state.day}, Y${state.year}`;
+    }
+    if (seasonEl) {
+        const seasonNames = { winter: '❄️ Winter', spring: '🌸 Spring', summer: '☀️ Summer', fall: '🍂 Fall' };
+        seasonEl.textContent = seasonNames[getSeason()];
+    }
+    
+    const tier = getTier(state.zooRating || 0);
+    if (ratingEl) ratingEl.textContent = `${tier.emoji} ${state.zooRating}`;
+    if (satisfactionEl) satisfactionEl.textContent = `${state.visitorSatisfaction}%`;
+    if (zooNameEl) zooNameEl.textContent = state.zooName || 'My Zoo';
+}
 
-window.closeBuyModal = function() {
-    document.getElementById('buyModal').classList.remove('active');
-    window.animalToBuy = null;
-};
+// ... [KEEP ALL YOUR EXISTING renderSavesTab, renderVisitorsTab, renderRatingBreakdown, renderLogTab, EVENT LISTENERS, AND BUTTON HANDLERS EXACTLY AS THEY WERE] ...
+
+// =====================================================================
+// INITIALIZATION
+// =====================================================================
+async function init() {
+    console.log('🚀 init() function called!');
+    
+    try {
+        await loadAllData();
+        console.log('✅ loadAllData() completed!');
+        
+        updateUI();
+        renderShop();
+        HouseUI.init(); // 🆕 ADDITION 3: Initialize House UI
+        
+        logMessage("🦁 ZooSmith V2 Engine Initialized!");
+        
+        window.state = state;
+        window.data = data;
+    } catch (error) {
+        console.error('❌ ERROR in init():', error);
+    }
+}
+
+console.log('🚀 About to call init()...');
+init();
