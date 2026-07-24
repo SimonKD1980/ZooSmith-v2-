@@ -1,0 +1,68 @@
+[
+  {
+    "id": "small_terrarium",
+    "name": "Small Terrarium",
+    "description": "A glass-fronted heated enclosure for small reptiles or amphibians.",
+    "cost": 500,
+    "dailyUpkeep": 10,
+    "size": "small",
+    "type": "terrestrial",
+    "maxAnimals": 3,
+    "icon": "🪴"
+  },
+  {
+    "id": "small_aquatic_tank",
+    "name": "Small Aquatic Tank",
+    "description": "A filtered freshwater or saltwater tank for small aquatic species.",
+    "cost": 700,
+    "dailyUpkeep": 15,
+    "size": "small",
+    "type": "aquatic",
+    "maxAnimals": 5,
+    "icon": "🐟"
+  },
+  {
+    "id": "medium_perch_enclosure",
+    "name": "Medium Perch Enclosure",
+    "description": "A branching structure with nesting boxes for medium birds or small primates.",
+    "cost": 1200,
+    "dailyUpkeep": 20,
+    "size": "medium",
+    "type": "terrestrial",
+    "maxAnimals": 4,
+    "icon": "🪵"
+  },
+  {
+    "id": "medium_reef_tank",
+    "name": "Medium Reef Tank",
+    "description": "A large illuminated saltwater tank with live coral and tropical fish.",
+    "cost": 1800,
+    "dailyUpkeep": 30,
+    "size": "medium",
+    "type": "aquatic",
+    "maxAnimals": 6,
+    "icon": "🪸"
+  },
+  {
+    "id": "large_climbing_habitat",
+    "name": "Large Climbing Habitat",
+    "description": "A tall indoor structure with ropes, platforms, and foliage for larger primates.",
+    "cost": 3000,
+    "dailyUpkeep": 40,
+    "size": "large",
+    "type": "terrestrial",
+    "maxAnimals": 3,
+    "icon": "🧗"
+  },
+  {
+    "id": "large_shark_tank",
+    "name": "Large Predator Tank",
+    "description": "A massive reinforced glass tank designed for apex aquatic predators.",
+    "cost": 5000,
+    "dailyUpkeep": 60,
+    "size": "large",
+    "type": "aquatic",
+    "maxAnimals": 2,
+    "icon": "🦈"
+  }
+]
