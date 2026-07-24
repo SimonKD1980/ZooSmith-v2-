@@ -85,21 +85,28 @@ eventBus.on('DAY_ADVANCED', () => {
  */
 function renderShop() {
     const shopContainer = document.getElementById('shop');
-    if (!shopContainer || !animalsData) return;
+    if (!shopContainer || !window.animalsData) return;
     
-    shopContainer.innerHTML = ''; // Clear existing content
+    shopContainer.innerHTML = ''; 
     
-    // Create a grid to hold the shop items (reusing the exhibit-grid CSS)
     const grid = document.createElement('div');
     grid.className = 'exhibit-grid';
-    grid.style.marginTop = '0'; // Reset margin for shop
+    grid.style.marginTop = '0';
     
-    animalsData.forEach(animal => {
+    window.animalsData.forEach(animal => {
         const item = document.createElement('div');
         item.className = 'exhibit-slot empty';
         item.style.cursor = 'pointer';
+        
+        // 🆕 FIX: Use the animal's id + .png, with BASE_PATH for GitHub Pages
+        const imgSrc = `${window.BASE_PATH}images/animals/${animal.id}.png`;
+        
         item.innerHTML = `
-            <div class="slot-icon">${animal.icon || '🐾'}</div>
+            <img src="${imgSrc}" 
+                 alt="${animal.name}" 
+                 style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px;"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div style="font-size: 2.5rem; margin-bottom: 8px; display: none;">${animal.icon || '🐾'}</div>
             <div class="slot-title">${animal.name}</div>
             <div class="slot-subtitle">${animal.category || 'Animal'}</div>
             <div class="slot-subtitle">Cost: $${animal.cost}</div>
