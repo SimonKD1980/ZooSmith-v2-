@@ -5,16 +5,13 @@
 // =====================================================================
 import { state } from './engine/GameState.js';
 import { eventBus } from './engine/EventBus.js';
-import { advanceDay, loadGameData } from './engine/Engine.js';
+import { advanceDay, loadGameData, animalsData } from './engine/Engine.js'; // 🆕 Added animalsData
 import { HouseUI } from './ui/HouseUI.js';
-
-// (Add your other existing imports here, e.g., ShopUI, StaffUI, etc.)
 
 // =====================================================================
 // 2. INITIALIZATION
 // =====================================================================
 
-// 🆕 Wrap initialization in an async function to wait for JSON data
 async function initGame() {
     console.log('🦁 ZooSmith V2 Initializing...');
     
@@ -22,7 +19,8 @@ async function initGame() {
     await loadGameData(); 
     
     // 2. Initialize UI modules
-    HouseUI.init();
+    renderShop();      // 🆕 Renders the main animal shop
+    HouseUI.init();    // Initializes the Houses tab
     
     // 3. Initial UI render based on starting state
     updateHeaderUI();
@@ -49,10 +47,13 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         const sectionId = e.target.dataset.section;
         document.getElementById(sectionId).classList.add('active');
 
-        // 🆕 Refresh House UI when the tab is opened
+        // Refresh specific UIs when their tabs are opened
         if (sectionId === 'houses') {
             HouseUI.renderHouseShop();
             HouseUI.renderBuiltHouses();
+        }
+        if (sectionId === 'shop') {
+            renderShop(); // Refresh shop in case money/tiers changed
         }
     });
 });
@@ -79,6 +80,37 @@ eventBus.on('DAY_ADVANCED', () => {
 // 4. HELPER FUNCTIONS
 // =====================================================================
 
+/**
+ * 🆕 Renders the main Shop tab with animals from animals.json
+ */
+function renderShop() {
+    const shopContainer = document.getElementById('shop');
+    if (!shopContainer || !animalsData) return;
+    
+    shopContainer.innerHTML = ''; // Clear existing content
+    
+    // Create a grid to hold the shop items (reusing the exhibit-grid CSS)
+    const grid = document.createElement('div');
+    grid.className = 'exhibit-grid';
+    grid.style.marginTop = '0'; // Reset margin for shop
+    
+    animalsData.forEach(animal => {
+        const item = document.createElement('div');
+        item.className = 'exhibit-slot empty';
+        item.style.cursor = 'pointer';
+        item.innerHTML = `
+            <div class="slot-icon">${animal.icon || '🐾'}</div>
+            <div class="slot-title">${animal.name}</div>
+            <div class="slot-subtitle">${animal.category || 'Animal'}</div>
+            <div class="slot-subtitle">Cost: $${animal.cost}</div>
+            <button class="btn-small primary" onclick="openBuyAnimalModal('${animal.id}')">Buy</button>
+        `;
+        grid.appendChild(item);
+    });
+    
+    shopContainer.appendChild(grid);
+}
+
 function updateHeaderUI() {
     // Update Money
     const moneyEl = document.getElementById('money');
@@ -86,9 +118,7 @@ function updateHeaderUI() {
 
     // Update Date & Season
     const dayEl = document.getElementById('day');
-    const seasonEl = document.getElementById('season');
     if (dayEl) dayEl.innerText = `Day ${state.day}, M${state.month}, Y${state.year}`;
-    // (You can import getSeason from GameState.js to update the season emoji/text here)
 
     // Update Rating
     const ratingEl = document.getElementById('rating');
@@ -99,6 +129,44 @@ function updateHeaderUI() {
     if (satisfactionEl) satisfactionEl.innerText = `${state.visitorSatisfaction}%`;
 }
 
-// Make functions globally available for HTML onclick handlers (if needed)
-window.confirmBuyAnimal = function() { /* Your existing logic */ };
-window.closeBuyModal = function() { document.getElementById('buyModal').classList.remove('active'); };
+// =====================================================================
+// 5. GLOBAL MODAL HANDLERS
+// =====================================================================
+
+// Opens the buy animal modal and stores which animal we want to buy
+window.openBuyAnimalModal = function(animalId) {
+    window.animalToBuy = animalId;
+    
+    // Populate the exhibit dropdown (Basic example - adapt to your actual exhibit logic)
+    const select = document.getElementById('exhibitSelect');
+    select.innerHTML = '<option value="default">Default Exhibit</option>';
+    
+    // Show the modal
+    document.getElementById('buyModal').classList.add('active');
+};
+
+// Your existing confirm logic (adapt as needed)
+window.confirmBuyAnimal = function() {
+    const animalId = window.animalToBuy;
+    const animal = animalsData.find(a => a.id === animalId);
+    
+    if (!animal) return;
+
+    if (state.money >= animal.cost) {
+        state.money -= animal.cost;
+        
+        // 🆕 Add animal to state (Basic implementation - adapt to your exhibit logic)
+        // state.animals.push({ id: generateUniqueId('animal'), dataId: animalId, ... });
+        
+        eventBus.emit('MONEY_CHANGED');
+        closeBuyModal();
+        console.log(`✅ Bought ${animal.name}`);
+    } else {
+        alert("Not enough money!");
+    }
+};
+
+window.closeBuyModal = function() {
+    document.getElementById('buyModal').classList.remove('active');
+    window.animalToBuy = null;
+};
