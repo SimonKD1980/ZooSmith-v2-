@@ -12,22 +12,34 @@ import { processResearch } from './systems/ResearchSystem.js';
 // =====================================================================
 // 🆕 UNIVERSAL DATA HOLDERS (Loaded via fetch)
 // =====================================================================
+// 🆕 UNIVERSAL DATA HOLDERS (Loaded via fetch)
 export let housesData = [];
 export let indoorExhibitsData = [];
 export let animalsData = [];
 
 /**
  * Fetches all JSON data files. Call this ONCE when the game starts.
- * (Adjust the paths if your folder structure is different!)
  */
 export async function loadGameData() {
     try {
+        // 1. Detect if we are on GitHub Pages or running locally
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        
+        // 2. Set the correct base path
+        // GitHub Pages needs the repo name. Local testing needs to go up two folders from js/engine/
+        const basePath = isGitHubPages ? '/ZooSmith-v2-/' : '../../';
+
         const [housesRes, indoorRes, animalsRes] = await Promise.all([
-            fetch('../../data/houses.json'),
-            fetch('../../data/indoor_exhibits.json'),
-            fetch('../../data/animals.json')
+            fetch(`${basePath}data/houses.json`),
+            fetch(`${basePath}data/indoor_exhibits.json`),
+            fetch(`${basePath}data/animals.json`)
         ]);
         
+        // 3. Check if any file returned a 404 before trying to parse JSON
+        if (!housesRes.ok || !indoorRes.ok || !animalsRes.ok) {
+            throw new Error(`HTTP Error: One or more files returned ${housesRes.status} ${indoorRes.status} ${animalsRes.status}`);
+        }
+
         housesData = await housesRes.json();
         indoorExhibitsData = await indoorRes.json();
         animalsData = await animalsRes.json();
