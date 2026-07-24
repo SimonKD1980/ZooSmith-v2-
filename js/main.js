@@ -1,11 +1,11 @@
 // js/main.js
 
 // =====================================================================
-// 1. IMPORTS (Declare each ONLY ONCE at the top of the file)
+// 1. IMPORTS
 // =====================================================================
 import { state } from './engine/GameState.js';
-import { eventBus } from './engine/EventBus.js'; // ⚠️ MAKE SURE THIS IS ONLY HERE ONCE!
-import { advanceDay } from './engine/Engine.js';
+import { eventBus } from './engine/EventBus.js';
+import { advanceDay, loadGameData } from './engine/Engine.js';
 import { HouseUI } from './ui/HouseUI.js';
 
 // (Add your other existing imports here, e.g., ShopUI, StaffUI, etc.)
@@ -13,19 +13,25 @@ import { HouseUI } from './ui/HouseUI.js';
 // =====================================================================
 // 2. INITIALIZATION
 // =====================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🦁 ZooSmith V2 Initialized');
+
+// 🆕 Wrap initialization in an async function to wait for JSON data
+async function initGame() {
+    console.log('🦁 ZooSmith V2 Initializing...');
     
-    // Initialize UI modules
+    // 1. WAIT for all JSON data to load before doing anything else
+    await loadGameData(); 
+    
+    // 2. Initialize UI modules
     HouseUI.init();
     
-    // Initialize your other UI modules here...
-    // ShopUI.init();
-    // StaffUI.init();
-
-    // Initial UI render based on starting state
+    // 3. Initial UI render based on starting state
     updateHeaderUI();
-});
+    
+    console.log('✅ Game Ready!');
+}
+
+// Start the game when the page loads
+document.addEventListener('DOMContentLoaded', initGame);
 
 // =====================================================================
 // 3. EVENT LISTENERS
@@ -63,8 +69,6 @@ if (endDayBtn) {
 // --- EventBus Listeners (Live UI Updates) ---
 eventBus.on('MONEY_CHANGED', () => {
     updateHeaderUI();
-    // Optional: Re-render house lists if you want live updates without tab switching
-    // HouseUI.renderBuiltHouses(); 
 });
 
 eventBus.on('DAY_ADVANCED', () => {
