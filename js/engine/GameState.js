@@ -162,3 +162,5 @@ export function canPlaceAnimalInIndoorExhibit(animalData, exhibitData, currentAn
 
     return { valid: true };
 }
+
+window.state = state;
