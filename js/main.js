@@ -67,6 +67,12 @@ if (zooNameEl) {
         }
     });
 }
+// js/main.js (Add this to your existing init logic)
+import { HouseUI } from './ui/HouseUI.js';
+import { eventBus } from './engine/EventBus.js';
+
+// 1. Initialize House UI on load
+HouseUI
 
 
 // =====================================================================
