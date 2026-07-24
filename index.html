@@ -32,7 +32,6 @@
             margin-bottom: 20px;
         }
 
-        /* Brand Section */
         .header-brand {
             display: flex;
             align-items: center;
@@ -61,9 +60,7 @@
             transition: color 0.2s;
         }
 
-        .brand-name:hover {
-            color: #22c55e;
-        }
+        .brand-name:hover { color: #22c55e; }
 
         .edit-icon {
             opacity: 0;
@@ -72,18 +69,14 @@
             transition: opacity 0.2s;
         }
 
-        .brand-name:hover .edit-icon {
-            opacity: 1;
-        }
+        .brand-name:hover .edit-icon { opacity: 1; }
 
-        /* Stats Container */
         .header-stats {
             display: flex;
             gap: 16px;
             align-items: center;
         }
 
-        /* Individual Stat Card */
         .stat-card {
             display: flex;
             align-items: center;
@@ -103,11 +96,7 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
 
-        .stat-icon {
-            font-size: 1.8rem;
-            line-height: 1;
-            flex-shrink: 0;
-        }
+        .stat-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
 
         .stat-details {
             display: flex;
@@ -131,53 +120,29 @@
             white-space: nowrap;
         }
 
-        /* Stat Colors */
         .stat-card.money .stat-value { color: #22c55e; }
         .stat-card.rating .stat-value { color: #fbbf24; }
         .stat-card.satisfaction .stat-value { color: #3b82f6; }
         .stat-card.date .stat-label { color: #a855f7; }
 
-        /* TABLET (768px - 1024px) */
         @media (max-width: 1024px) {
-            .game-header {
-                padding: 14px 20px;
-                flex-direction: column;
-                gap: 16px;
-            }
-            .header-stats {
-                flex-wrap: wrap;
-                justify-content: center;
-                width: 100%;
-            }
-            .stat-card {
-                padding: 10px 14px;
-                min-width: 130px;
-            }
+            .game-header { padding: 14px 20px; flex-direction: column; gap: 16px; }
+            .header-stats { flex-wrap: wrap; justify-content: center; width: 100%; }
+            .stat-card { padding: 10px 14px; min-width: 130px; }
         }
 
-        /* MOBILE (640px - 767px) */
         @media (max-width: 767px) {
             .game-header { padding: 12px 16px; }
             .brand-icon { font-size: 2rem; }
             .brand-name { font-size: 1.4rem; }
-            .header-stats {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-                width: 100%;
-            }
-            .stat-card {
-                padding: 10px 12px;
-                min-width: auto;
-                justify-content: center;
-            }
+            .header-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+            .stat-card { padding: 10px 12px; min-width: auto; justify-content: center; }
             .stat-icon { font-size: 1.5rem; }
             .stat-details { min-width: auto; }
             .stat-label { font-size: 0.65rem; }
             .stat-value { font-size: 0.95rem; }
         }
 
-        /* SMALL MOBILE (< 640px) */
         @media (max-width: 640px) {
             body { padding: 10px; }
             .game-header { padding: 10px 12px; margin-bottom: 12px; }
@@ -190,7 +155,6 @@
             .stat-value { font-size: 0.85rem; }
         }
 
-        /* TINY PHONES (< 380px) */
         @media (max-width: 380px) {
             .header-stats { grid-template-columns: 1fr; }
             .stat-card { padding: 10px 12px; }
@@ -217,14 +181,8 @@
             font-size: 0.9rem;
             transition: all 0.2s;
         }
-        .nav button:hover {
-            background: #334155;
-            color: #e5e7eb;
-        }
-        .nav button.active {
-            background: #22c55e;
-            color: #000;
-        }
+        .nav button:hover { background: #334155; color: #e5e7eb; }
+        .nav button.active { background: #22c55e; color: #000; }
         
         /* Action Buttons */
         .action-bar {
@@ -259,10 +217,7 @@
             border-radius: 8px;
             margin-bottom: 15px;
         }
-        .status-panel h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.1rem;
-        }
+        .status-panel h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
         
         /* Modal */
         .modal {
@@ -284,10 +239,7 @@
             width: 90%;
             border: 2px solid #334155;
         }
-        .modal-content h3 {
-            margin-top: 0;
-            color: #e5e7eb;
-        }
+        .modal-content h3 { margin-top: 0; color: #e5e7eb; }
         .modal-content select {
             width: 100%;
             padding: 10px;
@@ -298,10 +250,7 @@
             border-radius: 8px;
             font-size: 1rem;
         }
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-        }
+        .modal-buttons { display: flex; gap: 10px; }
         .modal-buttons button {
             flex: 1;
             padding: 12px;
@@ -315,62 +264,69 @@
         .cancel-btn { background: #ef4444; color: #fff; }
         
         /* Tooltip Styles */
-        .tooltip-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-        
+        .tooltip-wrapper { position: relative; display: inline-block; }
         .tooltip-text {
-            visibility: hidden;
-            opacity: 0;
-            width: max-content;
-            max-width: 250px;
-            background: linear-gradient(135deg, #1e293b, #334155);
-            color: #e5e7eb;
-            text-align: left;
-            border-radius: 8px;
-            padding: 10px 14px;
-            position: absolute;
-            z-index: 100;
-            top: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: opacity 0.2s, visibility 0.2s;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            border: 1px solid #475569;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            white-space: normal;
+            visibility: hidden; opacity: 0; width: max-content; max-width: 250px;
+            background: linear-gradient(135deg, #1e293b, #334155); color: #e5e7eb;
+            text-align: left; border-radius: 8px; padding: 10px 14px;
+            position: absolute; z-index: 100; top: 125%; left: 50%;
+            transform: translateX(-50%); transition: opacity 0.2s, visibility 0.2s;
+            font-size: 0.85rem; line-height: 1.5; border: 1px solid #475569;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); pointer-events: none; white-space: normal;
         }
-        
         .tooltip-text::after {
-            content: "";
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            margin-left: -6px;
-            border-width: 6px;
-            border-style: solid;
-            border-color: transparent transparent #334155 transparent;
+            content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -6px;
+            border-width: 6px; border-style: solid; border-color: transparent transparent #334155 transparent;
         }
-        
-        .tooltip-text strong {
-            color: #22c55e;
-            display: block;
-            margin-bottom: 4px;
-            font-size: 0.9rem;
-        }
-        
-        .tooltip-wrapper:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
+        .tooltip-text strong { color: #22c55e; display: block; margin-bottom: 4px; font-size: 0.9rem; }
+        .tooltip-wrapper:hover .tooltip-text { visibility: visible; opacity: 1; }
+        @media (max-width: 767px) { .tooltip-text { display: none; } }
 
-        /* Mobile: Disable tooltips (useless on touch) */
-        @media (max-width: 767px) {
-            .tooltip-text { display: none; }
+        /* =========================================
+           🏠 HOUSE & INDOOR EXHIBIT UI STYLES
+           ========================================= */
+        .house-stats {
+            display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; color: #9ca3af;
+            margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;
         }
+        .house-stats span { display: flex; align-items: center; gap: 6px; }
+        .divider { border: 0; border-top: 1px solid #334155; margin: 20px 0; }
+        
+        .exhibit-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 15px;
+        }
+        .exhibit-slot {
+            background: #0f172a; border: 2px dashed #475569; border-radius: 8px; padding: 16px;
+            text-align: center; transition: all 0.2s; min-height: 140px; display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .exhibit-slot.occupied { border-style: solid; border-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+        .exhibit-slot.empty:hover { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); cursor: pointer; }
+        
+        .slot-icon { font-size: 2rem; margin-bottom: 8px; }
+        .slot-title { font-weight: 700; margin-bottom: 4px; color: #e5e7eb; font-size: 0.95rem; }
+        .slot-subtitle { font-size: 0.8rem; color: #9ca3af; margin-bottom: 12px; }
+        
+        .animal-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 12px; width: 100%; }
+        .animal-tag { background: #22c55e; color: #000; font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+        
+        .btn-small { 
+            padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; border: none;
+            font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-small.primary { background: #22c55e; color: #000; }
+        .btn-small.primary:hover { background: #16a34a; }
+        .btn-small.secondary { background: #334155; color: #e5e7eb; }
+        .btn-small.secondary:hover { background: #475569; }
+        .btn-small.danger { background: #ef4444; color: #fff; }
+        .btn-small.danger:hover { background: #dc2626; }
+
+        .animal-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; margin-top: 15px; }
+        .animal-list-item {
+            display: flex; justify-content: space-between; align-items: center; background: #0f172a;
+            padding: 12px; border-radius: 8px; border: 1px solid #334155; transition: border-color 0.2s;
+        }
+        .animal-list-item:hover { border-color: #22c55e; }
     </style>
 </head>
 <body>
@@ -381,9 +337,7 @@
     <header class="game-header">
         <div class="header-brand tooltip-wrapper">
             <span class="brand-icon">🦁</span>
-            <span class="brand-name" id="zooName">
-                My Zoo <span class="edit-icon">✏️</span>
-            </span>
+            <span class="brand-name" id="zooName">My Zoo <span class="edit-icon">✏️</span></span>
             <div class="tooltip-text">
                 <strong>🏞️ Zoo Name</strong>
                 Click the name to rename your zoo!
@@ -445,6 +399,7 @@
     <div class="nav">
         <button class="nav-btn active" data-section="shop">🛒 Shop</button>
         <button class="nav-btn" data-section="exhibits">🏞️ Exhibits</button>
+        <button class="nav-btn" data-section="houses">🏠 Houses</button>
         <button class="nav-btn" data-section="staff">👷 Staff</button>
         <button class="nav-btn" data-section="supplies">🍽️ Supplies</button>
         <button class="nav-btn" data-section="amenities">🏪 Amenities</button>
@@ -466,6 +421,20 @@
     <!-- Tab Sections -->
     <div id="shop" class="section active"></div>
     <div id="exhibits" class="section"></div>
+    
+    <!-- 🆕 Houses Section -->
+    <div id="houses" class="section">
+        <div class="status-panel">
+            <h3>🏗️ Build a New House</h3>
+            <p style="color: #9ca3af; margin-bottom: 15px;">Houses allow you to group smaller exhibits together and provide climate control for exotic animals.</p>
+            <div id="houseShopContainer" class="exhibit-grid"></div>
+        </div>
+        <div class="status-panel">
+            <h3>🏰 Your Built Houses</h3>
+            <div id="builtHousesList" class="exhibit-grid"></div>
+        </div>
+    </div>
+
     <div id="staff" class="section"></div>
     <div id="supplies" class="section"></div>
     <div id="amenities" class="section"></div>
@@ -502,6 +471,50 @@
             <h3>🏗️ Build New Exhibit</h3>
             <p style="color: #9ca3af; margin: 15px 0;">Coming soon! For now, use the default exhibit.</p>
             <button class="cancel-btn" style="width: 100%;" onclick="document.getElementById('buildModal').classList.remove('active')">Close</button>
+        </div>
+    </div>
+
+    <!-- 🏠 HOUSE DETAIL MODAL (Drill-Down View) -->
+    <div id="houseDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="modalHouseTitle" style="margin: 0; color: #22c55e;">House Name</h3>
+                <button class="btn-small secondary" onclick="HouseUI.closeModal()">✕</button>
+            </div>
+            
+            <p id="modalHouseDesc" style="color: #9ca3af; font-style: italic; margin-bottom: 15px;">Description goes here.</p>
+            
+            <div class="house-stats">
+                <span id="modalHouseClimate">🌡️ Climate: Temperate</span>
+                <span id="modalHouseUpkeep">💰 Upkeep: $50/day</span>
+                <span id="modalHouseCapacity">📦 Capacity: 0/4 Exhibits</span>
+            </div>
+
+            <hr class="divider">
+
+            <h4 style="margin-bottom: 10px;">Indoor Exhibits</h4>
+            <div id="indoorExhibitsGrid" class="exhibit-grid">
+                <!-- Indoor exhibit slots injected here -->
+            </div>
+
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="sellHouseBtn" class="btn-small danger">Sell House (50% Refund)</button>
+                <button class="btn-small secondary" onclick="HouseUI.closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🐾 ANIMAL SELECTOR MODAL -->
+    <div id="animalSelectorModal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Select an Animal</h3>
+                <button class="btn-small secondary" onclick="HouseUI.closeAnimalSelector()">✕</button>
+            </div>
+            <p style="color: #9ca3af;">Choose an animal from your zoo that fits this exhibit's requirements:</p>
+            <div id="compatibleAnimalsList" class="animal-list">
+                <!-- Compatible animals injected here -->
+            </div>
         </div>
     </div>
 
