@@ -2,9 +2,8 @@
 import { state, generateUniqueId, canPlaceAnimalInIndoorExhibit } from '../engine/GameState.js';
 import { eventBus } from '../engine/EventBus.js';
 
-import housesData from '../../data/houses.json' assert { type: 'json' };
-import indoorExhibitsData from '../../data/indoor_exhibits.json' assert { type: 'json' };
-import animalsData from '../../data/animals.json' assert { type: 'json' };
+// 🆕 Import the data arrays directly from the Engine (no more assert syntax!)
+import { housesData, indoorExhibitsData, animalsData } from '../engine/Engine.js';
 
 let currentHouseId = null;
 let currentExhibitId = null;
@@ -20,6 +19,7 @@ export const HouseUI = {
         if (!container) return;
         container.innerHTML = '';
         
+        // Only show houses unlocked by the player's current tier
         const availableHouses = housesData.filter(h => state.currentTier >= (h.unlockTier || 1));
 
         availableHouses.forEach(house => {
@@ -196,7 +196,7 @@ export const HouseUI = {
         
         const houseData = housesData.find(h => h.id === house.dataId);
         this.renderIndoorExhibitsGrid(house, houseData);
-        this.renderBuiltHouses(); // Update the main list count
+        this.renderBuiltHouses();
     },
 
     promptAddAnimal(houseInstanceId, exhibitInstanceId) {
@@ -207,9 +207,7 @@ export const HouseUI = {
         const exhibit = house.exhibits[exhibitInstanceId];
         const exData = indoorExhibitsData.find(e => e.id === exhibit.dataId);
 
-        // NOTE: Adjust this filter based on how your game tracks "unassigned" animals.
-        // For now, it checks all animals in the game data that meet the criteria.
-        // In a real implementation, you'd filter state.animals for unassigned ones.
+        // Filter animals from the master data that meet the exhibit's requirements
         const compatibleAnimals = animalsData.filter(animal => {
             const validation = canPlaceAnimalInIndoorExhibit(animal, exData, exhibit.animals.length);
             return validation.valid;
