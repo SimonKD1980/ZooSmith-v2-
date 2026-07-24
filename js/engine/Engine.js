@@ -9,11 +9,34 @@ import { processStaff } from './systems/StaffSystem.js';
 import { processRating } from './systems/RatingSystem.js';
 import { processResearch } from './systems/ResearchSystem.js';
 
-// 🆕 Import the new JSON data for Houses and Indoor Exhibits
-// (Adjust the path '../data/' if your engine folder is nested differently)
-import housesData from '../data/houses.json' assert { type: 'json' };
-import indoorExhibitsData from '../data/indoor_exhibits.json' assert { type: 'json' };
-import animalsData from '../data/animals.json' assert { type: 'json' };
+// =====================================================================
+// 🆕 UNIVERSAL DATA HOLDERS (Loaded via fetch)
+// =====================================================================
+export let housesData = [];
+export let indoorExhibitsData = [];
+export let animalsData = [];
+
+/**
+ * Fetches all JSON data files. Call this ONCE when the game starts.
+ * (Adjust the paths if your folder structure is different!)
+ */
+export async function loadGameData() {
+    try {
+        const [housesRes, indoorRes, animalsRes] = await Promise.all([
+            fetch('../../data/houses.json'),
+            fetch('../../data/indoor_exhibits.json'),
+            fetch('../../data/animals.json')
+        ]);
+        
+        housesData = await housesRes.json();
+        indoorExhibitsData = await indoorRes.json();
+        animalsData = await animalsRes.json();
+        
+        console.log('✅ All JSON data loaded successfully!');
+    } catch (error) {
+        console.error('❌ Failed to load game data:', error);
+    }
+}
 
 // =====================================================================
 // 🆕 UNIVERSAL HELPERS (Outdoor + Indoor)
@@ -60,7 +83,7 @@ export function getAllExhibits() {
                 isIndoor: true, 
                 parentHouseId: house.id,
                 parentHouseDataId: house.dataId,
-                houseUpkeep: houseData ? houseData.dailyUpkeep : 0 // We'll handle this in facilities
+                houseUpkeep: houseData ? houseData.dailyUpkeep : 0
             });
         });
     });
@@ -146,7 +169,7 @@ export function advanceDay() {
         animalBreakdown: animalBreakdown.breakdown,
         staffCount: state.hiredStaff?.length || 0,
         ticketPrice: state.ticketPrice || 20,
-        exhibits: Object.keys(state.exhibits || {}).length + Object.keys(state.houses || {}).length, // 🆕 Count houses too!
+        exhibits: Object.keys(state.exhibits || {}).length + Object.keys(state.houses || {}).length,
         neglectDeaths: state.dailyReport?.neglectDeaths || 0
     };
     
@@ -204,6 +227,3 @@ function getAnimalBreakdown() {
         breakdown
     };
 }
-
-// Export helpers so other systems can use them!
-export { getAllAnimals, getAllExhibits };
