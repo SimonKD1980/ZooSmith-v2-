@@ -1,5 +1,5 @@
 // js/engine/Engine.js
-import { state, getSeason, generateUniqueId, canPlaceAnimalInIndoorExhibit } from './GameState.js';
+import { state, getSeason } from './GameState.js';
 import { eventBus } from './EventBus.js';
 import { processEconomy } from './systems/EconomySystem.js';
 import { processWildlife } from './systems/WildlifeSystem.js';
@@ -9,107 +9,11 @@ import { processStaff } from './systems/StaffSystem.js';
 import { processRating } from './systems/RatingSystem.js';
 import { processResearch } from './systems/ResearchSystem.js';
 
-// =====================================================================
-// 🆕 UNIVERSAL DATA HOLDERS (Loaded via fetch)
-// =====================================================================
-// 🆕 UNIVERSAL DATA HOLDERS (Loaded via fetch)
-export let housesData = [];
-export let indoorExhibitsData = [];
-export let animalsData = [];
-
-/**
- * Fetches all JSON data files. Call this ONCE when the game starts.
- */
-export async function loadGameData() {
-    try {
-        // 1. Detect if we are on GitHub Pages or running locally
-        const isGitHubPages = window.location.hostname.includes('github.io');
-        
-        // 2. Set the correct base path
-        // GitHub Pages needs the repo name. Local testing needs to go up two folders from js/engine/
-        const basePath = isGitHubPages ? '/ZooSmith-v2-/' : '../../';
-
-        const [housesRes, indoorRes, animalsRes] = await Promise.all([
-            fetch(`${basePath}data/houses.json`),
-            fetch(`${basePath}data/indoor_exhibits.json`),
-            fetch(`${basePath}data/animals.json`)
-        ]);
-        
-        // 3. Check if any file returned a 404 before trying to parse JSON
-        if (!housesRes.ok || !indoorRes.ok || !animalsRes.ok) {
-            throw new Error(`HTTP Error: One or more files returned ${housesRes.status} ${indoorRes.status} ${animalsRes.status}`);
-        }
-
-        housesData = await housesRes.json();
-        indoorExhibitsData = await indoorRes.json();
-        animalsData = await animalsRes.json();
-        
-        console.log('✅ All JSON data loaded successfully!');
-    } catch (error) {
-        console.error('❌ Failed to load game data:', error);
-    }
-}
-
-// =====================================================================
-// 🆕 UNIVERSAL HELPERS (Outdoor + Indoor)
-// =====================================================================
-
-/**
- * Gets EVERY animal object in the zoo, regardless of where it is housed.
- */
-export function getAllAnimals() {
-    const allAnimals = [];
-    
-    // 1. Grab outdoor animals
-    Object.values(state.exhibits || {}).forEach(exhibit => {
-        if (exhibit.animals) allAnimals.push(...exhibit.animals);
-    });
-    
-    // 2. Grab indoor animals (nested inside houses)
-    Object.values(state.houses || {}).forEach(house => {
-        Object.values(house.exhibits || {}).forEach(exhibit => {
-            if (exhibit.animals) allAnimals.push(...exhibit.animals);
-        });
-    });
-    
-    return allAnimals;
-}
-
-/**
- * Gets EVERY exhibit in the zoo, flagging whether it is indoor or outdoor.
- */
-export function getAllExhibits() {
-    const allExhibits = [];
-    
-    // 1. Outdoor exhibits
-    Object.values(state.exhibits || {}).forEach(exhibit => {
-        allExhibits.push({ ...exhibit, isIndoor: false });
-    });
-    
-    // 2. Indoor exhibits (nested inside houses)
-    Object.values(state.houses || {}).forEach(house => {
-        const houseData = housesData.find(h => h.id === house.dataId);
-        Object.values(house.exhibits || {}).forEach(exhibit => {
-            allExhibits.push({ 
-                ...exhibit, 
-                isIndoor: true, 
-                parentHouseId: house.id,
-                parentHouseDataId: house.dataId,
-                houseUpkeep: houseData ? houseData.dailyUpkeep : 0
-            });
-        });
-    });
-    
-    return allExhibits;
-}
-
-// =====================================================================
-// ⏱️ CORE DAY ADVANCEMENT
-// =====================================================================
-
 export function advanceDay() {
     console.log(`\n========== ADVANCING TO DAY ${state.day} ==========`);
-    
+    console.log('🔍 BEFORE RESET - dailyReport:', JSON.stringify(state.dailyReport));
+    console.log('🔍 BEFORE RESET - hiredStaff:', state.hiredStaff);
+
     // 🔥 NUCLEAR RESET: Force everything to 0
     state.dailyReport = {
         staffExpense: 0,
@@ -121,22 +25,45 @@ export function advanceDay() {
         neglectFines: 0,
         neglectDeaths: 0
     };
+    
+    console.log('✅ AFTER RESET - dailyReport:', JSON.stringify(state.dailyReport));
 
     const startMoney = state.money;
     const startRating = state.zooRating;
 
     // 🔥 Track each step
+    console.log('\n--- Running processStaff() ---');
     processStaff();
+    console.log('📊 After processStaff - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processWildlife() ---');
     processWildlife();
+    console.log('📊 After processWildlife - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processFacilities() ---');
     processFacilities();
+    console.log('📊 After processFacilities - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processVisitors() ---');
     processVisitors();
+    console.log('📊 After processVisitors - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processRating() ---');
     processRating();
+    console.log('📊 After processRating - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processResearch() ---');
     processResearch();
+    console.log('📊 After processResearch - dailyReport.staffExpense:', state.dailyReport.staffExpense);
+
+    console.log('\n--- Running processEconomy() ---');
     processEconomy();
+    console.log('📊 After processEconomy - dailyReport.staffExpense:', state.dailyReport.staffExpense);
 
     // 🔥 FINAL SAFETY CHECK: Force staff to 0 if no staff hired
     if (!state.hiredStaff || state.hiredStaff.length === 0) {
         if (state.dailyReport.staffExpense !== 0) {
+            console.log('🚨 BUG DETECTED! staffExpense was', state.dailyReport.staffExpense, 'but no staff hired. FORCING TO 0');
             state.dailyReport.staffExpense = 0;
         }
     }
@@ -147,6 +74,10 @@ export function advanceDay() {
     const animalBreakdown = getAnimalBreakdown();
     const animalPurchases = state.dailyReport?.animalPurchases || [];
     const animalPurchaseTotal = animalPurchases.reduce((sum, p) => sum + p.cost, 0);
+    
+    console.log('\n📊 FINAL VALUES:');
+    console.log('  staffExpense:', state.dailyReport.staffExpense);
+    console.log('  hiredStaff.length:', state.hiredStaff?.length);
     
     const dailyReport = {
         day: state.day,
@@ -181,7 +112,7 @@ export function advanceDay() {
         animalBreakdown: animalBreakdown.breakdown,
         staffCount: state.hiredStaff?.length || 0,
         ticketPrice: state.ticketPrice || 20,
-        exhibits: Object.keys(state.exhibits || {}).length + Object.keys(state.houses || {}).length,
+        exhibits: Object.keys(state.exhibits || {}).length,
         neglectDeaths: state.dailyReport?.neglectDeaths || 0
     };
     
@@ -193,45 +124,45 @@ export function advanceDay() {
     state.day++;
     state.daysSinceNewAnimal++;
 
-    // 🔥 Handle Month and Year rollovers
+    // 🔥 NEW: Handle Month and Year rollovers
     if (state.day > state.daysInMonth) {
         state.day = 1;
         state.month++;
 
+        // New Year!
         if (state.month > 12) {
             state.month = 1;
             state.year++;
             eventBus.emit('YEAR_ADVANCED', { year: state.year });
         }
         
+        // New Month / Season Change!
         eventBus.emit('MONTH_ADVANCED', { 
             month: state.month, 
             season: getSeason() 
         });
     }
 
+    console.log('\n✅ FINAL DAILY REPORT:', JSON.stringify(dailyReport.expenses));
+    console.log('==========================================\n');
+
     eventBus.emit('DAY_ADVANCED');
     eventBus.emit('DAILY_REPORT_GENERATED', dailyReport);
 }
-
-// =====================================================================
-// 📊 REPORTING HELPERS
-// =====================================================================
 
 function getAnimalBreakdown() {
     const breakdown = {};
     let total = 0;
     
-    // 🆕 Use the universal helper to get ALL animals (indoor + outdoor)
-    const allAnimals = getAllAnimals();
-    
-    allAnimals.forEach(animal => {
-        const speciesName = animal.speciesName || animal.name || animal.id;
-        if (!breakdown[speciesName]) {
-            breakdown[speciesName] = 0;
-        }
-        breakdown[speciesName]++;
-        total++;
+    Object.values(state.exhibits || {}).forEach(exhibit => {
+        (exhibit.animals || []).forEach(animal => {
+            const speciesName = animal.speciesName || animal.name || animal.id;
+            if (!breakdown[speciesName]) {
+                breakdown[speciesName] = 0;
+            }
+            breakdown[speciesName]++;
+            total++;
+        });
     });
     
     return {
