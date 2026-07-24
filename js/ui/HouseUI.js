@@ -1,9 +1,7 @@
 // js/ui/HouseUI.js
 import { state, generateUniqueId, canPlaceAnimalInIndoorExhibit } from '../engine/GameState.js';
 import { eventBus } from '../engine/EventBus.js';
-
-// 🆕 Import the data arrays directly from the Engine (no more assert syntax!)
-import { housesData, indoorExhibitsData, animalsData } from '../engine/Engine.js';
+import { data } from '../engine/data.js'; // Uses your existing data loader!
 
 let currentHouseId = null;
 let currentExhibitId = null;
@@ -16,11 +14,10 @@ export const HouseUI = {
 
     renderHouseShop() {
         const container = document.getElementById('houseShopContainer');
-        if (!container) return;
+        if (!container || !data.houses) return;
         container.innerHTML = '';
         
-        // Only show houses unlocked by the player's current tier
-        const availableHouses = housesData.filter(h => state.currentTier >= (h.unlockTier || 1));
+        const availableHouses = data.houses.filter(h => state.currentTier >= (h.unlockTier || 1));
 
         availableHouses.forEach(house => {
             const div = document.createElement('div');
@@ -50,7 +47,7 @@ export const HouseUI = {
         }
 
         houseInstances.forEach(house => {
-            const houseData = housesData.find(h => h.id === house.dataId);
+            const houseData = data.houses.find(h => h.id === house.dataId);
             const div = document.createElement('div');
             div.className = 'exhibit-slot occupied';
             div.style.cursor = 'pointer';
@@ -66,7 +63,7 @@ export const HouseUI = {
     },
 
     buyHouse(houseDataId) {
-        const houseData = housesData.find(h => h.id === houseDataId);
+        const houseData = data.houses.find(h => h.id === houseDataId);
         if (!houseData) return;
 
         if (state.money < houseData.cost) {
@@ -94,7 +91,7 @@ export const HouseUI = {
         const house = state.houses[houseInstanceId];
         if (!house) return;
 
-        const houseData = housesData.find(h => h.id === house.dataId);
+        const houseData = data.houses.find(h => h.id === house.dataId);
         const exhibitCount = Object.keys(house.exhibits).length;
 
         document.getElementById('modalHouseTitle').innerText = `${houseData.icon} ${house.name}`;
@@ -104,7 +101,6 @@ export const HouseUI = {
         document.getElementById('modalHouseCapacity').innerText = `📦 Capacity: ${exhibitCount}/${houseData.capacity} Exhibits`;
 
         document.getElementById('sellHouseBtn').onclick = () => this.sellHouse(houseInstanceId);
-
         this.renderIndoorExhibitsGrid(house, houseData);
         document.getElementById('houseDetailModal').classList.add('active');
     },
@@ -116,9 +112,9 @@ export const HouseUI = {
         const exhibitCount = Object.keys(house.exhibits).length;
 
         Object.values(house.exhibits).forEach(exhibit => {
-            const exData = indoorExhibitsData.find(e => e.id === exhibit.dataId);
+            const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
             const animalNames = exhibit.animals.map(aId => {
-                const animal = animalsData.find(a => a.id === aId);
+                const animal = data.animals.find(a => a.id === aId);
                 return animal ? animal.name : 'Unknown';
             });
 
@@ -152,9 +148,9 @@ export const HouseUI = {
 
     showBuildExhibitOptions(houseInstanceId) {
         const house = state.houses[houseInstanceId];
-        const houseData = housesData.find(h => h.id === house.dataId);
+        const houseData = data.houses.find(h => h.id === house.dataId);
         
-        const allowedExhibits = indoorExhibitsData.filter(ex => 
+        const allowedExhibits = data.indoor_exhibits.filter(ex => 
             houseData.allowedExhibitSize.includes(ex.size) &&
             houseData.allowedExhibitType.includes(ex.type)
         );
@@ -176,7 +172,7 @@ export const HouseUI = {
 
     buildIndoorExhibit(houseInstanceId, exhibitDataId) {
         const house = state.houses[houseInstanceId];
-        const exData = indoorExhibitsData.find(e => e.id === exhibitDataId);
+        const exData = data.indoor_exhibits.find(e => e.id === exhibitDataId);
 
         if (state.money < exData.cost) {
             alert("Not enough money to build this exhibit!");
@@ -194,7 +190,7 @@ export const HouseUI = {
         state.money -= exData.cost;
         eventBus.emit('MONEY_CHANGED');
         
-        const houseData = housesData.find(h => h.id === house.dataId);
+        const houseData = data.houses.find(h => h.id === house.dataId);
         this.renderIndoorExhibitsGrid(house, houseData);
         this.renderBuiltHouses();
     },
@@ -205,10 +201,9 @@ export const HouseUI = {
         
         const house = state.houses[houseInstanceId];
         const exhibit = house.exhibits[exhibitInstanceId];
-        const exData = indoorExhibitsData.find(e => e.id === exhibit.dataId);
+        const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
 
-        // Filter animals from the master data that meet the exhibit's requirements
-        const compatibleAnimals = animalsData.filter(animal => {
+        const compatibleAnimals = data.animals.filter(animal => {
             const validation = canPlaceAnimalInIndoorExhibit(animal, exData, exhibit.animals.length);
             return validation.valid;
         });
@@ -238,8 +233,8 @@ export const HouseUI = {
 
         const house = state.houses[currentHouseId];
         const exhibit = house.exhibits[currentExhibitId];
-        const animalData = animalsData.find(a => a.id === animalId);
-        const exData = indoorExhibitsData.find(e => e.id === exhibit.dataId);
+        const animalData = data.animals.find(a => a.id === animalId);
+        const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
 
         const validation = canPlaceAnimalInIndoorExhibit(animalData, exData, exhibit.animals.length);
         
@@ -251,7 +246,7 @@ export const HouseUI = {
         exhibit.animals.push(animalId);
         this.closeAnimalSelector();
         
-        const houseData = housesData.find(h => h.id === house.dataId);
+        const houseData = data.houses.find(h => h.id === house.dataId);
         this.renderIndoorExhibitsGrid(house, houseData);
         eventBus.emit('ANIMAL_ASSIGNED', { animalId, exhibitId: currentExhibitId });
     },
@@ -260,7 +255,7 @@ export const HouseUI = {
         if (!confirm("Are you sure? Selling the house will also remove all exhibits and animals inside it!")) return;
 
         const house = state.houses[houseInstanceId];
-        const houseData = housesData.find(h => h.id === house.dataId);
+        const houseData = data.houses.find(h => h.id === house.dataId);
         
         state.money += Math.floor(houseData.cost * 0.5);
         delete state.houses[houseInstanceId];
@@ -282,5 +277,4 @@ export const HouseUI = {
     }
 };
 
-// Make it globally accessible for HTML onclick handlers
 window.HouseUI = HouseUI;
