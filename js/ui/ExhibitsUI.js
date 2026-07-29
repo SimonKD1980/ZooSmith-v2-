@@ -21,8 +21,8 @@ export function renderExhibits() {
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
     `;
 
-    for (const size in EXHIBIT_TYPES) {
-        const exhibitType = EXHIBIT_TYPES[size];
+    for (const sizeKey in EXHIBIT_TYPES) {
+        const exhibitType = EXHIBIT_TYPES[sizeKey];
         const canAfford = state.money >= exhibitType.cost;
         html += `
             <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px;">
@@ -36,7 +36,7 @@ export function renderExhibits() {
                 <div style="font-size: 1.2rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
                     💰 $${exhibitType.cost.toLocaleString()}
                 </div>
-                <button onclick="window.buildExhibit('${size}')" 
+                <button onclick="window.buildExhibit('${sizeKey}')" 
                     style="width: 100%; padding: 10px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-size: 0.95rem;"
                     ${!canAfford ? 'disabled' : ''}>
                     ${canAfford ? '🏗️ Build' : '💸 Can\'t Afford'}
@@ -60,12 +60,14 @@ export function renderExhibits() {
             const fenceColor = fence >= 70 ? '#22c55e' : fence >= 50 ? '#f59e0b' : fence >= 30 ? '#ef4444' : '#dc2626';
             const cleanColor = cleanliness >= 70 ? '#22c55e' : cleanliness >= 50 ? '#f59e0b' : cleanliness >= 30 ? '#ef4444' : '#dc2626';
             const isUnderConstruction = exhibit.buildDaysRemaining > 0;
-            const exhibitType = EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
+            
+            // 🔥 FIX: Look up by type FIRST, then fall back to size
+            const exhibitType = EXHIBIT_TYPES[exhibit.type] || EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
+            
             const repairCost = Math.ceil((100 - fence) * 2);
             const breedingInfo = getBreedingOpportunities(exhibit);
             const hasJanitors = getCleanerCapacity() > 0;
 
-            // 🔥 Get upgrade info
             const availableUpgrades = getAvailableUpgrades(exhibit);
             const installedUpgrades = availableUpgrades.filter(u => u.installed);
             const purchasableUpgrades = availableUpgrades.filter(u => u.available);
@@ -140,7 +142,7 @@ export function renderExhibits() {
                             </div>`
                         }
                     </div>
-                    <!-- 🔥 UPGRADES SECTION -->
+                    <!-- UPGRADES SECTION -->
                     <div style="border-top: 1px solid #1e293b; padding-top: 12px; margin-top: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div style="font-weight: 700; color: #e5e7eb;">⬆️ Upgrades</div>
@@ -308,31 +310,32 @@ function getPregnancyProgress(animal) {
 // =====================================================================
 // ACTIONS
 // =====================================================================
-export function buildExhibit(size) {
-    const exhibitType = EXHIBIT_TYPES[size];
+export function buildExhibit(sizeKey) {
+    const exhibitType = EXHIBIT_TYPES[sizeKey];
     if (!exhibitType) {
         alert("Unknown exhibit type!");
         return;
     }
-
     if (state.money < exhibitType.cost) {
         alert(`Not enough money! Need $${exhibitType.cost}`);
         return;
     }
-
     const name = prompt(`Name your new ${exhibitType.name}:`, `Exhibit ${Object.keys(state.exhibits).length + 1}`);
     if (!name) return;
 
     state.money -= exhibitType.cost;
 
+    // 🔥 FIX: Determine the actual habitat type based on what was clicked
+    let habitatType = 'terrestrial';
+    if (sizeKey === 'terrarium') habitatType = 'terrarium';
+    else if (sizeKey === 'aquatic') habitatType = 'aquatic';
+
     const newId = 'exhibit_' + Date.now();
     state.exhibits[newId] = {
         id: newId,
         name: name,
-        size: exhibitType.size,
-        // 🔥 FIX: Use the actual exhibit type (e.g., 'terrarium', 'small', 'medium', 'large')
-        // instead of hardcoding 'terrestrial'. This ensures terrariums are tagged correctly.
-        type: size,
+        size: exhibitType.size,      // 'small', 'medium', 'large'
+        type: habitatType,           // 'terrestrial', 'terrarium', or 'aquatic'
         animals: [],
         upgrades: [],
         buildDaysRemaining: exhibitType.buildDays,
@@ -343,7 +346,7 @@ export function buildExhibit(size) {
     eventBus.emit('EXHIBIT_BUILD_STARTED', {
         name: name,
         size: exhibitType.size,
-        type: size,
+        type: habitatType,
         cost: exhibitType.cost,
         days: exhibitType.buildDays
     });
@@ -508,8 +511,7 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
 
     const speciesData = data.animals.find(a => a.id === animal.id);
     const requiredSize = speciesData?.requiredExhibitSize || 'small';
-    // 🔥 FIX: Get the required exhibit type (e.g., 'terrarium' for lizards, 'terrestrial' for most animals)
-    const requiredType = speciesData?.requiredExhibitType || 'terrestrial';
+    const requiredType = speciesData?.requiredExhibitType || 'terrestrial'; // 🔥 FIX: Get required type
 
     const compatibleExhibits = [];
 
@@ -521,7 +523,8 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
         // 🔥 FIX: TYPE CHECK - Only show exhibits matching the animal's required type
         if (exhibit.type !== requiredType) continue;
 
-        const exhibitType = EXHIBIT_TYPES[exhibit.size];
+        // 🔥 FIX: Look up by type FIRST, then fall back to size
+        const exhibitType = EXHIBIT_TYPES[exhibit.type] || EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
         if (!exhibitType) continue;
 
         const sizeOrder = ['small', 'medium', 'large'];
