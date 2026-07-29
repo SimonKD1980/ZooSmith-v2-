@@ -337,7 +337,7 @@ export function buildExhibit(size) {
         id: newId,
         name: name,
         size: exhibitType.size,
-        type: 'terrestrial',
+        type: size,
         animals: [],
         upgrades: [],
         buildDaysRemaining: exhibitType.buildDays,
@@ -523,16 +523,7 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
     const requiredSize = speciesData?.requiredExhibitSize || 'small';
 
     const compatibleExhibits = [];
-    for (const id in state.exhibits) {
-        if (id === currentExhibitId) continue;
-        
-        const exhibit = state.exhibits[id];
-        if (exhibit.buildDaysRemaining > 0) continue;
-        
-        const exhibitType = EXHIBIT_TYPES[exhibit.size];
-        if (!exhibitType) continue;
-        
-        const sizeOrder = ['small', 'medium', 'large'];
+            const requiredIndex = sizeOrder.indexOf(requiredSize);
         const requiredIndex = sizeOrder.indexOf(requiredSize);
         const exhibitIndex = sizeOrder.indexOf(exhibit.size);
         
