@@ -24,7 +24,6 @@ export function renderExhibits() {
     for (const size in EXHIBIT_TYPES) {
         const exhibitType = EXHIBIT_TYPES[size];
         const canAfford = state.money >= exhibitType.cost;
-
         html += `
             <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px;">
                 <div style="text-align: center; font-size: 2.5rem; margin-bottom: 8px;">${exhibitType.icon}</div>
@@ -60,11 +59,9 @@ export function renderExhibits() {
             const cleanliness = exhibit.cleanliness ?? 100;
             const fenceColor = fence >= 70 ? '#22c55e' : fence >= 50 ? '#f59e0b' : fence >= 30 ? '#ef4444' : '#dc2626';
             const cleanColor = cleanliness >= 70 ? '#22c55e' : cleanliness >= 50 ? '#f59e0b' : cleanliness >= 30 ? '#ef4444' : '#dc2626';
-            
             const isUnderConstruction = exhibit.buildDaysRemaining > 0;
             const exhibitType = EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
             const repairCost = Math.ceil((100 - fence) * 2);
-
             const breedingInfo = getBreedingOpportunities(exhibit);
             const hasJanitors = getCleanerCapacity() > 0;
 
@@ -74,12 +71,20 @@ export function renderExhibits() {
             const purchasableUpgrades = availableUpgrades.filter(u => u.available);
             const exhibitEffects = getExhibitEffects(exhibit);
 
+            // 🔥 NEW: Display exhibit type badge
+            const typeBadge = exhibit.type === 'terrarium' 
+                ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🦎 Terrarium</span>'
+                : exhibit.type === 'aquatic'
+                ? '<span style="background: #3b82f6; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🌊 Aquatic</span>'
+                : '<span style="background: #22c55e; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🌍 Terrestrial</span>';
+
             html += `
                 <div style="background: #0f172a; border: 1px solid ${isUnderConstruction ? '#f59e0b' : '#334155'}; border-radius: 10px; padding: 15px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
                         <div>
                             <h4 style="margin: 0; color: #e5e7eb; font-size: 1.2rem;">
                                 ${exhibitType.icon} ${exhibit.name}
+                                ${typeBadge}
                                 ${isUnderConstruction ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🚧 Building</span>' : ''}
                             </h4>
                             <div style="color: #9ca3af; font-size: 0.85rem; margin-top: 4px;">
@@ -102,7 +107,6 @@ export function renderExhibits() {
                             ` : ''}
                         </div>
                     </div>
-                    
                     ${isUnderConstruction ? `
                         <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
                             <div style="color: #fbbf24; font-weight: 700; margin-bottom: 4px;">🚧 Under Construction</div>
@@ -117,7 +121,6 @@ export function renderExhibits() {
                             <div>✨ Clean: <strong style="color: ${cleanColor}">${cleanliness.toFixed(1)}%</strong></div>
                         </div>
                     `}
-                    
                     ${breedingInfo.canBreed ? `
                         <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid #ec4899; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
                             <div style="color: #f9a8d4; font-weight: 700; margin-bottom: 6px;">💕 Breeding Opportunities</div>
@@ -128,7 +131,6 @@ export function renderExhibits() {
                             `).join('')}
                         </div>
                     ` : ''}
-                    
                     <div style="border-top: 1px solid #1e293b; padding-top: 10px; margin-top: 10px;">
                         <div style="font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">🐾 Animals (${exhibit.animals.length})</div>
                         ${exhibit.animals.length === 0 ? 
@@ -138,14 +140,12 @@ export function renderExhibits() {
                             </div>`
                         }
                     </div>
-                    
                     <!-- 🔥 UPGRADES SECTION -->
                     <div style="border-top: 1px solid #1e293b; padding-top: 12px; margin-top: 12px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <div style="font-weight: 700; color: #e5e7eb;">⬆️ Upgrades</div>
                             <div style="font-size: 0.8rem; color: #9ca3af;">${installedUpgrades.length} installed</div>
                         </div>
-                        
                         ${installedUpgrades.length > 0 ? `
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
                                 ${installedUpgrades.map(u => `
@@ -159,7 +159,6 @@ export function renderExhibits() {
                                 `).join('')}
                             </div>
                         ` : ''}
-                        
                         ${exhibitEffects.happiness > 0 || exhibitEffects.attraction > 0 || exhibitEffects.income > 0 ? `
                             <div style="background: #1e293b; padding: 8px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                                 ${exhibitEffects.happiness > 0 ? `<span style="color: #22c55e;">😊 +${exhibitEffects.happiness} happiness</span>` : ''}
@@ -170,7 +169,6 @@ export function renderExhibits() {
                                 ${exhibitEffects.fenceDecayReduction < 1 ? `<span style="color: #3b82f6;">🛡️ -${Math.round((1-exhibitEffects.fenceDecayReduction)*100)}% fence decay</span>` : ''}
                             </div>
                         ` : ''}
-                        
                         ${!isUnderConstruction && purchasableUpgrades.length > 0 ? `
                             <details style="margin-bottom: 8px;">
                                 <summary style="cursor: pointer; color: #3b82f6; font-size: 0.9rem; font-weight: 600; padding: 4px 0;">
@@ -201,7 +199,6 @@ export function renderExhibits() {
                                 </div>
                             </details>
                         ` : ''}
-                        
                         ${isUnderConstruction ? `
                             <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">🚧 Upgrades available after construction completes.</div>
                         ` : purchasableUpgrades.length === 0 && installedUpgrades.length === 0 ? `
@@ -221,20 +218,20 @@ export function renderExhibits() {
 
 function getBreedingOpportunities(exhibit) {
     if (exhibit.buildDaysRemaining > 0) return { canBreed: false, pairs: [] };
-    
+
     const speciesGroups = {};
     exhibit.animals.forEach(animal => {
         const species = animal.id;
         if (!speciesGroups[species]) speciesGroups[species] = [];
         speciesGroups[species].push(animal);
     });
-    
+
     const pairs = [];
     for (const species in speciesGroups) {
         const group = speciesGroups[species];
         const males = group.filter(a => a.gender === 'male' && getLifeStage(a.ageDays || 0).stage === 'adult');
         const females = group.filter(a => a.gender === 'female' && getLifeStage(a.ageDays || 0).stage === 'adult' && !a.isPregnant);
-        
+
         if (males.length > 0 && females.length > 0) {
             const speciesData = data.animals.find(a => a.id === species);
             pairs.push({
@@ -244,7 +241,7 @@ function getBreedingOpportunities(exhibit) {
             });
         }
     }
-    
+
     return {
         canBreed: pairs.length > 0,
         pairs: pairs
@@ -255,10 +252,9 @@ function renderAnimalCard(animal, exhibitId) {
     const stage = getLifeStage(animal.ageDays || 0);
     const health = animal.health ?? 100;
     const healthColor = health >= 70 ? '#22c55e' : health >= 40 ? '#f59e0b' : '#ef4444';
-    
     const genderEmoji = animal.gender === 'male' ? '♂️' : '♀️';
     const genderColor = animal.gender === 'male' ? '#3b82f6' : '#ec4899';
-    
+
     const statusBadges = [];
     if (animal.bornInZoo) statusBadges.push('<span style="background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🏠 Zoo Born</span>');
     if (animal.sick) statusBadges.push('<span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🤒 Sick</span>');
@@ -282,7 +278,6 @@ function renderAnimalCard(animal, exhibitId) {
             <div style="height: 4px; background: #0f172a; border-radius: 2px; overflow: hidden; margin-bottom: 4px;">
                 <div style="height: 100%; width: ${health}%; background: ${healthColor};"></div>
             </div>
-            
             ${animal.isPregnant ? `
                 <div style="background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; border-radius: 6px; padding: 6px; margin-top: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -294,7 +289,6 @@ function renderAnimalCard(animal, exhibitId) {
                     </div>
                 </div>
             ` : ''}
-            
             ${statusBadges.length > 0 ? `
                 <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;">
                     ${statusBadges.join('')}
@@ -314,7 +308,6 @@ function getPregnancyProgress(animal) {
 // =====================================================================
 // ACTIONS
 // =====================================================================
-
 export function buildExhibit(size) {
     const exhibitType = EXHIBIT_TYPES[size];
     if (!exhibitType) {
@@ -337,6 +330,8 @@ export function buildExhibit(size) {
         id: newId,
         name: name,
         size: exhibitType.size,
+        // 🔥 FIX: Use the actual exhibit type (e.g., 'terrarium', 'small', 'medium', 'large')
+        // instead of hardcoding 'terrestrial'. This ensures terrariums are tagged correctly.
         type: size,
         animals: [],
         upgrades: [],
@@ -348,6 +343,7 @@ export function buildExhibit(size) {
     eventBus.emit('EXHIBIT_BUILD_STARTED', {
         name: name,
         size: exhibitType.size,
+        type: size,
         cost: exhibitType.cost,
         days: exhibitType.buildDays
     });
@@ -376,7 +372,6 @@ export function repairFence(exhibitId) {
     }
 
     const repairCost = Math.ceil((100 - fence) * 2);
-
     if (state.money < repairCost) {
         alert(`Not enough money! Need $${repairCost}`);
         return;
@@ -407,7 +402,6 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
     if (!animal) {
         animal = exhibit.animals.find(a => a.name === animalIdentifier);
     }
-    
     if (!animal) {
         console.error('Animal not found:', animalIdentifier);
         alert('Animal not found!');
@@ -423,7 +417,6 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
     if (animal.bornInZoo && animal.mother) {
         let motherName = 'Unknown';
         let fatherName = 'Unknown';
-        
         for (const ex of Object.values(state.exhibits)) {
             const mom = ex.animals.find(a => a.uid === animal.mother);
             if (mom) motherName = mom.name;
@@ -432,7 +425,6 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
                 if (dad) fatherName = dad.name;
             }
         }
-        
         parentInfo = `
             <div style="background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #9ca3af; margin-bottom: 15px;">
                 <strong style="color: #e5e7eb;">👨‍👩‍👧 Family:</strong><br>
@@ -444,7 +436,7 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
 
     const alertBox = document.createElement('div');
     alertBox.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
-    
+
     alertBox.innerHTML = `
         <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #334155; max-height: 90vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
@@ -454,7 +446,6 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
                 </div>
                 <button onclick="this.closest('div[style*=fixed]').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700;">✕</button>
             </div>
-            
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                 <div style="background: #0f172a; padding: 10px; border-radius: 6px;">
                     <div style="font-size: 0.75rem; color: #9ca3af;">Gender</div>
@@ -473,7 +464,6 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
                     <div style="font-weight: 700; color: ${animal.bornInZoo ? '#22c55e' : '#9ca3af'};">${animal.bornInZoo ? 'Yes 🏠' : 'No'}</div>
                 </div>
             </div>
-            
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <span style="color: #9ca3af;">❤️ Health</span>
@@ -483,7 +473,6 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
                     <div style="height: 100%; width: ${health}%; background: ${health >= 70 ? '#22c55e' : health >= 40 ? '#f59e0b' : '#ef4444'};"></div>
                 </div>
             </div>
-            
             ${animal.isPregnant ? `
                 <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid #ec4899; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                     <div style="color: #ec4899; font-weight: 700;">🤰 Pregnant</div>
@@ -493,16 +482,14 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
                     </div>
                 </div>
             ` : ''}
-            
             ${parentInfo}
-            
             <button onclick="window.openTransferModal('${exhibitId}', '${animal.uid || animal.name}')" 
                 style="width: 100%; padding: 12px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
                 🔄 Transfer to Another Exhibit
             </button>
         </div>
     `;
-    
+
     document.body.appendChild(alertBox);
 }
 
@@ -521,19 +508,34 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
 
     const speciesData = data.animals.find(a => a.id === animal.id);
     const requiredSize = speciesData?.requiredExhibitSize || 'small';
+    // 🔥 FIX: Get the required exhibit type (e.g., 'terrarium' for lizards, 'terrestrial' for most animals)
+    const requiredType = speciesData?.requiredExhibitType || 'terrestrial';
 
     const compatibleExhibits = [];
-            const requiredIndex = sizeOrder.indexOf(requiredSize);
+
+    for (const id in state.exhibits) {
+        if (id === currentExhibitId) continue;
+        const exhibit = state.exhibits[id];
+        if (exhibit.buildDaysRemaining > 0) continue;
+
+        // 🔥 FIX: TYPE CHECK - Only show exhibits matching the animal's required type
+        if (exhibit.type !== requiredType) continue;
+
+        const exhibitType = EXHIBIT_TYPES[exhibit.size];
+        if (!exhibitType) continue;
+
+        const sizeOrder = ['small', 'medium', 'large'];
         const requiredIndex = sizeOrder.indexOf(requiredSize);
         const exhibitIndex = sizeOrder.indexOf(exhibit.size);
-        
         if (exhibitIndex < requiredIndex) continue;
+
         if (exhibit.animals.length >= exhibitType.maxAnimals) continue;
-        
+
         compatibleExhibits.push({
             id: id,
             name: exhibit.name,
             size: exhibit.size,
+            type: exhibit.type,
             animals: exhibit.animals.length,
             maxAnimals: exhibitType.maxAnimals
         });
@@ -541,12 +543,13 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
 
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
-    
+
     let exhibitsHTML = '';
     if (compatibleExhibits.length === 0) {
-        exhibitsHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No compatible exhibits available.</p>';
+        exhibitsHTML = `<p style="color: #9ca3af; text-align: center; padding: 20px;">No compatible exhibits available.<br><small>This ${animal.name} requires a <strong style="color:#fbbf24;">${requiredType}</strong> exhibit.</small></p>`;
     } else {
         compatibleExhibits.forEach(ex => {
+            const typeBadge = ex.type === 'terrarium' ? '🦎' : ex.type === 'aquatic' ? '🌊' : '🌍';
             exhibitsHTML += `
                 <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" 
                     onclick="window.transferAnimal('${currentExhibitId}', '${ex.id}', '${animal.uid || animal.name}')"
@@ -554,7 +557,7 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
                     onmouseout="this.style.borderColor='#334155'">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-weight: 700; color: #e5e7eb;">${ex.name}</div>
+                            <div style="font-weight: 700; color: #e5e7eb;">${ex.name} <span style="font-size:0.8rem; color:#9ca3af;">${typeBadge}</span></div>
                             <div style="font-size: 0.85rem; color: #9ca3af;">${ex.size} • ${ex.animals}/${ex.maxAnimals} animals</div>
                         </div>
                         <div style="color: #3b82f6; font-weight: 700;">→</div>
@@ -563,29 +566,29 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
             `;
         });
     }
-    
+
     modal.innerHTML = `
         <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #334155; max-height: 90vh; overflow-y: auto;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
                 <div>
                     <h2 style="margin: 0; color: #e5e7eb;">🔄 Transfer ${animal.name}</h2>
                     <p style="margin: 4px 0 0; color: #9ca3af; font-size: 0.9rem;">From: ${currentExhibit.name}</p>
+                    <p style="margin: 4px 0 0; color: #fbbf24; font-size: 0.85rem;">Requires: <strong>${requiredType}</strong> exhibit</p>
                 </div>
                 <button onclick="this.closest('div[style*=fixed]').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700;">✕</button>
             </div>
-            
             <h3 style="color: #e5e7eb; margin-bottom: 10px;">Select Destination:</h3>
             ${exhibitsHTML}
         </div>
     `;
-    
+
     document.body.appendChild(modal);
 }
 
 export function transferAnimal(fromExhibitId, toExhibitId, animalIdentifier) {
     const fromExhibit = state.exhibits[fromExhibitId];
     const toExhibit = state.exhibits[toExhibitId];
-    
+
     if (!fromExhibit || !toExhibit) {
         alert("Invalid exhibit!");
         return;
@@ -601,7 +604,6 @@ export function transferAnimal(fromExhibitId, toExhibitId, animalIdentifier) {
     }
 
     const animal = fromExhibit.animals[animalIndex];
-
     fromExhibit.animals.splice(animalIndex, 1);
     toExhibit.animals.push(animal);
 
@@ -620,13 +622,13 @@ export function transferAnimal(fromExhibitId, toExhibitId, animalIdentifier) {
 export function showBabyNamingModal(babyInfo) {
     const existingModal = document.getElementById('babyNamingModal');
     if (existingModal) existingModal.remove();
-    
+
     const modal = document.createElement('div');
     modal.id = 'babyNamingModal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; justify-content: center; align-items: center;';
-    
+
     const defaultName = generateBabyName(babyInfo.species, babyInfo.gender);
-    
+
     modal.innerHTML = `
         <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 40px; border-radius: 16px; max-width: 500px; width: 90%; border: 3px solid #ec4899; text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 10px;">🍼</div>
@@ -635,17 +637,14 @@ export function showBabyNamingModal(babyInfo) {
                 <strong>${babyInfo.motherName}</strong> has given birth to a ${babyInfo.gender} baby!<br>
                 <span style="color: #9ca3af; font-size: 0.9rem;">Father: ${babyInfo.fatherName}</span>
             </p>
-            
             <label style="display: block; color: #e5e7eb; font-weight: 700; margin-bottom: 8px; text-align: left;">Name your new baby:</label>
             <input type="text" id="babyNameInput" value="${defaultName}" maxlength="20"
                 style="width: 100%; padding: 12px; font-size: 1.1rem; background: #0f172a; color: #e5e7eb; border: 2px solid #ec4899; border-radius: 8px; text-align: center; margin-bottom: 10px;"
                 placeholder="Enter a name...">
-            
             <button onclick="window.randomizeBabyName('${babyInfo.species}', '${babyInfo.gender}')" 
                 style="padding: 6px 12px; background: #334155; color: #e5e7eb; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-bottom: 20px;">
                 🎲 Randomize Name
             </button>
-            
             <div style="display: flex; gap: 10px;">
                 <button onclick="window.confirmBabyName('${babyInfo.babyUid}')" 
                     style="flex: 1; padding: 12px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
@@ -654,9 +653,9 @@ export function showBabyNamingModal(babyInfo) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     setTimeout(() => {
         const input = document.getElementById('babyNameInput');
         if (input) {
@@ -669,7 +668,6 @@ export function showBabyNamingModal(babyInfo) {
 // =====================================================================
 // UPGRADE ACTIONS
 // =====================================================================
-
 export function buyUpgrade(exhibitId, upgradeId) {
     const exhibit = state.exhibits[exhibitId];
     if (!exhibit) {
@@ -699,6 +697,7 @@ export function buyUpgrade(exhibitId, upgradeId) {
     }
 
     state.money -= upgradeData.cost;
+
     if (!exhibit.upgrades) exhibit.upgrades = [];
     exhibit.upgrades.push(upgradeId);
 
@@ -739,7 +738,6 @@ export function removeUpgrade(exhibitId, upgradeId) {
 // =====================================================================
 // HELPERS
 // =====================================================================
-
 const BABY_MALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Prince', 'Duke', 'Sir'];
 const BABY_FEMALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Princess', 'Duchess', 'Lady'];
 
@@ -759,16 +757,15 @@ window.randomizeBabyName = (species, gender) => {
 window.confirmBabyName = (babyUid) => {
     const input = document.getElementById('babyNameInput');
     const newName = input?.value.trim();
-    
+
     if (!newName) {
         alert("Please enter a name!");
         return;
     }
-    
+
     if (renameBaby(babyUid, newName)) {
         const modal = document.getElementById('babyNamingModal');
         if (modal) modal.remove();
-        
         eventBus.emit('BABY_NAMED', { babyUid, newName });
         renderExhibits();
     }
