@@ -32,9 +32,9 @@ export const HouseUI = {
                 <div class="slot-icon">${house.icon}</div>
                 <div class="slot-title">${house.name}</div>
                 <div class="slot-subtitle">${house.description}</div>
-                <div class="slot-subtitle">Cap: ${house.capacity} | Upkeep: $${house.dailyUpkeep}/day</div>
+                <div class="slot-subtitle">📅 ${house.buildDays} days • Cap: ${house.capacity} • 💰 $${house.dailyUpkeep}/day</div>
                 <button class="btn-small btn-primary" onclick="HouseUI.buyHouse('${house.id}')" ${!canAfford ? 'disabled' : ''}>
-                    ${canAfford ? `Buy $${house.cost}` : '💸 Can\'t Afford'}
+                    ${canAfford ? `Build $${house.cost}` : '💸 Can\'t Afford'}
                 </button>
             `;
             container.appendChild(div);
@@ -55,16 +55,41 @@ export const HouseUI = {
         houseInstances.forEach(house => {
             const houseData = data.houses.find(h => h.id === house.dataId);
             if (!houseData) return;
+            
+            const isUnderConstruction = house.buildDaysRemaining > 0;
             const div = document.createElement('div');
-            div.className = 'exhibit-slot occupied';
-            div.style.cursor = 'pointer';
+            div.className = `exhibit-slot ${isUnderConstruction ? 'empty' : 'occupied'}`;
+            div.style.cursor = isUnderConstruction ? 'default' : 'pointer';
+            
+            let constructionHTML = '';
+            if (isUnderConstruction) {
+                const progress = ((houseData.buildDays - house.buildDaysRemaining) / houseData.buildDays) * 100;
+                constructionHTML = `
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; margin: 10px 0;">
+                        <div style="color: #fbbf24; font-weight: 700; margin-bottom: 4px;">🚧 Under Construction</div>
+                        <div style="color: #e5e7eb; font-size: 0.9rem;">${house.buildDaysRemaining} day${house.buildDaysRemaining !== 1 ? 's' : ''} remaining</div>
+                        <div style="height: 6px; background: #1e293b; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                            <div style="height: 100%; width: ${progress}%; background: #f59e0b; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
             div.innerHTML = `
                 <div class="slot-icon">${houseData.icon}</div>
                 <div class="slot-title">${house.name}</div>
-                <div class="slot-subtitle">${Object.keys(house.exhibits).length}/${houseData.capacity} Exhibits</div>
-                <button class="btn-small btn-primary" onclick="event.stopPropagation(); HouseUI.openHouseDetail('${house.id}')">Manage</button>
+                ${constructionHTML}
+                ${!isUnderConstruction ? `
+                    <div class="slot-subtitle">${Object.keys(house.exhibits).length}/${houseData.capacity} Exhibits</div>
+                    <button class="btn-small btn-primary" onclick="event.stopPropagation(); HouseUI.openHouseDetail('${house.id}')">Manage</button>
+                ` : `
+                    <div class="slot-subtitle" style="color: #f59e0b;">🚧 Building...</div>
+                `}
             `;
-            div.onclick = () => this.openHouseDetail(house.id);
+            
+            if (!isUnderConstruction) {
+                div.onclick = () => this.openHouseDetail(house.id);
+            }
             container.appendChild(div);
         });
     },
@@ -88,11 +113,16 @@ export const HouseUI = {
             dataId: houseData.id,
             name: name,
             cleanliness: 100,
-            exhibits: {}
+            exhibits: {},
+            buildDaysRemaining: houseData.buildDays
         };
         state.money -= houseData.cost;
 
-        eventBus.emit('HOUSE_BUILT', { name: name, cost: houseData.cost });
+        eventBus.emit('HOUSE_BUILD_STARTED', { 
+            name: name, 
+            cost: houseData.cost,
+            days: houseData.buildDays
+        });
         eventBus.emit('MONEY_CHANGED');
 
         this.renderHouseShop();
