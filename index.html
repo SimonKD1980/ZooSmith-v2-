@@ -131,10 +131,21 @@
         </div>
     </div>
 
+    <!-- ===== EXHIBIT TYPE SELECTOR MODAL ===== -->
+<div id="exhibitTypeModal" class="modal-overlay">
+    <div class="modal" style="max-width: 700px;">
+        <button class="modal-close" onclick="HouseUI.closeExhibitTypeModal()">✕</button>
+        <h2>🏗️ Select Exhibit Type</h2>
+        <p style="color: #9ca3af; margin-bottom: 20px;">Choose which type of indoor exhibit to build in this house.</p>
+        <div id="exhibitTypeOptions" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;"></div>
+    </div>
+</div>
+
     <!-- Hidden file input for imports -->
     <input type="file" id="importSaveInput" accept=".json" style="display: none;">
 
     <!-- ===== SCRIPTS ===== -->
     <script type="module" src="js/main.js"></script>
+    
 </body>
 </html>
