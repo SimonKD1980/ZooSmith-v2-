@@ -19,12 +19,13 @@ export const HouseUI = {
         container.innerHTML = '';
 
         if (data.houses.length === 0) {
-            container.innerHTML = '<p style="color: #9ca3af; grid-column: 1/-1; text-align: center;">No house types available.</p>';
+            container.innerHTML = '<p style="color: #9ca3af; grid-column: 1/-1; text-align: center;">No house types available. Check data/houses.json</p>';
             return;
         }
 
         data.houses.forEach(house => {
             const canAfford = state.money >= house.cost;
+            const buildDays = house.buildDays || 5;
             const div = document.createElement('div');
             div.className = 'exhibit-slot empty';
             div.style.cursor = 'default';
@@ -32,7 +33,7 @@ export const HouseUI = {
                 <div class="slot-icon">${house.icon}</div>
                 <div class="slot-title">${house.name}</div>
                 <div class="slot-subtitle">${house.description}</div>
-                <div class="slot-subtitle">📅 ${house.buildDays} days • Cap: ${house.capacity} • 💰 $${house.dailyUpkeep}/day</div>
+                <div class="slot-subtitle">📅 ${buildDays} days • Cap: ${house.capacity} • 💰 $${house.dailyUpkeep}/day upkeep</div>
                 <button class="btn-small btn-primary" onclick="HouseUI.buyHouse('${house.id}')" ${!canAfford ? 'disabled' : ''}>
                     ${canAfford ? `Build $${house.cost}` : '💸 Can\'t Afford'}
                 </button>
@@ -63,7 +64,8 @@ export const HouseUI = {
             
             let constructionHTML = '';
             if (isUnderConstruction) {
-                const progress = ((houseData.buildDays - house.buildDaysRemaining) / houseData.buildDays) * 100;
+                const totalDays = houseData.buildDays || 5;
+                const progress = ((totalDays - house.buildDaysRemaining) / totalDays) * 100;
                 constructionHTML = `
                     <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; margin: 10px 0;">
                         <div style="color: #fbbf24; font-weight: 700; margin-bottom: 4px;">🚧 Under Construction</div>
@@ -80,7 +82,7 @@ export const HouseUI = {
                 <div class="slot-title">${house.name}</div>
                 ${constructionHTML}
                 ${!isUnderConstruction ? `
-                    <div class="slot-subtitle">${Object.keys(house.exhibits).length}/${houseData.capacity} Exhibits</div>
+                    <div class="slot-subtitle">${Object.keys(house.exhibits || {}).length}/${houseData.capacity} Exhibits</div>
                     <button class="btn-small btn-primary" onclick="event.stopPropagation(); HouseUI.openHouseDetail('${house.id}')">Manage</button>
                 ` : `
                     <div class="slot-subtitle" style="color: #f59e0b;">🚧 Building...</div>
@@ -103,25 +105,42 @@ export const HouseUI = {
             return;
         }
 
-        const name = prompt(`Name your ${houseData.name}:`, houseData.name);
+        const name = prompt(`Name your new ${houseData.name}:`, houseData.name);
         if (!name) return;
 
         const instanceId = generateUniqueId('house');
         if (!state.houses) state.houses = {};
+        
+        const buildDays = houseData.buildDays || 5;
+        
         state.houses[instanceId] = {
             id: instanceId,
             dataId: houseData.id,
             name: name,
             cleanliness: 100,
             exhibits: {},
-            buildDaysRemaining: houseData.buildDays
+            buildDaysRemaining: buildDays
         };
+        
+        // 🔥 DEDUCT MONEY
         state.money -= houseData.cost;
+        
+        // 🔥 TRACK IN DAILY REPORT
+        if (!state.dailyReport) state.dailyReport = {};
+        if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
+        state.dailyReport.animalPurchases.push({
+            name: name,
+            species: houseData.name,
+            cost: houseData.cost,
+            exhibit: 'Houses',
+            gender: 'N/A',
+            ageStage: 'construction'
+        });
 
         eventBus.emit('HOUSE_BUILD_STARTED', { 
             name: name, 
             cost: houseData.cost,
-            days: houseData.buildDays
+            days: buildDays
         });
         eventBus.emit('MONEY_CHANGED');
 
@@ -137,7 +156,7 @@ export const HouseUI = {
         const houseData = data.houses.find(h => h.id === house.dataId);
         if (!houseData) return;
 
-        const exhibitCount = Object.keys(house.exhibits).length;
+        const exhibitCount = Object.keys(house.exhibits || {}).length;
         document.getElementById('modalHouseTitle').innerText = `${houseData.icon} ${house.name}`;
         document.getElementById('modalHouseDesc').innerText = houseData.description;
         document.getElementById('modalHouseClimate').innerText = `🌡️ Climate: ${houseData.climate.charAt(0).toUpperCase() + houseData.climate.slice(1)}`;
@@ -153,7 +172,7 @@ export const HouseUI = {
         const grid = document.getElementById('indoorExhibitsGrid');
         grid.innerHTML = '';
 
-        Object.values(house.exhibits).forEach(exhibit => {
+        Object.values(house.exhibits || {}).forEach(exhibit => {
             const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
             if (!exData) return;
 
@@ -162,21 +181,42 @@ export const HouseUI = {
                 return animal ? animal.name : 'Unknown';
             });
 
+            const isUnderConstruction = exhibit.buildDaysRemaining > 0;
             const div = document.createElement('div');
-            div.className = 'exhibit-slot occupied';
+            div.className = `exhibit-slot ${isUnderConstruction ? 'empty' : 'occupied'}`;
+            
+            let constructionHTML = '';
+            if (isUnderConstruction) {
+                const totalDays = exData.buildDays || 2;
+                const progress = ((totalDays - exhibit.buildDaysRemaining) / totalDays) * 100;
+                constructionHTML = `
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 8px; margin: 8px 0;">
+                        <div style="color: #fbbf24; font-weight: 700; font-size: 0.85rem;">🚧 Building ${exhibit.buildDaysRemaining}d left</div>
+                        <div style="height: 4px; background: #1e293b; border-radius: 2px; margin-top: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: ${progress}%; background: #f59e0b;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
             div.innerHTML = `
                 <div class="slot-icon">${exData.icon}</div>
                 <div class="slot-title">${exData.name}</div>
-                <div class="slot-subtitle">${(exhibit.animals || []).length}/${exData.maxAnimals} Animals</div>
-                <div class="animal-tags">
-                    ${animalNames.map(name => `<span class="animal-tag">${name}</span>`).join('')}
-                </div>
-                <button class="btn-small btn-secondary" onclick="HouseUI.promptAddAnimal('${house.id}', '${exhibit.id}')">+ Add Animal</button>
+                ${constructionHTML}
+                ${!isUnderConstruction ? `
+                    <div class="slot-subtitle">${(exhibit.animals || []).length}/${exData.maxAnimals} Animals</div>
+                    <div class="animal-tags">
+                        ${animalNames.map(name => `<span class="animal-tag">${name}</span>`).join('')}
+                    </div>
+                    <button class="btn-small btn-secondary" onclick="HouseUI.promptAddAnimal('${house.id}', '${exhibit.id}')">+ Add Animal</button>
+                ` : `
+                    <div class="slot-subtitle" style="color: #f59e0b;">🚧 Building...</div>
+                `}
             `;
             grid.appendChild(div);
         });
 
-        const emptySlots = houseData.capacity - Object.keys(house.exhibits).length;
+        const emptySlots = houseData.capacity - Object.keys(house.exhibits || {}).length;
         for (let i = 0; i < emptySlots; i++) {
             const div = document.createElement('div');
             div.className = 'exhibit-slot empty';
@@ -207,6 +247,7 @@ export const HouseUI = {
         } else {
             allowedExhibits.forEach(ex => {
                 const canAfford = state.money >= ex.cost;
+                const buildDays = ex.buildDays || 2;
                 const div = document.createElement('div');
                 div.style.cssText = `background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;`;
                 div.onmouseenter = () => div.style.borderColor = '#22c55e';
@@ -216,8 +257,9 @@ export const HouseUI = {
                     <h3 style="margin: 0 0 8px; color: #e5e7eb; text-align: center;">${ex.name}</h3>
                     <p style="color: #9ca3af; font-size: 0.9rem; margin: 0 0 12px; text-align: center;">${ex.description}</p>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem;">
-                        <span style="color: #9ca3af;">📏 Size: ${ex.size}</span>
-                        <span style="color: #9ca3af;">🐾 Max ${ex.maxAnimals} animals</span>
+                        <span style="color: #9ca3af;">📏 ${ex.size}</span>
+                        <span style="color: #9ca3af;">🐾 Max ${ex.maxAnimals}</span>
+                        <span style="color: #f59e0b;">📅 ${buildDays}d</span>
                     </div>
                     <div style="font-size: 1.3rem; font-weight: 800; color: ${canAfford ? '#22c55e' : '#64748b'}; text-align: center; margin-bottom: 12px;">
                         💰 $${ex.cost.toLocaleString()}
@@ -251,18 +293,37 @@ export const HouseUI = {
 
         const instanceId = generateUniqueId('indoor_ex');
         if (!house.exhibits) house.exhibits = {};
+        
+        const buildDays = exData.buildDays || 2;
+        
         house.exhibits[instanceId] = {
             id: instanceId,
             dataId: exData.id,
             animals: [],
-            cleanliness: 100
+            cleanliness: 100,
+            buildDaysRemaining: buildDays
         };
+        
+        // 🔥 DEDUCT MONEY
         state.money -= exData.cost;
+        
+        // 🔥 TRACK IN DAILY REPORT
+        if (!state.dailyReport) state.dailyReport = {};
+        if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
+        state.dailyReport.animalPurchases.push({
+            name: exData.name,
+            species: 'Indoor Exhibit',
+            cost: exData.cost,
+            exhibit: house.name,
+            gender: 'N/A',
+            ageStage: 'construction'
+        });
 
-        eventBus.emit('INDOOR_EXHIBIT_BUILT', { 
+        eventBus.emit('INDOOR_EXHIBIT_BUILD_STARTED', { 
             name: exData.name, 
             houseName: house.name,
-            cost: exData.cost 
+            cost: exData.cost,
+            days: buildDays
         });
         eventBus.emit('MONEY_CHANGED');
 
@@ -295,7 +356,7 @@ export const HouseUI = {
                 const div = document.createElement('div');
                 div.className = 'animal-list-item';
                 div.innerHTML = `
-                    <span>${animal.icon || '🐾'} ${animal.name} <small style="color:#9ca3af">(${animal.requiredExhibitSize} ${animal.requiredExhibitType})</small></span>
+                    <span>${animal.icon || '🐾'} ${animal.name} <small style="color:#9ca3af">(${animal.requiredExhibitSize || 'small'} ${animal.requiredExhibitType || 'terrestrial'})</small></span>
                     <button class="btn-small btn-primary" onclick="HouseUI.confirmAddAnimal('${animal.id}')">Add</button>
                 `;
                 listContainer.appendChild(div);
@@ -334,11 +395,12 @@ export const HouseUI = {
 
         const house = state.houses[houseInstanceId];
         const houseData = data.houses.find(h => h.id === house.dataId);
-        state.money += Math.floor(houseData.cost * 0.5);
+        const refund = Math.floor(houseData.cost * 0.5);
+        state.money += refund;
         delete state.houses[houseInstanceId];
 
         this.closeModal();
-        eventBus.emit('HOUSE_SOLD', { name: house.name });
+        eventBus.emit('HOUSE_SOLD', { name: house.name, refund });
         eventBus.emit('MONEY_CHANGED');
         this.renderBuiltHouses();
     },
