@@ -143,7 +143,7 @@
     "diet": "Herbivore",
     "attractionValue": 12,
     "requiredExhibitSize": "small",
-    "requiredExhibitType": "terrestrial",
+    "requiredExhibitType": "terrarium",
     "habitat": "Arid Regions",
     "conservationStatus": "Varies",
     "info": "Slow-moving, long-lived reptiles with a protective bony shell.",
