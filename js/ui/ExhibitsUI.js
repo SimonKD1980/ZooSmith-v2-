@@ -1,793 +1,537 @@
-// js/ui/ExhibitsUI.js
-import { state } from '../engine/GameState.js';
+// js/ui/HouseUI.js
+import { state, generateUniqueId, canPlaceAnimalInIndoorExhibit } from '../engine/GameState.js';
 import { eventBus } from '../engine/EventBus.js';
 import { data } from '../engine/data.js';
-import { EXHIBIT_TYPES, getLifeStage } from '../engine/constants.js';
-import { attemptBreeding, renameBaby } from '../engine/systems/WildlifeSystem.js';
-import { getCleanerCapacity } from '../engine/systems/StaffSystem.js';
-import { getAvailableUpgrades, canInstallUpgrade, getExhibitEffects } from '../engine/systems/UpgradeSystem.js';
 
-export function renderExhibits() {
-    const exhibitsEl = document.getElementById('exhibits');
-    if (!exhibitsEl) return;
+let currentHouseId = null;
+let currentExhibitId = null;
+let pendingHouseIdForExhibit = null;
 
-    let html = '';
+export const HouseUI = {
+    init() {
+        if (!state.houses) state.houses = {};
+        this.renderHouseShop();
+        this.renderBuiltHouses();
+    },
 
-    // SECTION 1: Build New Exhibit
-    html += `
-        <div class="status-panel">
-            <h3>🏗️ Build New Exhibit</h3>
-            <p style="color: #9ca3af; margin-bottom: 15px;">Expand your zoo with new habitats for your animals.</p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-    `;
+    renderHouseShop() {
+        const container = document.getElementById('houseShopContainer');
+        if (!container || !data.houses) return;
+        container.innerHTML = '';
 
-    for (const sizeKey in EXHIBIT_TYPES) {
-        const exhibitType = EXHIBIT_TYPES[sizeKey];
-        const canAfford = state.money >= exhibitType.cost;
-        html += `
-            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px;">
-                <div style="text-align: center; font-size: 2.5rem; margin-bottom: 8px;">${exhibitType.icon}</div>
-                <h4 style="margin: 0 0 6px; color: #e5e7eb;">${exhibitType.name}</h4>
-                <p style="color: #9ca3af; font-size: 0.85rem; margin: 0 0 10px; min-height: 40px;">${exhibitType.description}</p>
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #9ca3af; margin-bottom: 10px;">
-                    <span>📅 ${exhibitType.buildDays} days</span>
-                    <span>🐾 Max ${exhibitType.maxAnimals} animals</span>
-                </div>
-                <div style="font-size: 1.2rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
-                    💰 $${exhibitType.cost.toLocaleString()}
-                </div>
-                <button onclick="window.buildExhibit('${sizeKey}')" 
-                    style="width: 100%; padding: 10px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-size: 0.95rem;"
-                    ${!canAfford ? 'disabled' : ''}>
-                    ${canAfford ? '🏗️ Build' : '💸 Can\'t Afford'}
-                </button>
-            </div>
-        `;
-    }
-
-    html += `</div></div>`;
-
-    // SECTION 2: Current Exhibits
-    html += `<div class="status-panel"><h3>🏞️ Your Exhibits</h3>`;
-
-    if (Object.keys(state.exhibits).length === 0) {
-        html += '<p style="color: #9ca3af;">No exhibits yet. Build one above to get started!</p>';
-    } else {
-        for (const id in state.exhibits) {
-            const exhibit = state.exhibits[id];
-            const fence = exhibit.fenceCondition ?? 100;
-            const cleanliness = exhibit.cleanliness ?? 100;
-            const fenceColor = fence >= 70 ? '#22c55e' : fence >= 50 ? '#f59e0b' : fence >= 30 ? '#ef4444' : '#dc2626';
-            const cleanColor = cleanliness >= 70 ? '#22c55e' : cleanliness >= 50 ? '#f59e0b' : cleanliness >= 30 ? '#ef4444' : '#dc2626';
-            const isUnderConstruction = exhibit.buildDaysRemaining > 0;
-            
-            // 🔥 FIX: Look up by type FIRST, then fall back to size
-            const exhibitType = EXHIBIT_TYPES[exhibit.type] || EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
-            
-            const repairCost = Math.ceil((100 - fence) * 2);
-            const breedingInfo = getBreedingOpportunities(exhibit);
-            const hasJanitors = getCleanerCapacity() > 0;
-
-            const availableUpgrades = getAvailableUpgrades(exhibit);
-            const installedUpgrades = availableUpgrades.filter(u => u.installed);
-            const purchasableUpgrades = availableUpgrades.filter(u => u.available);
-            const exhibitEffects = getExhibitEffects(exhibit);
-
-            // 🔥 NEW: Display exhibit type badge
-            const typeBadge = exhibit.type === 'terrarium' 
-                ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🦎 Terrarium</span>'
-                : exhibit.type === 'aquatic'
-                ? '<span style="background: #3b82f6; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🌊 Aquatic</span>'
-                : '<span style="background: #22c55e; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🌍 Terrestrial</span>';
-
-            html += `
-                <div style="background: #0f172a; border: 1px solid ${isUnderConstruction ? '#f59e0b' : '#334155'}; border-radius: 10px; padding: 15px; margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-                        <div>
-                            <h4 style="margin: 0; color: #e5e7eb; font-size: 1.2rem;">
-                                ${exhibitType.icon} ${exhibit.name}
-                                ${typeBadge}
-                                ${isUnderConstruction ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🚧 Building</span>' : ''}
-                            </h4>
-                            <div style="color: #9ca3af; font-size: 0.85rem; margin-top: 4px;">
-                                ${exhibitType.name} • ${exhibit.animals.length}/${exhibitType.maxAnimals} animals • $${exhibitType.upkeep}/day upkeep
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            ${!isUnderConstruction && fence < 100 ? `
-                                <button onclick="window.repairFence('${id}')" 
-                                    style="padding: 6px 12px; background: ${hasJanitors ? '#3b82f6' : '#475569'}; color: ${hasJanitors ? '#fff' : '#9ca3af'}; border: none; border-radius: 6px; font-weight: 600; cursor: ${hasJanitors ? 'pointer' : 'not-allowed'}; font-size: 0.85rem;"
-                                    ${!hasJanitors ? 'title="Requires janitor staff"' : ''}>
-                                    🔧 Repair ($${repairCost})${!hasJanitors ? ' ⚠️' : ''}
-                                </button>
-                            ` : ''}
-                            ${breedingInfo.canBreed ? `
-                                <button onclick="window.attemptBreeding('${id}')" 
-                                    style="padding: 6px 12px; background: #ec4899; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
-                                    🐾 Breed (${breedingInfo.pairs.length} pair${breedingInfo.pairs.length > 1 ? 's' : ''})
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                    ${isUnderConstruction ? `
-                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-                            <div style="color: #fbbf24; font-weight: 700; margin-bottom: 4px;">🚧 Under Construction</div>
-                            <div style="color: #e5e7eb; font-size: 0.9rem;">${exhibit.buildDaysRemaining} day${exhibit.buildDaysRemaining !== 1 ? 's' : ''} remaining</div>
-                            <div style="height: 6px; background: #1e293b; border-radius: 3px; margin-top: 6px; overflow: hidden;">
-                                <div style="height: 100%; width: ${((exhibitType.buildDays - exhibit.buildDaysRemaining) / exhibitType.buildDays) * 100}%; background: #f59e0b;"></div>
-                            </div>
-                        </div>
-                    ` : `
-                        <div style="display: flex; gap: 15px; font-size: 0.9rem; margin-bottom: 10px; flex-wrap: wrap;">
-                            <div>🔧 Fence: <strong style="color: ${fenceColor}">${fence.toFixed(1)}%</strong></div>
-                            <div>✨ Clean: <strong style="color: ${cleanColor}">${cleanliness.toFixed(1)}%</strong></div>
-                        </div>
-                    `}
-                    ${breedingInfo.canBreed ? `
-                        <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid #ec4899; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
-                            <div style="color: #f9a8d4; font-weight: 700; margin-bottom: 6px;">💕 Breeding Opportunities</div>
-                            ${breedingInfo.pairs.map(pair => `
-                                <div style="color: #e5e7eb; font-size: 0.85rem; margin-bottom: 2px;">
-                                    ${pair.male} ♂️ + ${pair.female} ♀️ (${pair.species})
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    <div style="border-top: 1px solid #1e293b; padding-top: 10px; margin-top: 10px;">
-                        <div style="font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">🐾 Animals (${exhibit.animals.length})</div>
-                        ${exhibit.animals.length === 0 ? 
-                            '<p style="color: #9ca3af; font-size: 0.9rem;">No animals yet. Buy some from the Shop!</p>' :
-                            `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;">
-                                ${exhibit.animals.map(animal => renderAnimalCard(animal, id)).join('')}
-                            </div>`
-                        }
-                    </div>
-                    <!-- UPGRADES SECTION -->
-                    <div style="border-top: 1px solid #1e293b; padding-top: 12px; margin-top: 12px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="font-weight: 700; color: #e5e7eb;">⬆️ Upgrades</div>
-                            <div style="font-size: 0.8rem; color: #9ca3af;">${installedUpgrades.length} installed</div>
-                        </div>
-                        ${installedUpgrades.length > 0 ? `
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-                                ${installedUpgrades.map(u => `
-                                    <div style="background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 6px; padding: 4px 8px; display: flex; align-items: center; gap: 4px; font-size: 0.8rem;" title="${u.name}: ${u.description}">
-                                        <span>${u.icon}</span>
-                                        <span style="color: #e5e7eb;">${u.name}</span>
-                                        <button onclick="event.stopPropagation(); window.removeUpgrade('${id}', '${u.id}')" 
-                                            style="background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem; padding: 0 2px;" 
-                                            title="Remove (30% refund)">✕</button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                        ${exhibitEffects.happiness > 0 || exhibitEffects.attraction > 0 || exhibitEffects.income > 0 ? `
-                            <div style="background: #1e293b; padding: 8px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-                                ${exhibitEffects.happiness > 0 ? `<span style="color: #22c55e;">😊 +${exhibitEffects.happiness} happiness</span>` : ''}
-                                ${exhibitEffects.attraction > 0 ? `<span style="color: #fbbf24;">⭐ +${exhibitEffects.attraction} attraction</span>` : ''}
-                                ${exhibitEffects.income > 0 ? `<span style="color: #22c55e;">💰 +$${exhibitEffects.income}/day</span>` : ''}
-                                ${exhibitEffects.visitorCapacity > 0 ? `<span style="color: #3b82f6;">👥 +${exhibitEffects.visitorCapacity} visitors</span>` : ''}
-                                ${exhibitEffects.ratingBonus > 0 ? `<span style="color: #a855f7;">📈 +${exhibitEffects.ratingBonus} rating</span>` : ''}
-                                ${exhibitEffects.fenceDecayReduction < 1 ? `<span style="color: #3b82f6;">🛡️ -${Math.round((1-exhibitEffects.fenceDecayReduction)*100)}% fence decay</span>` : ''}
-                            </div>
-                        ` : ''}
-                        ${!isUnderConstruction && purchasableUpgrades.length > 0 ? `
-                            <details style="margin-bottom: 8px;">
-                                <summary style="cursor: pointer; color: #3b82f6; font-size: 0.9rem; font-weight: 600; padding: 4px 0;">
-                                    🛒 Browse Upgrades (${purchasableUpgrades.length} available)
-                                </summary>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 8px;">
-                                    ${purchasableUpgrades.map(u => `
-                                        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px;">
-                                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                                <span style="font-size: 1.3rem;">${u.icon}</span>
-                                                <span style="font-weight: 700; color: #e5e7eb; font-size: 0.9rem;">${u.name}</span>
-                                            </div>
-                                            <p style="color: #9ca3af; font-size: 0.75rem; margin: 0 0 6px; line-height: 1.3;">${u.description}</p>
-                                            <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px;">
-                                                ${u.effects.happiness ? `😊+${u.effects.happiness} ` : ''}
-                                                ${u.effects.attraction ? `⭐+${u.effects.attraction} ` : ''}
-                                                ${u.effects.income ? `💰+$${u.effects.income} ` : ''}
-                                                ${u.effects.visitorCapacity ? `👥+${u.effects.visitorCapacity} ` : ''}
-                                                ${u.effects.ratingBonus ? `📈+${u.effects.ratingBonus} ` : ''}
-                                            </div>
-                                            <button onclick="window.buyUpgrade('${id}', '${u.id}')" 
-                                                style="width: 100%; padding: 6px; background: ${state.money >= u.cost ? '#22c55e' : '#475569'}; color: ${state.money >= u.cost ? '#000' : '#9ca3af'}; border: none; border-radius: 6px; font-weight: 700; cursor: ${state.money >= u.cost ? 'pointer' : 'not-allowed'}; font-size: 0.85rem;"
-                                                ${state.money < u.cost ? 'disabled' : ''}>
-                                                💰 $${u.cost.toLocaleString()}
-                                            </button>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </details>
-                        ` : ''}
-                        ${isUnderConstruction ? `
-                            <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">🚧 Upgrades available after construction completes.</div>
-                        ` : purchasableUpgrades.length === 0 && installedUpgrades.length === 0 ? `
-                            <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">No upgrades available for this exhibit type/size.</div>
-                        ` : purchasableUpgrades.length === 0 && installedUpgrades.length > 0 ? `
-                            <div style="color: #64748b; font-size: 0.85rem; font-style: italic;">✅ All available upgrades installed!</div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
+        if (data.houses.length === 0) {
+            container.innerHTML = '<p style="color: #9ca3af; grid-column: 1/-1; text-align: center;">No house types available. Check data/houses.json</p>';
+            return;
         }
-    }
 
-    html += `</div>`;
-    exhibitsEl.innerHTML = html;
-}
+        data.houses.forEach(house => {
+            const canAfford = state.money >= house.cost;
+            const buildDays = house.buildDays || 5;
+            const div = document.createElement('div');
+            div.className = 'exhibit-slot empty';
+            div.style.cursor = 'default';
+            div.innerHTML = `
+                <div class="slot-icon">${house.icon}</div>
+                <div class="slot-title">${house.name}</div>
+                <div class="slot-subtitle">${house.description}</div>
+                <div class="slot-subtitle">📅 ${buildDays} days • Cap: ${house.capacity} • 💰 $${house.dailyUpkeep}/day upkeep</div>
+                <button class="btn-small btn-primary" onclick="HouseUI.buyHouse('${house.id}')" ${!canAfford ? 'disabled' : ''}>
+                    ${canAfford ? `Build $${house.cost.toLocaleString()}` : '💸 Can\'t Afford'}
+                </button>
+            `;
+            container.appendChild(div);
+        });
+    },
 
-function getBreedingOpportunities(exhibit) {
-    if (exhibit.buildDaysRemaining > 0) return { canBreed: false, pairs: [] };
+    renderBuiltHouses() {
+        const container = document.getElementById('builtHousesList');
+        if (!container) return;
+        container.innerHTML = '';
 
-    const speciesGroups = {};
-    exhibit.animals.forEach(animal => {
-        const species = animal.id;
-        if (!speciesGroups[species]) speciesGroups[species] = [];
-        speciesGroups[species].push(animal);
-    });
+        const houseInstances = Object.values(state.houses || {});
+        if (houseInstances.length === 0) {
+            container.innerHTML = '<p style="color: #9ca3af; grid-column: 1/-1; text-align: center;">No houses built yet.</p>';
+            return;
+        }
 
-    const pairs = [];
-    for (const species in speciesGroups) {
-        const group = speciesGroups[species];
-        const males = group.filter(a => a.gender === 'male' && getLifeStage(a.ageDays || 0).stage === 'adult');
-        const females = group.filter(a => a.gender === 'female' && getLifeStage(a.ageDays || 0).stage === 'adult' && !a.isPregnant);
+        houseInstances.forEach(house => {
+            const houseData = data.houses.find(h => h.id === house.dataId);
+            if (!houseData) return;
+            
+            const isUnderConstruction = house.buildDaysRemaining > 0;
+            const div = document.createElement('div');
+            div.className = `exhibit-slot ${isUnderConstruction ? 'empty' : 'occupied'}`;
+            div.style.cursor = isUnderConstruction ? 'default' : 'pointer';
+            
+            let constructionHTML = '';
+            if (isUnderConstruction) {
+                const totalDays = houseData.buildDays || 5;
+                const progress = ((totalDays - house.buildDaysRemaining) / totalDays) * 100;
+                constructionHTML = `
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; margin: 10px 0;">
+                        <div style="color: #fbbf24; font-weight: 700; margin-bottom: 4px;">🚧 Under Construction</div>
+                        <div style="color: #e5e7eb; font-size: 0.9rem;">${house.buildDaysRemaining} day${house.buildDaysRemaining !== 1 ? 's' : ''} remaining</div>
+                        <div style="height: 6px; background: #1e293b; border-radius: 3px; margin-top: 6px; overflow: hidden;">
+                            <div style="height: 100%; width: ${progress}%; background: #f59e0b; transition: width 0.5s;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            div.innerHTML = `
+                <div class="slot-icon">${houseData.icon}</div>
+                <div class="slot-title">${house.name}</div>
+                ${constructionHTML}
+                ${!isUnderConstruction ? `
+                    <div class="slot-subtitle">${Object.keys(house.exhibits || {}).length}/${houseData.capacity} Exhibits</div>
+                    <button class="btn-small btn-primary" onclick="event.stopPropagation(); HouseUI.openHouseDetail('${house.id}')">Manage</button>
+                ` : `
+                    <div class="slot-subtitle" style="color: #f59e0b;">🚧 Building...</div>
+                `}
+            `;
+            
+            if (!isUnderConstruction) {
+                div.onclick = () => this.openHouseDetail(house.id);
+            }
+            container.appendChild(div);
+        });
+    },
 
-        if (males.length > 0 && females.length > 0) {
-            const speciesData = data.animals.find(a => a.id === species);
-            pairs.push({
-                species: speciesData?.name || species,
-                male: males[0].name,
-                female: females[0].name
+    buyHouse(houseDataId) {
+        const houseData = data.houses.find(h => h.id === houseDataId);
+        if (!houseData) return;
+
+        if (state.money < houseData.cost) {
+            alert("Not enough money!");
+            return;
+        }
+
+        const name = prompt(`Name your new ${houseData.name}:`, houseData.name);
+        if (!name) return;
+
+        const instanceId = generateUniqueId('house');
+        if (!state.houses) state.houses = {};
+        
+        const buildDays = houseData.buildDays || 5;
+        
+        state.houses[instanceId] = {
+            id: instanceId,
+            dataId: houseData.id,
+            name: name,
+            cleanliness: 100,
+            exhibits: {},
+            buildDaysRemaining: buildDays
+        };
+        
+        // 🔥 DEDUCT MONEY
+        state.money -= houseData.cost;
+        
+        // 🔥 TRACK IN DAILY REPORT
+        if (!state.dailyReport) state.dailyReport = {};
+        if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
+        state.dailyReport.animalPurchases.push({
+            name: name,
+            species: houseData.name,
+            cost: houseData.cost,
+            exhibit: 'Houses',
+            gender: 'N/A',
+            ageStage: 'construction'
+        });
+
+        eventBus.emit('HOUSE_BUILD_STARTED', { 
+            name: name, 
+            cost: houseData.cost,
+            days: buildDays
+        });
+        eventBus.emit('MONEY_CHANGED');
+
+        this.renderHouseShop();
+        this.renderBuiltHouses();
+    },
+
+    openHouseDetail(houseInstanceId) {
+        currentHouseId = houseInstanceId;
+        const house = state.houses[houseInstanceId];
+        if (!house) return;
+
+        const houseData = data.houses.find(h => h.id === house.dataId);
+        if (!houseData) return;
+
+        const exhibitCount = Object.keys(house.exhibits || {}).length;
+        document.getElementById('modalHouseTitle').innerText = `${houseData.icon} ${house.name}`;
+        document.getElementById('modalHouseDesc').innerText = houseData.description;
+        document.getElementById('modalHouseClimate').innerText = `🌡️ Climate: ${houseData.climate.charAt(0).toUpperCase() + houseData.climate.slice(1)}`;
+        document.getElementById('modalHouseUpkeep').innerText = `💰 Upkeep: $${houseData.dailyUpkeep}/day`;
+        document.getElementById('modalHouseCapacity').innerText = `📦 Capacity: ${exhibitCount}/${houseData.capacity} Exhibits`;
+        document.getElementById('sellHouseBtn').onclick = () => this.sellHouse(houseInstanceId);
+
+        this.renderIndoorExhibitsGrid(house, houseData);
+        document.getElementById('houseDetailModal').classList.add('active');
+    },
+
+    renderIndoorExhibitsGrid(house, houseData) {
+        const grid = document.getElementById('indoorExhibitsGrid');
+        grid.innerHTML = '';
+
+        Object.values(house.exhibits || {}).forEach(exhibit => {
+            const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
+            if (!exData) return;
+
+            // 🔥 Safely get animal names (handles both full objects and legacy IDs)
+            const animalNames = (exhibit.animals || []).map(a => {
+                if (typeof a === 'object' && a.name) return a.name;
+                const animalData = data.animals.find(x => x.id === a);
+                return animalData ? animalData.name : 'Unknown';
+            });
+
+            const isUnderConstruction = exhibit.buildDaysRemaining > 0;
+            const div = document.createElement('div');
+            div.className = `exhibit-slot ${isUnderConstruction ? 'empty' : 'occupied'}`;
+            
+            let constructionHTML = '';
+            if (isUnderConstruction) {
+                const totalDays = exData.buildDays || 2;
+                const progress = ((totalDays - exhibit.buildDaysRemaining) / totalDays) * 100;
+                constructionHTML = `
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 8px; margin: 8px 0;">
+                        <div style="color: #fbbf24; font-weight: 700; font-size: 0.85rem;">🚧 Building ${exhibit.buildDaysRemaining}d left</div>
+                        <div style="height: 4px; background: #1e293b; border-radius: 2px; margin-top: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: ${progress}%; background: #f59e0b;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            div.innerHTML = `
+                <div class="slot-icon">${exData.icon}</div>
+                <div class="slot-title">${exData.name}</div>
+                ${constructionHTML}
+                ${!isUnderConstruction ? `
+                    <div class="slot-subtitle">${(exhibit.animals || []).length}/${exData.maxAnimals} Animals</div>
+                    <div class="animal-tags">
+                        ${animalNames.map(name => `<span class="animal-tag">${name}</span>`).join('')}
+                    </div>
+                    <button class="btn-small btn-secondary" onclick="HouseUI.promptAddAnimal('${house.id}', '${exhibit.id}')">+ Add Animal</button>
+                ` : `
+                    <div class="slot-subtitle" style="color: #f59e0b;">🚧 Building...</div>
+                `}
+            `;
+            grid.appendChild(div);
+        });
+
+        const emptySlots = houseData.capacity - Object.keys(house.exhibits || {}).length;
+        for (let i = 0; i < emptySlots; i++) {
+            const div = document.createElement('div');
+            div.className = 'exhibit-slot empty';
+            div.innerHTML = `
+                <div class="slot-icon">➕</div>
+                <div class="slot-title">Empty Slot</div>
+                <div class="slot-subtitle">Click to build an exhibit</div>
+                <button class="btn-small btn-secondary" onclick="HouseUI.showExhibitTypeModal('${house.id}')">Build Exhibit</button>
+            `;
+            grid.appendChild(div);
+        }
+    },
+
+    showExhibitTypeModal(houseInstanceId) {
+        pendingHouseIdForExhibit = houseInstanceId;
+        const house = state.houses[houseInstanceId];
+        const houseData = data.houses.find(h => h.id === house.dataId);
+        const allowedExhibits = data.indoor_exhibits.filter(ex => 
+            houseData.allowedExhibitSize.includes(ex.size) &&
+            houseData.allowedExhibitType.includes(ex.type)
+        );
+
+        const optionsContainer = document.getElementById('exhibitTypeOptions');
+        if (!optionsContainer) {
+            // Fallback to prompt if modal doesn't exist in HTML
+            this.showBuildExhibitOptionsPrompt(houseInstanceId, allowedExhibits);
+            return;
+        }
+        optionsContainer.innerHTML = '';
+
+        if (allowedExhibits.length === 0) {
+            optionsContainer.innerHTML = '<p style="color: #ef4444; grid-column: 1/-1; text-align: center;">No exhibit types available for this house.</p>';
+        } else {
+            allowedExhibits.forEach(ex => {
+                const canAfford = state.money >= ex.cost;
+                const buildDays = ex.buildDays || 2;
+                const div = document.createElement('div');
+                div.style.cssText = `background: #0f172a; border: 2px solid #334155; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;`;
+                div.onmouseenter = () => div.style.borderColor = '#22c55e';
+                div.onmouseleave = () => div.style.borderColor = '#334155';
+                div.innerHTML = `
+                    <div style="font-size: 3rem; text-align: center; margin-bottom: 10px;">${ex.icon}</div>
+                    <h3 style="margin: 0 0 8px; color: #e5e7eb; text-align: center;">${ex.name}</h3>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin: 0 0 12px; text-align: center;">${ex.description}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem;">
+                        <span style="color: #9ca3af;">📏 ${ex.size}</span>
+                        <span style="color: #9ca3af;">🐾 Max ${ex.maxAnimals}</span>
+                        <span style="color: #f59e0b;">📅 ${buildDays}d</span>
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: ${canAfford ? '#22c55e' : '#64748b'}; text-align: center; margin-bottom: 12px;">
+                        💰 $${ex.cost.toLocaleString()}
+                    </div>
+                    <button class="btn-small ${canAfford ? 'btn-primary' : 'btn-secondary'}" 
+                        style="width: 100%;"
+                        onclick="event.stopPropagation(); HouseUI.buildIndoorExhibit('${houseInstanceId}', '${ex.id}')"
+                        ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? '🏗️ Build' : '💸 Can\'t Afford'}
+                    </button>
+                `;
+                if (canAfford) {
+                    div.onclick = () => this.buildIndoorExhibit(houseInstanceId, ex.id);
+                }
+                optionsContainer.appendChild(div);
             });
         }
-    }
 
-    return {
-        canBreed: pairs.length > 0,
-        pairs: pairs
-    };
-}
+        document.getElementById('exhibitTypeModal').classList.add('active');
+    },
 
-function renderAnimalCard(animal, exhibitId) {
-    const stage = getLifeStage(animal.ageDays || 0);
-    const health = animal.health ?? 100;
-    const healthColor = health >= 70 ? '#22c55e' : health >= 40 ? '#f59e0b' : '#ef4444';
-    const genderEmoji = animal.gender === 'male' ? '♂️' : '♀️';
-    const genderColor = animal.gender === 'male' ? '#3b82f6' : '#ec4899';
-
-    const statusBadges = [];
-    if (animal.bornInZoo) statusBadges.push('<span style="background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🏠 Zoo Born</span>');
-    if (animal.sick) statusBadges.push('<span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🤒 Sick</span>');
-    if (animal.wasHungry) statusBadges.push('<span style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 6px; border-radius: 8px; font-size: 0.7rem;">🍖 Hungry</span>');
-
-    const animalIdentifier = animal.uid || animal.name;
-
-    return `
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; cursor: pointer;" onclick="window.showAnimalDetails('${exhibitId}', '${animalIdentifier}')">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 6px;">
-                <div style="font-weight: 700; color: #e5e7eb; font-size: 0.95rem;">${animal.name}</div>
-                <span style="color: ${genderColor}; font-size: 0.9rem;">${genderEmoji}</span>
-            </div>
-            <div style="font-size: 0.8rem; color: #9ca3af; margin-bottom: 6px;">
-                ${stage.emoji} ${stage.label} • ${animal.ageDays || 0} days old
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 0.75rem; color: #9ca3af;">❤️ Health</span>
-                <span style="font-size: 0.8rem; font-weight: 700; color: ${healthColor};">${Math.round(health)}%</span>
-            </div>
-            <div style="height: 4px; background: #0f172a; border-radius: 2px; overflow: hidden; margin-bottom: 4px;">
-                <div style="height: 100%; width: ${health}%; background: ${healthColor};"></div>
-            </div>
-            ${animal.isPregnant ? `
-                <div style="background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; border-radius: 6px; padding: 6px; margin-top: 6px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-size: 0.75rem; color: #f9a8d4; font-weight: 700;">🤰 Pregnant</span>
-                        <span style="font-size: 0.75rem; color: #ec4899; font-weight: 700;">${animal.daysUntilBirth}d left</span>
-                    </div>
-                    <div style="height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden;">
-                        <div style="height: 100%; width: ${getPregnancyProgress(animal)}%; background: linear-gradient(90deg, #ec4899, #f472b6);"></div>
-                    </div>
-                </div>
-            ` : ''}
-            ${statusBadges.length > 0 ? `
-                <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;">
-                    ${statusBadges.join('')}
-                </div>
-            ` : ''}
-        </div>
-    `;
-}
-
-function getPregnancyProgress(animal) {
-    if (!animal.isPregnant) return 0;
-    const totalGestation = 60;
-    const elapsed = totalGestation - animal.daysUntilBirth;
-    return Math.min(100, (elapsed / totalGestation) * 100);
-}
-
-// =====================================================================
-// ACTIONS
-// =====================================================================
-export function buildExhibit(sizeKey) {
-    const exhibitType = EXHIBIT_TYPES[sizeKey];
-    if (!exhibitType) {
-        alert("Unknown exhibit type!");
-        return;
-    }
-    if (state.money < exhibitType.cost) {
-        alert(`Not enough money! Need $${exhibitType.cost}`);
-        return;
-    }
-    const name = prompt(`Name your new ${exhibitType.name}:`, `Exhibit ${Object.keys(state.exhibits).length + 1}`);
-    if (!name) return;
-
-    state.money -= exhibitType.cost;
-
-    // 🔥 FIX: Determine the actual habitat type based on what was clicked
-    let habitatType = 'terrestrial';
-    if (sizeKey === 'terrarium') habitatType = 'terrarium';
-    else if (sizeKey === 'aquatic') habitatType = 'aquatic';
-
-    const newId = 'exhibit_' + Date.now();
-    state.exhibits[newId] = {
-        id: newId,
-        name: name,
-        size: exhibitType.size,      // 'small', 'medium', 'large'
-        type: habitatType,           // 'terrestrial', 'terrarium', or 'aquatic'
-        animals: [],
-        upgrades: [],
-        buildDaysRemaining: exhibitType.buildDays,
-        fenceCondition: 100,
-        cleanliness: 100
-    };
-
-    eventBus.emit('EXHIBIT_BUILD_STARTED', {
-        name: name,
-        size: exhibitType.size,
-        type: habitatType,
-        cost: exhibitType.cost,
-        days: exhibitType.buildDays
-    });
-
-    renderExhibits();
-    eventBus.emit('DAY_ADVANCED');
-}
-
-export function repairFence(exhibitId) {
-    const exhibit = state.exhibits[exhibitId];
-    if (!exhibit) {
-        alert("Exhibit not found!");
-        return;
-    }
-
-    const fence = exhibit.fenceCondition ?? 100;
-    if (fence >= 100) {
-        alert("Fence is already in perfect condition!");
-        return;
-    }
-
-    const cleanerCapacity = getCleanerCapacity();
-    if (cleanerCapacity === 0) {
-        alert("You need to hire at least one janitor to repair fences! Go to the Staff tab to hire maintenance workers.");
-        return;
-    }
-
-    const repairCost = Math.ceil((100 - fence) * 2);
-    if (state.money < repairCost) {
-        alert(`Not enough money! Need $${repairCost}`);
-        return;
-    }
-
-    if (!confirm(`Repair fence for $${repairCost}?\n\nThis will use one of your ${cleanerCapacity} janitor(s).`)) return;
-
-    state.money -= repairCost;
-    exhibit.fenceCondition = 100;
-
-    eventBus.emit('FENCE_REPAIRED', {
-        exhibitName: exhibit.name,
-        cost: repairCost
-    });
-
-    renderExhibits();
-    eventBus.emit('DAY_ADVANCED');
-}
-
-export function showAnimalDetails(exhibitId, animalIdentifier) {
-    const exhibit = state.exhibits[exhibitId];
-    if (!exhibit) {
-        console.error('Exhibit not found:', exhibitId);
-        return;
-    }
-
-    let animal = exhibit.animals.find(a => a.uid === animalIdentifier);
-    if (!animal) {
-        animal = exhibit.animals.find(a => a.name === animalIdentifier);
-    }
-    if (!animal) {
-        console.error('Animal not found:', animalIdentifier);
-        alert('Animal not found!');
-        return;
-    }
-
-    const stage = getLifeStage(animal.ageDays || 0);
-    const health = animal.health ?? 100;
-    const genderEmoji = animal.gender === 'male' ? '♂️ Male' : '♀️ Female';
-    const speciesData = data.animals.find(a => a.id === animal.id);
-
-    let parentInfo = '';
-    if (animal.bornInZoo && animal.mother) {
-        let motherName = 'Unknown';
-        let fatherName = 'Unknown';
-        for (const ex of Object.values(state.exhibits)) {
-            const mom = ex.animals.find(a => a.uid === animal.mother);
-            if (mom) motherName = mom.name;
-            if (animal.father) {
-                const dad = ex.animals.find(a => a.uid === animal.father);
-                if (dad) fatherName = dad.name;
-            }
-        }
-        parentInfo = `
-            <div style="background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #9ca3af; margin-bottom: 15px;">
-                <strong style="color: #e5e7eb;">👨‍👩‍👧 Family:</strong><br>
-                Mother: ${motherName}<br>
-                Father: ${fatherName}
-            </div>
-        `;
-    }
-
-    const alertBox = document.createElement('div');
-    alertBox.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
-
-    alertBox.innerHTML = `
-        <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #334155; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                <div>
-                    <h2 style="margin: 0; color: #e5e7eb;">${animal.name}</h2>
-                    <p style="margin: 4px 0 0; color: #9ca3af; font-style: italic;">${speciesData?.scienceName || speciesData?.name || animal.id}</p>
-                </div>
-                <button onclick="this.closest('div[style*=fixed]').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700;">✕</button>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                <div style="background: #0f172a; padding: 10px; border-radius: 6px;">
-                    <div style="font-size: 0.75rem; color: #9ca3af;">Gender</div>
-                    <div style="font-weight: 700; color: #e5e7eb;">${genderEmoji}</div>
-                </div>
-                <div style="background: #0f172a; padding: 10px; border-radius: 6px;">
-                    <div style="font-size: 0.75rem; color: #9ca3af;">Life Stage</div>
-                    <div style="font-weight: 700; color: #e5e7eb;">${stage.emoji} ${stage.label}</div>
-                </div>
-                <div style="background: #0f172a; padding: 10px; border-radius: 6px;">
-                    <div style="font-size: 0.75rem; color: #9ca3af;">Age</div>
-                    <div style="font-weight: 700; color: #e5e7eb;">${animal.ageDays || 0} days</div>
-                </div>
-                <div style="background: #0f172a; padding: 10px; border-radius: 6px;">
-                    <div style="font-size: 0.75rem; color: #9ca3af;">Born in Zoo</div>
-                    <div style="font-weight: 700; color: ${animal.bornInZoo ? '#22c55e' : '#9ca3af'};">${animal.bornInZoo ? 'Yes 🏠' : 'No'}</div>
-                </div>
-            </div>
-            <div style="background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                    <span style="color: #9ca3af;">❤️ Health</span>
-                    <span style="font-weight: 700; color: ${health >= 70 ? '#22c55e' : health >= 40 ? '#f59e0b' : '#ef4444'};">${Math.round(health)}%</span>
-                </div>
-                <div style="height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden;">
-                    <div style="height: 100%; width: ${health}%; background: ${health >= 70 ? '#22c55e' : health >= 40 ? '#f59e0b' : '#ef4444'};"></div>
-                </div>
-            </div>
-            ${animal.isPregnant ? `
-                <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid #ec4899; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
-                    <div style="color: #ec4899; font-weight: 700;">🤰 Pregnant</div>
-                    <div style="color: #e5e7eb; font-size: 0.9rem;">Baby due in ${animal.daysUntilBirth} day${animal.daysUntilBirth !== 1 ? 's' : ''}</div>
-                    <div style="height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; margin-top: 6px;">
-                        <div style="height: 100%; width: ${getPregnancyProgress(animal)}%; background: linear-gradient(90deg, #ec4899, #f472b6);"></div>
-                    </div>
-                </div>
-            ` : ''}
-            ${parentInfo}
-            <button onclick="window.openTransferModal('${exhibitId}', '${animal.uid || animal.name}')" 
-                style="width: 100%; padding: 12px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
-                🔄 Transfer to Another Exhibit
-            </button>
-        </div>
-    `;
-
-    document.body.appendChild(alertBox);
-}
-
-export function openTransferModal(currentExhibitId, animalIdentifier) {
-    const existingModal = document.querySelector('div[style*="position: fixed"]');
-    if (existingModal) existingModal.remove();
-
-    const currentExhibit = state.exhibits[currentExhibitId];
-    if (!currentExhibit) return;
-
-    let animal = currentExhibit.animals.find(a => a.uid === animalIdentifier);
-    if (!animal) {
-        animal = currentExhibit.animals.find(a => a.name === animalIdentifier);
-    }
-    if (!animal) return;
-
-    const speciesData = data.animals.find(a => a.id === animal.id);
-    const requiredSize = speciesData?.requiredExhibitSize || 'small';
-    const requiredType = speciesData?.requiredExhibitType || 'terrestrial'; // 🔥 FIX: Get required type
-    
-    // 🔥 FIX: Properly closed console.log for debugging
-    console.log('🐾 Animal:', animal.name, '| Required Type:', requiredType);
-    console.log('🏞️ All Exhibits:', Object.values(state.exhibits).map(e => ({ name: e.name, type: e.type })));
-
-    const compatibleExhibits = [];
-
-    for (const id in state.exhibits) {
-        if (id === currentExhibitId) continue;
-        const exhibit = state.exhibits[id];
-        if (exhibit.buildDaysRemaining > 0) continue;
-
-        // 🔥 FIX: TYPE CHECK - Only show exhibits matching the animal's required type
-        if (exhibit.type !== requiredType) continue;
-
-        // 🔥 FIX: Look up by type FIRST, then fall back to size
-        const exhibitType = EXHIBIT_TYPES[exhibit.type] || EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
-        if (!exhibitType) continue;
-
-        const sizeOrder = ['small', 'medium', 'large'];
-        const requiredIndex = sizeOrder.indexOf(requiredSize);
-        const exhibitIndex = sizeOrder.indexOf(exhibit.size);
-        if (exhibitIndex < requiredIndex) continue;
-
-        if (exhibit.animals.length >= exhibitType.maxAnimals) continue;
-
-        compatibleExhibits.push({
-            id: id,
-            name: exhibit.name,
-            size: exhibit.size,
-            type: exhibit.type,
-            animals: exhibit.animals.length,
-            maxAnimals: exhibitType.maxAnimals
+    showBuildExhibitOptionsPrompt(houseInstanceId, allowedExhibits) {
+        let options = "Choose an exhibit to build:\n\n";
+        allowedExhibits.forEach((ex, index) => {
+            options += `${index + 1}. ${ex.name} ($${ex.cost})\n`;
         });
-    }
+        options += `\nEnter a number (1-${allowedExhibits.length}):`;
+        const choice = prompt(options);
+        if (!choice) return;
+        const selectedIndex = parseInt(choice) - 1;
+        if (selectedIndex >= 0 && selectedIndex < allowedExhibits.length) {
+            this.buildIndoorExhibit(houseInstanceId, allowedExhibits[selectedIndex].id);
+        }
+    },
 
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
+    buildIndoorExhibit(houseInstanceId, exhibitDataId) {
+        const house = state.houses[houseInstanceId];
+        const exData = data.indoor_exhibits.find(e => e.id === exhibitDataId);
+        if (!exData) return;
 
-    let exhibitsHTML = '';
-    if (compatibleExhibits.length === 0) {
-        exhibitsHTML = `<p style="color: #9ca3af; text-align: center; padding: 20px;">No compatible exhibits available.<br><small>This ${animal.name} requires a <strong style="color:#fbbf24;">${requiredType}</strong> exhibit.</small></p>`;
-    } else {
-        compatibleExhibits.forEach(ex => {
-            const typeBadge = ex.type === 'terrarium' ? '🦎' : ex.type === 'aquatic' ? '🌊' : '🌍';
-            exhibitsHTML += `
-                <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" 
-                    onclick="window.transferAnimal('${currentExhibitId}', '${ex.id}', '${animal.uid || animal.name}')"
-                    onmouseover="this.style.borderColor='#3b82f6'" 
-                    onmouseout="this.style.borderColor='#334155'">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+        if (state.money < exData.cost) {
+            alert("Not enough money to build this exhibit!");
+            return;
+        }
+
+        const name = prompt(`Name your new ${exData.name}:`, `${exData.name} ${Object.keys(house.exhibits || {}).length + 1}`);
+        if (!name) return;
+
+        const instanceId = generateUniqueId('indoor_ex');
+        if (!house.exhibits) house.exhibits = {};
+        
+        const buildDays = exData.buildDays || 2;
+        
+        house.exhibits[instanceId] = {
+            id: instanceId,
+            dataId: exData.id,
+            name: name,
+            animals: [],
+            cleanliness: 100,
+            buildDaysRemaining: buildDays
+        };
+        
+        // 🔥 DEDUCT MONEY
+        state.money -= exData.cost;
+        
+        // 🔥 TRACK IN DAILY REPORT
+        if (!state.dailyReport) state.dailyReport = {};
+        if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
+        state.dailyReport.animalPurchases.push({
+            name: name,
+            species: 'Indoor Exhibit',
+            cost: exData.cost,
+            exhibit: house.name,
+            gender: 'N/A',
+            ageStage: 'construction'
+        });
+
+        eventBus.emit('INDOOR_EXHIBIT_BUILD_STARTED', { 
+            name: name, 
+            houseName: house.name,
+            cost: exData.cost,
+            days: buildDays
+        });
+        eventBus.emit('MONEY_CHANGED');
+
+        this.closeExhibitTypeModal();
+        const houseData = data.houses.find(h => h.id === house.dataId);
+        this.renderIndoorExhibitsGrid(house, houseData);
+        this.renderBuiltHouses();
+    },
+
+    promptAddAnimal(houseInstanceId, exhibitInstanceId) {
+        currentHouseId = houseInstanceId;
+        currentExhibitId = exhibitInstanceId;
+
+        const house = state.houses[houseInstanceId];
+        const exhibit = house.exhibits[exhibitInstanceId];
+        const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
+
+        // 🔥 Show animals from the SHOP CATALOG (what you can buy)
+        const compatibleAnimals = data.animals.filter(animal => {
+            const validation = canPlaceAnimalInIndoorExhibit(animal, exData, (exhibit.animals || []).length);
+            return validation.valid;
+        });
+
+        const listContainer = document.getElementById('compatibleAnimalsList');
+        listContainer.innerHTML = '';
+
+        if (compatibleAnimals.length === 0) {
+            listContainer.innerHTML = '<p style="color: #ef4444;">No compatible animals available for this exhibit type/size.</p>';
+        } else {
+            compatibleAnimals.forEach(animal => {
+                const cost = animal.cost ?? animal.price ?? 0;
+                const canAfford = state.money >= cost;
+                const div = document.createElement('div');
+                div.className = 'animal-list-item';
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5rem;">${animal.icon || '🐾'}</span>
                         <div>
-                            <div style="font-weight: 700; color: #e5e7eb;">${ex.name} <span style="font-size:0.8rem; color:#9ca3af;">${typeBadge}</span></div>
-                            <div style="font-size: 0.85rem; color: #9ca3af;">${ex.size} • ${ex.animals}/${ex.maxAnimals} animals</div>
+                            <div style="font-weight: 700; color: #e5e7eb;">${animal.name}</div>
+                            <div style="font-size: 0.8rem; color: #9ca3af;">
+                                ${animal.diet} • ${animal.habitat || 'Unknown'}
+                            </div>
                         </div>
-                        <div style="color: #3b82f6; font-weight: 700;">→</div>
                     </div>
-                </div>
-            `;
-        });
-    }
-
-    modal.innerHTML = `
-        <div style="background: #1e293b; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; border: 2px solid #334155; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                <div>
-                    <h2 style="margin: 0; color: #e5e7eb;">🔄 Transfer ${animal.name}</h2>
-                    <p style="margin: 4px 0 0; color: #9ca3af; font-size: 0.9rem;">From: ${currentExhibit.name}</p>
-                    <p style="margin: 4px 0 0; color: #fbbf24; font-size: 0.85rem;">Requires: <strong>${requiredType}</strong> exhibit</p>
-                </div>
-                <button onclick="this.closest('div[style*=fixed]').remove()" style="background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700;">✕</button>
-            </div>
-            <h3 style="color: #e5e7eb; margin-bottom: 10px;">Select Destination:</h3>
-            ${exhibitsHTML}
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-}
-export function transferAnimal(fromExhibitId, toExhibitId, animalIdentifier) {
-    const fromExhibit = state.exhibits[fromExhibitId];
-    const toExhibit = state.exhibits[toExhibitId];
-
-    if (!fromExhibit || !toExhibit) {
-        alert("Invalid exhibit!");
-        return;
-    }
-
-    let animalIndex = fromExhibit.animals.findIndex(a => a.uid === animalIdentifier);
-    if (animalIndex === -1) {
-        animalIndex = fromExhibit.animals.findIndex(a => a.name === animalIdentifier);
-    }
-    if (animalIndex === -1) {
-        alert("Animal not found!");
-        return;
-    }
-
-    const animal = fromExhibit.animals[animalIndex];
-    fromExhibit.animals.splice(animalIndex, 1);
-    toExhibit.animals.push(animal);
-
-    const modal = document.querySelector('div[style*="position: fixed"]');
-    if (modal) modal.remove();
-
-    eventBus.emit('ANIMAL_TRANSFERRED', {
-        animalName: animal.name,
-        fromExhibit: fromExhibit.name,
-        toExhibit: toExhibit.name
-    });
-
-    renderExhibits();
-}
-
-export function showBabyNamingModal(babyInfo) {
-    const existingModal = document.getElementById('babyNamingModal');
-    if (existingModal) existingModal.remove();
-
-    const modal = document.createElement('div');
-    modal.id = 'babyNamingModal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; justify-content: center; align-items: center;';
-
-    const defaultName = generateBabyName(babyInfo.species, babyInfo.gender);
-
-    modal.innerHTML = `
-        <div style="background: linear-gradient(135deg, #1e293b, #334155); padding: 40px; border-radius: 16px; max-width: 500px; width: 90%; border: 3px solid #ec4899; text-align: center;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🍼</div>
-            <h2 style="margin: 0 0 10px; color: #f9a8d4; font-size: 1.8rem;">A New ${babyInfo.species} is Born!</h2>
-            <p style="color: #e5e7eb; margin-bottom: 20px;">
-                <strong>${babyInfo.motherName}</strong> has given birth to a ${babyInfo.gender} baby!<br>
-                <span style="color: #9ca3af; font-size: 0.9rem;">Father: ${babyInfo.fatherName}</span>
-            </p>
-            <label style="display: block; color: #e5e7eb; font-weight: 700; margin-bottom: 8px; text-align: left;">Name your new baby:</label>
-            <input type="text" id="babyNameInput" value="${defaultName}" maxlength="20"
-                style="width: 100%; padding: 12px; font-size: 1.1rem; background: #0f172a; color: #e5e7eb; border: 2px solid #ec4899; border-radius: 8px; text-align: center; margin-bottom: 10px;"
-                placeholder="Enter a name...">
-            <button onclick="window.randomizeBabyName('${babyInfo.species}', '${babyInfo.gender}')" 
-                style="padding: 6px 12px; background: #334155; color: #e5e7eb; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-bottom: 20px;">
-                🎲 Randomize Name
-            </button>
-            <div style="display: flex; gap: 10px;">
-                <button onclick="window.confirmBabyName('${babyInfo.babyUid}')" 
-                    style="flex: 1; padding: 12px; background: #22c55e; color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem;">
-                    ✅ Confirm Name
-                </button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    setTimeout(() => {
-        const input = document.getElementById('babyNameInput');
-        if (input) {
-            input.focus();
-            input.select();
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #22c55e; font-weight: 700;">$${cost.toLocaleString()}</span>
+                        <button class="btn-small btn-primary" 
+                            onclick="HouseUI.confirmAddAnimal('${animal.id}')"
+                            ${!canAfford ? 'disabled' : ''}>
+                            ${canAfford ? '🛒 Buy' : '💸 Can\'t Afford'}
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
         }
-    }, 100);
-}
 
-// =====================================================================
-// UPGRADE ACTIONS
-// =====================================================================
-export function buyUpgrade(exhibitId, upgradeId) {
-    const exhibit = state.exhibits[exhibitId];
-    if (!exhibit) {
-        alert("Exhibit not found!");
-        return;
-    }
+        document.getElementById('animalSelectorModal').classList.add('active');
+    },
 
-    const upgradeData = data.upgrades.find(u => u.id === upgradeId);
-    if (!upgradeData) {
-        alert("Upgrade not found!");
-        return;
-    }
+    confirmAddAnimal(animalId) {
+        if (!currentHouseId || !currentExhibitId) return;
 
-    const check = canInstallUpgrade(exhibit, upgradeId);
-    if (!check.allowed) {
-        alert(`Cannot install: ${check.reason}`);
-        return;
-    }
+        const house = state.houses[currentHouseId];
+        const exhibit = house.exhibits[currentExhibitId];
+        const animalData = data.animals.find(a => a.id === animalId);
+        const exData = data.indoor_exhibits.find(e => e.id === exhibit.dataId);
 
-    if (state.money < upgradeData.cost) {
-        alert(`Not enough money! Need $${upgradeData.cost}`);
-        return;
-    }
+        if (!animalData) {
+            alert("Animal not found!");
+            return;
+        }
 
-    if (!confirm(`Install ${upgradeData.icon} ${upgradeData.name} for $${upgradeData.cost}?`)) {
-        return;
-    }
+        // 🔥 Validate compatibility
+        const validation = canPlaceAnimalInIndoorExhibit(animalData, exData, (exhibit.animals || []).length);
+        if (!validation.valid) {
+            alert(validation.reason);
+            return;
+        }
 
-    state.money -= upgradeData.cost;
+        // 🔥 Check money
+        const cost = animalData.cost ?? animalData.price ?? 0;
+        if (state.money < cost) {
+            alert(`Not enough money! Need $${cost}`);
+            return;
+        }
 
-    if (!exhibit.upgrades) exhibit.upgrades = [];
-    exhibit.upgrades.push(upgradeId);
+        // 🔥 Ask for a custom name
+        const customName = prompt(`Name your new ${animalData.name}:`, this.generateRandomAnimalName(animalData.name));
+        if (!customName) return;
 
-    eventBus.emit('UPGRADE_INSTALLED', {
-        exhibitName: exhibit.name,
-        upgradeName: upgradeData.name,
-        cost: upgradeData.cost
-    });
+        // 🔥 Deduct money
+        state.money -= cost;
 
-    renderExhibits();
-}
+        // 🔥 Track in daily report
+        if (!state.dailyReport) state.dailyReport = {};
+        if (!state.dailyReport.animalPurchases) state.dailyReport.animalPurchases = [];
+        state.dailyReport.animalPurchases.push({
+            name: customName,
+            species: animalData.name,
+            cost: cost,
+            exhibit: house.name + ' (Indoor)',
+            gender: 'random',
+            ageStage: 'adult'
+        });
 
-export function removeUpgrade(exhibitId, upgradeId) {
-    const exhibit = state.exhibits[exhibitId];
-    if (!exhibit) return;
+        // 🔥 Create a proper animal instance (with health, age, gender, diet, etc.)
+        const gender = Math.random() < 0.5 ? 'male' : 'female';
+        const newAnimal = {
+            uid: 'animal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            id: animalData.id,
+            speciesName: animalData.name,
+            name: customName,
+            gender: gender,
+            ageDays: 365, // Adult
+            health: 100,
+            sick: false,
+            wasHungry: false,
+            isPregnant: false,
+            daysUntilBirth: 0,
+            bornInZoo: false,
+            diet: animalData.diet,
+            foodAmount: animalData.foodAmount || 1
+        };
 
-    const upgradeData = data.upgrades.find(u => u.id === upgradeId);
-    if (!upgradeData) return;
+        // 🔥 Push the FULL INSTANCE (not just the ID string)
+        if (!exhibit.animals) exhibit.animals = [];
+        exhibit.animals.push(newAnimal);
 
-    const refund = Math.floor(upgradeData.cost * 0.3);
+        this.closeAnimalSelector();
+        
+        eventBus.emit('ANIMAL_PURCHASED', {
+            animal: customName,
+            species: animalData.name,
+            cost: cost,
+            exhibit: house.name + ' (Indoor)',
+            gender: gender,
+            ageStage: 'adult'
+        });
+        eventBus.emit('MONEY_CHANGED');
 
-    if (!confirm(`Remove ${upgradeData.name}?\nYou'll receive a $${refund} refund (30% of cost).`)) {
-        return;
-    }
+        const houseData = data.houses.find(h => h.id === house.dataId);
+        this.renderIndoorExhibitsGrid(house, houseData);
+        this.renderBuiltHouses();
+    },
 
-    exhibit.upgrades = exhibit.upgrades.filter(id => id !== upgradeId);
-    state.money += refund;
+    sellHouse(houseInstanceId) {
+        if (!confirm("Are you sure? Selling the house will also remove all exhibits and animals inside it!")) return;
 
-    eventBus.emit('UPGRADE_REMOVED', {
-        exhibitName: exhibit.name,
-        upgradeName: upgradeData.name,
-        refund: refund
-    });
+        const house = state.houses[houseInstanceId];
+        const houseData = data.houses.find(h => h.id === house.dataId);
+        const refund = Math.floor(houseData.cost * 0.5);
+        state.money += refund;
+        delete state.houses[houseInstanceId];
 
-    renderExhibits();
-}
+        this.closeModal();
+        eventBus.emit('HOUSE_SOLD', { name: house.name, refund });
+        eventBus.emit('MONEY_CHANGED');
+        this.renderBuiltHouses();
+    },
 
-// =====================================================================
-// HELPERS
-// =====================================================================
-const BABY_MALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Prince', 'Duke', 'Sir'];
-const BABY_FEMALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Princess', 'Duchess', 'Lady'];
+    closeModal() {
+        document.getElementById('houseDetailModal').classList.remove('active');
+        currentHouseId = null;
+    },
 
-function generateBabyName(species, gender) {
-    const names = gender === 'male' ? BABY_MALE_NAMES : BABY_FEMALE_NAMES;
-    const prefix = names[Math.floor(Math.random() * names.length)];
-    return `${species} ${prefix}`;
-}
+    closeAnimalSelector() {
+        document.getElementById('animalSelectorModal').classList.remove('active');
+        currentHouseId = null;
+        currentExhibitId = null;
+    },
 
-window.randomizeBabyName = (species, gender) => {
-    const input = document.getElementById('babyNameInput');
-    if (input) {
-        input.value = generateBabyName(species, gender);
+    closeExhibitTypeModal() {
+        const modal = document.getElementById('exhibitTypeModal');
+        if (modal) modal.classList.remove('active');
+        pendingHouseIdForExhibit = null;
+    },
+
+    generateRandomAnimalName(speciesName) {
+        const names = ['Leo', 'Luna', 'Max', 'Bella', 'Charlie', 'Daisy', 'Rocky', 'Cleo', 'Zeus', 'Nala', 'Shadow', 'Storm', 'Milo', 'Zara'];
+        return names[Math.floor(Math.random() * names.length)] || (speciesName + ' ' + Math.floor(Math.random() * 99));
     }
 };
 
-window.confirmBabyName = (babyUid) => {
-    const input = document.getElementById('babyNameInput');
-    const newName = input?.value.trim();
-
-    if (!newName) {
-        alert("Please enter a name!");
-        return;
-    }
-
-    if (renameBaby(babyUid, newName)) {
-        const modal = document.getElementById('babyNamingModal');
-        if (modal) modal.remove();
-        eventBus.emit('BABY_NAMED', { babyUid, newName });
-        renderExhibits();
-    }
-};
-
-// Expose to window
-window.buildExhibit = buildExhibit;
-window.repairFence = repairFence;
-window.showAnimalDetails = showAnimalDetails;
-window.openTransferModal = openTransferModal;
-window.transferAnimal = transferAnimal;
-window.showBabyNamingModal = showBabyNamingModal;
-window.buyUpgrade = buyUpgrade;
-window.removeUpgrade = removeUpgrade;
-window.attemptBreeding = (exhibitId) => {
-    if (attemptBreeding(exhibitId)) {
-        renderExhibits();
-    }
-};
+window.HouseUI = HouseUI;
