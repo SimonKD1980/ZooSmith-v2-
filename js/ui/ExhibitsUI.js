@@ -7,13 +7,36 @@ import { attemptBreeding, renameBaby } from '../engine/systems/WildlifeSystem.js
 import { getCleanerCapacity } from '../engine/systems/StaffSystem.js';
 import { getAvailableUpgrades, canInstallUpgrade, getExhibitEffects } from '../engine/systems/UpgradeSystem.js';
 
+// 🔥 NEW: Zone Filter State
+let currentZoneFilter = 'all';
+
 export function renderExhibits() {
     const exhibitsEl = document.getElementById('exhibits');
     if (!exhibitsEl) return;
 
     let html = '';
 
-    // SECTION 1: Build New Exhibit
+    // 1. Dynamic Zone Filter Bar
+    const uniqueZones = getUniqueZones();
+    html += `
+        <div class="status-panel" style="padding: 15px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <span style="font-weight: 700; color: #e5e7eb; margin-right: 10px;">🗺️ Filter by Zone:</span>
+                <button onclick="window.setZoneFilter('all')" 
+                    style="padding: 6px 12px; background: ${currentZoneFilter === 'all' ? '#22c55e' : '#1e293b'}; color: ${currentZoneFilter === 'all' ? '#000' : '#e5e7eb'}; border: 1px solid #334155; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    All Zones
+                </button>
+                ${uniqueZones.map(zone => `
+                    <button onclick="window.setZoneFilter('${zone}')" 
+                        style="padding: 6px 12px; background: ${currentZoneFilter === zone ? getZoneColor(zone) : '#1e293b'}; color: ${currentZoneFilter === zone ? '#000' : '#e5e7eb'}; border: 1px solid #334155; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        ${zone}
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    // 2. Build New Exhibit Section
     html += `
         <div class="status-panel">
             <h3>🏗️ Build New Exhibit</h3>
@@ -34,7 +57,7 @@ export function renderExhibits() {
                     <span>🐾 Max ${exhibitType.maxAnimals} animals</span>
                 </div>
                 <div style="font-size: 1.2rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
-                    💰 $${exhibitType.cost.toLocaleString()}
+                     $${exhibitType.cost.toLocaleString()}
                 </div>
                 <button onclick="window.buildExhibit('${sizeKey}')" 
                     style="width: 100%; padding: 10px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-size: 0.95rem;"
@@ -47,13 +70,18 @@ export function renderExhibits() {
 
     html += `</div></div>`;
 
-    // SECTION 2: Current Exhibits
+    // 3. Current Exhibits Section (Filtered by Zone)
     html += `<div class="status-panel"><h3>🏞️ Your Exhibits</h3>`;
 
-    if (Object.keys(state.exhibits).length === 0) {
-        html += '<p style="color: #9ca3af;">No exhibits yet. Build one above to get started!</p>';
+    const filteredExhibitIds = Object.keys(state.exhibits).filter(id => {
+        if (currentZoneFilter === 'all') return true;
+        return state.exhibits[id].zone === currentZoneFilter;
+    });
+
+    if (filteredExhibitIds.length === 0) {
+        html += '<p style="color: #9ca3af;">No exhibits found for this filter.</p>';
     } else {
-        for (const id in state.exhibits) {
+        filteredExhibitIds.forEach(id => {
             const exhibit = state.exhibits[id];
             const fence = exhibit.fenceCondition ?? 100;
             const cleanliness = exhibit.cleanliness ?? 100;
@@ -61,9 +89,7 @@ export function renderExhibits() {
             const cleanColor = cleanliness >= 70 ? '#22c55e' : cleanliness >= 50 ? '#f59e0b' : cleanliness >= 30 ? '#ef4444' : '#dc2626';
             const isUnderConstruction = exhibit.buildDaysRemaining > 0;
             
-            // Look up by type FIRST, then fall back to size
             const exhibitType = EXHIBIT_TYPES[exhibit.type] || EXHIBIT_TYPES[exhibit.size] || EXHIBIT_TYPES.small;
-            
             const repairCost = Math.ceil((100 - fence) * 2);
             const breedingInfo = getBreedingOpportunities(exhibit);
             const hasJanitors = getCleanerCapacity() > 0;
@@ -73,9 +99,11 @@ export function renderExhibits() {
             const purchasableUpgrades = availableUpgrades.filter(u => u.available);
             const exhibitEffects = getExhibitEffects(exhibit);
 
-            // Display exhibit type badge
+            // 🔥 Zone Badge Logic
+            const zoneName = exhibit.zone || 'General';
+            const zoneColor = getZoneColor(zoneName);
             const typeBadge = exhibit.type === 'terrarium' 
-                ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🦎 Terrarium</span>'
+                ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;"> Terrarium</span>'
                 : exhibit.type === 'aquatic'
                 ? '<span style="background: #3b82f6; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🌊 Aquatic</span>'
                 : '<span style="background: #22c55e; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🌍 Terrestrial</span>';
@@ -89,6 +117,12 @@ export function renderExhibits() {
                                 ${typeBadge}
                                 ${isUnderConstruction ? '<span style="background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; margin-left: 8px;">🚧 Building</span>' : ''}
                             </h4>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                                <span style="background: ${zoneColor}22; color: ${zoneColor}; border: 1px solid ${zoneColor}; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+                                    ️ ${zoneName}
+                                </span>
+                                <button onclick="window.renameExhibitZone('${id}')" style="background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 0.9rem;" title="Rename Zone">✏️</button>
+                            </div>
                             <div style="color: #9ca3af; font-size: 0.85rem; margin-top: 4px;">
                                 ${exhibitType.name} • ${exhibit.animals.length}/${exhibitType.maxAnimals} animals • $${exhibitType.upkeep}/day upkeep
                             </div>
@@ -98,13 +132,13 @@ export function renderExhibits() {
                                 <button onclick="window.repairFence('${id}')" 
                                     style="padding: 6px 12px; background: ${hasJanitors ? '#3b82f6' : '#475569'}; color: ${hasJanitors ? '#fff' : '#9ca3af'}; border: none; border-radius: 6px; font-weight: 600; cursor: ${hasJanitors ? 'pointer' : 'not-allowed'}; font-size: 0.85rem;"
                                     ${!hasJanitors ? 'title="Requires janitor staff"' : ''}>
-                                    🔧 Repair ($${repairCost})${!hasJanitors ? ' ⚠️' : ''}
+                                    🔧 Repair ($${repairCost})${!hasJanitors ? ' ️' : ''}
                                 </button>
                             ` : ''}
                             ${breedingInfo.canBreed ? `
                                 <button onclick="window.attemptBreeding('${id}')" 
                                     style="padding: 6px 12px; background: #ec4899; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
-                                    🐾 Breed (${breedingInfo.pairs.length} pair${breedingInfo.pairs.length > 1 ? 's' : ''})
+                                     Breed (${breedingInfo.pairs.length} pair${breedingInfo.pairs.length > 1 ? 's' : ''})
                                 </button>
                             ` : ''}
                         </div>
@@ -166,7 +200,7 @@ export function renderExhibits() {
                                 ${exhibitEffects.happiness > 0 ? `<span style="color: #22c55e;">😊 +${exhibitEffects.happiness} happiness</span>` : ''}
                                 ${exhibitEffects.attraction > 0 ? `<span style="color: #fbbf24;">⭐ +${exhibitEffects.attraction} attraction</span>` : ''}
                                 ${exhibitEffects.income > 0 ? `<span style="color: #22c55e;">💰 +$${exhibitEffects.income}/day</span>` : ''}
-                                ${exhibitEffects.visitorCapacity > 0 ? `<span style="color: #3b82f6;">👥 +${exhibitEffects.visitorCapacity} visitors</span>` : ''}
+                                ${exhibitEffects.visitorCapacity > 0 ? `<span style="color: #3b82f6;"> +${exhibitEffects.visitorCapacity} visitors</span>` : ''}
                                 ${exhibitEffects.ratingBonus > 0 ? `<span style="color: #a855f7;">📈 +${exhibitEffects.ratingBonus} rating</span>` : ''}
                                 ${exhibitEffects.fenceDecayReduction < 1 ? `<span style="color: #3b82f6;">🛡️ -${Math.round((1-exhibitEffects.fenceDecayReduction)*100)}% fence decay</span>` : ''}
                             </div>
@@ -211,7 +245,7 @@ export function renderExhibits() {
                     </div>
                 </div>
             `;
-        }
+        });
     }
 
     html += `</div>`;
@@ -323,9 +357,13 @@ export function buildExhibit(size) {
     const name = prompt(`Name your new ${exhibitType.name}:`, `Exhibit ${Object.keys(state.exhibits).length + 1}`);
     if (!name) return;
 
+    //  NEW: Prompt for Zone Name
+    const zoneName = prompt(`What Zone does this belong to? (e.g., "Savanna", "Reptile House")`, "General");
+    const finalZone = zoneName ? zoneName.trim() : "General";
+
     state.money -= exhibitType.cost;
 
-    // Dynamically determine the habitat type based on what was clicked
+    // Determine the actual habitat type based on what was clicked
     let habitatType = 'terrestrial';
     if (size === 'terrarium') habitatType = 'terrarium';
     else if (size === 'aquatic') habitatType = 'aquatic';
@@ -336,6 +374,7 @@ export function buildExhibit(size) {
         name: name,
         size: exhibitType.size,
         type: habitatType,
+        zone: finalZone, // 🔥 Save the custom zone name
         animals: [],
         upgrades: [],
         buildDaysRemaining: exhibitType.buildDays,
@@ -430,7 +469,7 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
         }
         parentInfo = `
             <div style="background: #0f172a; padding: 10px; border-radius: 6px; font-size: 0.85rem; color: #9ca3af; margin-bottom: 15px;">
-                <strong style="color: #e5e7eb;">👨‍👩‍👧 Family:</strong><br>
+                <strong style="color: #e5e7eb;">👨‍👩‍ Family:</strong><br>
                 Mother: ${motherName}<br>
                 Father: ${fatherName}
             </div>
@@ -464,7 +503,7 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
                 </div>
                 <div style="background: #0f172a; padding: 10px; border-radius: 6px;">
                     <div style="font-size: 0.75rem; color: #9ca3af;">Born in Zoo</div>
-                    <div style="font-weight: 700; color: ${animal.bornInZoo ? '#22c55e' : '#9ca3af'};">${animal.bornInZoo ? 'Yes 🏠' : 'No'}</div>
+                    <div style="font-weight: 700; color: ${animal.bornInZoo ? '#22c55e' : '#9ca3af'};">${animal.bornInZoo ? 'Yes ' : 'No'}</div>
                 </div>
             </div>
             <div style="background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
@@ -478,7 +517,7 @@ export function showAnimalDetails(exhibitId, animalIdentifier) {
             </div>
             ${animal.isPregnant ? `
                 <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid #ec4899; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
-                    <div style="color: #ec4899; font-weight: 700;">🤰 Pregnant</div>
+                    <div style="color: #ec4899; font-weight: 700;"> Pregnant</div>
                     <div style="color: #e5e7eb; font-size: 0.9rem;">Baby due in ${animal.daysUntilBirth} day${animal.daysUntilBirth !== 1 ? 's' : ''}</div>
                     <div style="height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; margin-top: 6px;">
                         <div style="height: 100%; width: ${getPregnancyProgress(animal)}%; background: linear-gradient(90deg, #ec4899, #f472b6);"></div>
@@ -551,7 +590,7 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
         exhibitsHTML = `<p style="color: #9ca3af; text-align: center; padding: 20px;">No compatible exhibits available.<br><small>This ${animal.name} requires a <strong style="color:#fbbf24;">${requiredType}</strong> exhibit.</small></p>`;
     } else {
         compatibleExhibits.forEach(ex => {
-            const typeBadge = ex.type === 'terrarium' ? '🦎' : ex.type === 'aquatic' ? '🌊' : '🌍';
+            const typeBadge = ex.type === 'terrarium' ? '🦎' : ex.type === 'aquatic' ? '' : '🌍';
             exhibitsHTML += `
                 <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s;" 
                     onclick="window.transferAnimal('${currentExhibitId}', '${ex.id}', '${animal.uid || animal.name}')"
@@ -738,7 +777,44 @@ export function removeUpgrade(exhibitId, upgradeId) {
 }
 
 // =====================================================================
-// HELPERS
+// ZONE HELPERS
+// =====================================================================
+function getUniqueZones() {
+    const zones = new Set();
+    Object.values(state.exhibits).forEach(ex => {
+        if (ex.zone) zones.add(ex.zone);
+    });
+    return Array.from(zones);
+}
+
+function getZoneColor(zoneName) {
+    if (!zoneName) return '#64748b';
+    let hash = 0;
+    for (let i = 0; i < zoneName.length; i++) {
+        hash = zoneName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = ['#f59e0b', '#22c55e', '#3b82f6', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e', '#eab308'];
+    return colors[Math.abs(hash) % colors.length];
+}
+
+export function renameExhibitZone(exhibitId) {
+    const exhibit = state.exhibits[exhibitId];
+    if (!exhibit) return;
+    
+    const newName = prompt(`Rename the zone for "${exhibit.name}":`, exhibit.zone || "General");
+    if (newName && newName.trim() !== '') {
+        exhibit.zone = newName.trim();
+        renderExhibits();
+    }
+}
+
+window.setZoneFilter = (zoneId) => {
+    currentZoneFilter = zoneId;
+    renderExhibits();
+};
+
+// =====================================================================
+// BABY NAME HELPERS
 // =====================================================================
 const BABY_MALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Prince', 'Duke', 'Sir'];
 const BABY_FEMALE_NAMES = ['Cub', 'Junior', 'Tiny', 'Little', 'Baby', 'Princess', 'Duchess', 'Lady'];
@@ -782,6 +858,7 @@ window.transferAnimal = transferAnimal;
 window.showBabyNamingModal = showBabyNamingModal;
 window.buyUpgrade = buyUpgrade;
 window.removeUpgrade = removeUpgrade;
+window.renameExhibitZone = renameExhibitZone;
 window.attemptBreeding = (exhibitId) => {
     if (attemptBreeding(exhibitId)) {
         renderExhibits();
