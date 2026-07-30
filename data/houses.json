@@ -39,7 +39,7 @@
     "unlockTier": 1,
     "buildDays": 4,
     "allowedExhibitSize": ["small"],
-    "allowedExhibitType": ["terrestrial"]
+    "allowedExhibitType": ["terrarium"]
   },
   {
     "id": "aviary_house",
