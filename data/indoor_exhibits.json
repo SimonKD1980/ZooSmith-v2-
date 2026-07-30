@@ -6,7 +6,7 @@
     "cost": 500,
     "dailyUpkeep": 10,
     "size": "small",
-    "type": "terrestrial",
+    "type": "terrarium",
     "maxAnimals": 3,
     "icon": "🪴"
   },
