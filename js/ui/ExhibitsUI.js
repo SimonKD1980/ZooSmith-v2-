@@ -512,7 +512,8 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
     const speciesData = data.animals.find(a => a.id === animal.id);
     const requiredSize = speciesData?.requiredExhibitSize || 'small';
     const requiredType = speciesData?.requiredExhibitType || 'terrestrial'; // 🔥 FIX: Get required type
-
+console.log('🐾 Animal:', animal.name, '| Required Type:', requiredType);
+    console.log('🏞️ All Exhibits:', Object.values(state.exhibits).map(e => ({ name: e
     const compatibleExhibits = [];
 
     for (const id in state.exhibits) {
