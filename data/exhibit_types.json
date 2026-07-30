@@ -3,5 +3,15 @@
     "id": "terrestrial",
     "name": "Standard Exhibit",
     "emoji": "🏞️"
+  },
+  "terrarium": {
+    "id": "terrarium",
+    "name": "Terrarium",
+    "emoji": "🦎"
+  },
+  "aquatic": {
+    "id": "aquatic",
+    "name": "Aquarium",
+    "emoji": "🌊"
   }
 }
