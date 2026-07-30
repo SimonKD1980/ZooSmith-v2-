@@ -512,8 +512,11 @@ export function openTransferModal(currentExhibitId, animalIdentifier) {
     const speciesData = data.animals.find(a => a.id === animal.id);
     const requiredSize = speciesData?.requiredExhibitSize || 'small';
     const requiredType = speciesData?.requiredExhibitType || 'terrestrial'; // 🔥 FIX: Get required type
-console.log('🐾 Animal:', animal.name, '| Required Type:', requiredType);
-    console.log('🏞️ All Exhibits:', Object.values(state.exhibits).map(e => ({ name: e
+    
+    // 🔥 FIX: Properly closed console.log for debugging
+    console.log('🐾 Animal:', animal.name, '| Required Type:', requiredType);
+    console.log('🏞️ All Exhibits:', Object.values(state.exhibits).map(e => ({ name: e.name, type: e.type })));
+
     const compatibleExhibits = [];
 
     for (const id in state.exhibits) {
@@ -588,7 +591,6 @@ console.log('🐾 Animal:', animal.name, '| Required Type:', requiredType);
 
     document.body.appendChild(modal);
 }
-
 export function transferAnimal(fromExhibitId, toExhibitId, animalIdentifier) {
     const fromExhibit = state.exhibits[fromExhibitId];
     const toExhibit = state.exhibits[toExhibitId];
