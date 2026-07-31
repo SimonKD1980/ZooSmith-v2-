@@ -80,9 +80,12 @@ export function startResearch(researchId) {
     return true;
 }
 export function isUnlocked(id) {
-    // 🔥 FIX: If the array doesn't exist yet, treat it as an empty list
-    const unlockedList = state.unlockedResearch || []; 
-    return unlockedList.some(item => item.id === id);
+    // 🔥 Safety check: if the array doesn't exist yet, return false
+    if (!state.unlockedResearch || !Array.isArray(state.unlockedResearch)) {
+        return false;
+    }
+    
+    return state.unlockedResearch.some(item => item.id === id);
 }
 
     // 🔥 2. If it is NOT gated by research, it is unlocked by default!
