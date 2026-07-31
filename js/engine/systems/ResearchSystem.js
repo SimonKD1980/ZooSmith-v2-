@@ -8,17 +8,18 @@ export function processResearch() {
 
     state.researchDaysRemaining--;
 
-    // 🔥 Emit an event so the UI knows to update the progress bar
     eventBus.emit('RESEARCH_PROGRESS', {
         daysRemaining: state.researchDaysRemaining
     });
 
     if (state.researchDaysRemaining <= 0) {
-        // Research complete!
         const researchId = state.researchInProgress;
-        const researchData = data.research.find(r => r.id === researchId);
+        
+        // 🔥 SAFETY: Check if data.research exists before searching it
+        const researchData = data.research ? data.research.find(r => r.id === researchId) : null;
         
         if (researchData) {
+            if (!state.researchCompleted) state.researchCompleted = [];
             state.researchCompleted.push(researchId);
             
             eventBus.emit('RESEARCH_COMPLETED', {
@@ -34,9 +35,13 @@ export function processResearch() {
 }
 
 export function startResearch(researchId) {
-    const researchData = data.research.find(r => r.id === researchId);
+    // 🔥 SAFETY: Prevent crash if research data isn't loaded yet
+    if (!data.research) return false;
     
+    const researchData = data.research.find(r => r.id === researchId);
     if (!researchData) return false;
+    
+    if (!state.researchCompleted) state.researchCompleted = [];
     if (state.researchCompleted.includes(researchId)) {
         alert("Already researched!");
         return false;
@@ -59,14 +64,11 @@ export function startResearch(researchId) {
         return false;
     }
 
-    // 🔥 1. Deduct money
     state.money -= researchData.cost;
     
-    // 🔥 2. Track in daily report expenses
     if (!state.dailyReport) state.dailyReport = {};
     state.dailyReport.researchExpense = (state.dailyReport.researchExpense || 0) + researchData.cost;
 
-    // 🔥 3. Start the research
     state.researchInProgress = researchId;
     state.researchDaysRemaining = researchData.researchDays;
 
@@ -79,22 +81,29 @@ export function startResearch(researchId) {
 
     return true;
 }
-export function isUnlocked(id) {
-    // 🔥 Safety check: if the array doesn't exist yet, return false
-    if (!state.unlockedResearch || !Array.isArray(state.unlockedResearch)) {
-        return false;
-    }
-    
-    return state.unlockedResearch.some(item => item.id === id);
-}
 
-    // 🔥 2. If it is NOT gated by research, it is unlocked by default!
-    // (This covers starter animals like lions/zebras, and basic staff like keeper/janitor)
+export function isUnlocked(itemId) {
+    // 🔥 SAFETY 1: If research data isn't loaded yet, assume unlocked to prevent crashes
+    if (!data.research || !Array.isArray(data.research)) {
+        return true;
+    }
+
+    // 1. Check if this item is gated by ANY research in the entire game
+    const isGatedByResearch = data.research.some(r => 
+        r.unlocks && r.unlocks.includes(itemId)
+    );
+
+    // 2. If it is NOT gated by research, it is unlocked by default!
     if (!isGatedByResearch) {
         return true;
     }
 
-    // 🔥 3. If it IS gated, check if the player has actually completed that research
+    // 🔥 SAFETY 2: Prevent crash if researchCompleted array doesn't exist yet
+    if (!state.researchCompleted || !Array.isArray(state.researchCompleted)) {
+        return false;
+    }
+
+    // 3. If it IS gated, check if the player has actually completed that research
     return data.research.some(r => 
         state.researchCompleted.includes(r.id) && 
         r.unlocks && r.unlocks.includes(itemId)
@@ -102,9 +111,13 @@ export function isUnlocked(id) {
 }
 
 export function getResearchRequirements(researchId) {
+    if (!data.research) return [];
+    
     const researchData = data.research.find(r => r.id === researchId);
     if (!researchData || !researchData.requires) return [];
     
+    if (!state.researchCompleted) state.researchCompleted = [];
+
     return researchData.requires.map(reqId => {
         const req = data.research.find(r => r.id === reqId);
         return {
