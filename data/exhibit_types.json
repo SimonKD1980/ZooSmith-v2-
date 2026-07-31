@@ -4,23 +4,32 @@
     "name": "Standard Exhibit",
     "icon": "🏞️",
     "description": "A standard land habitat for mammals and birds.",
-    "baseCost": 500,
-    "baseUpkeep": 5
+    "sizes": {
+      "small": { "cost": 500, "upkeep": 5, "buildDays": 2, "maxAnimals": 4 },
+      "medium": { "cost": 1500, "upkeep": 15, "buildDays": 4, "maxAnimals": 6 },
+      "large": { "cost": 4000, "upkeep": 30, "buildDays": 7, "maxAnimals": 10 }
+    }
   },
   "vivarium": {
     "id": "vivarium",
     "name": "Vivarium",
-    "icon": "",
+    "icon": "🦎",
     "description": "A glass enclosure for reptiles, amphibians, and insects.",
-    "baseCost": 800,
-    "baseUpkeep": 10
+    "sizes": {
+      "small": { "cost": 800, "upkeep": 10, "buildDays": 2, "maxAnimals": 5 },
+      "medium": { "cost": 2000, "upkeep": 25, "buildDays": 4, "maxAnimals": 12 },
+      "large": { "cost": 5000, "upkeep": 50, "buildDays": 7, "maxAnimals": 20 }
+    }
   },
   "aquarium": {
     "id": "aquarium",
     "name": "Aquarium",
     "icon": "🌊",
     "description": "A water habitat for fish and marine life.",
-    "baseCost": 1000,
-    "baseUpkeep": 15
+    "sizes": {
+      "small": { "cost": 1000, "upkeep": 15, "buildDays": 3, "maxAnimals": 10 },
+      "medium": { "cost": 3000, "upkeep": 40, "buildDays": 5, "maxAnimals": 40 },
+      "large": { "cost": 8000, "upkeep": 100, "buildDays": 10, "maxAnimals": 100 }
+    }
   }
 }
