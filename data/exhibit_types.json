@@ -1,16 +1,16 @@
 {
-  "terrestrial": {
-    "id": "terrestrial",
+  "Standard Exhibit": {
+    "id": "standard_exhibit",
     "name": "Standard Exhibit",
     "emoji": "🏞️"
   },
-  "terrarium": {
-    "id": "terrarium",
-    "name": "Terrarium",
+  "vivarium": {
+    "id": "vivarium",
+    "name": "Vivarium",
     "emoji": "🦎"
   },
-  "aquatic": {
-    "id": "aquatic",
+  "aquarium": {
+    "id": "aquarium",
     "name": "Aquarium",
     "emoji": "🌊"
   }
