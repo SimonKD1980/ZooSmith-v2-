@@ -1,17 +1,26 @@
 {
-  "Standard Exhibit": {
+  "standard_exhibit": {
     "id": "standard_exhibit",
     "name": "Standard Exhibit",
-    "emoji": "🏞️"
+    "icon": "🏞️",
+    "description": "A standard land habitat for mammals and birds.",
+    "baseCost": 500,
+    "baseUpkeep": 5
   },
   "vivarium": {
     "id": "vivarium",
     "name": "Vivarium",
-    "emoji": "🦎"
+    "icon": "",
+    "description": "A glass enclosure for reptiles, amphibians, and insects.",
+    "baseCost": 800,
+    "baseUpkeep": 10
   },
   "aquarium": {
     "id": "aquarium",
     "name": "Aquarium",
-    "emoji": "🌊"
+    "icon": "🌊",
+    "description": "A water habitat for fish and marine life.",
+    "baseCost": 1000,
+    "baseUpkeep": 15
   }
 }
