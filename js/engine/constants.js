@@ -1,79 +1,64 @@
 // js/engine/constants.js
-// All game balance constants in ONE place. Tweak here, affects everywhere.
 
 export const FOOD_TYPES = {
-    hay: {
-        name: "Hay",
-        icon: "🌾",
-        costPerUnit: 2,
-        diet: "Herbivore",
-        storageCap: 200,
-        color: "#fbbf24"
-    },
-    meat: {
-        name: "Meat",
-        icon: "🥩",
-        costPerUnit: 5,
-        diet: "Carnivore",
-        storageCap: 100,
-        color: "#ef4444"
-    },
-    produce: {
-        name: "Produce",
-        icon: "🥬",
-        costPerUnit: 3,
-        diet: "Omnivore",
-        storageCap: 150,
-        color: "#22c55e"
-    }
+    hay: { name: "Hay", icon: "🌾", costPerUnit: 2, diet: "Herbivore", storageCap: 200, color: "#fbbf24" },
+    meat: { name: "Meat", icon: "", costPerUnit: 5, diet: "Carnivore", storageCap: 100, color: "#ef4444" },
+    produce: { name: "Produce", icon: "🥬", costPerUnit: 3, diet: "Omnivore", storageCap: 150, color: "#22c55e" }
 };
 
-// 🔥 Exhibit type definitions (including Terrarium)
-export const EXHIBIT_TYPES = {
-    small: {
-        id: 'small',
-        name: 'Small Exhibit',
+// 🔥 NEW: Habitat Types (The "Type" of environment)
+export const HABITAT_TYPES = {
+    terrestrial: {
+        id: 'terrestrial',
+        name: 'Terrestrial',
         icon: '🏞️',
-        description: 'Perfect for small animals like birds, reptiles, or small mammals.',
-        cost: 500,
-        buildDays: 2,
-        size: 'small',
-        maxAnimals: 4,
-        upkeep: 5
+        description: 'Standard land habitat for mammals and birds.',
+        baseCost: 500,
+        baseUpkeep: 5
     },
-    medium: {
-        id: 'medium',
-        name: 'Medium Exhibit',
-        icon: '🌿',
-        description: 'Great for medium-sized animals like wolves, deer, or small big cats.',
-        cost: 1500,
-        buildDays: 4,
-        size: 'medium',
-        maxAnimals: 6,
-        upkeep: 15
+    aquatic: {
+        id: 'aquatic',
+        name: 'Aquatic',
+        icon: '🌊',
+        description: 'Water habitat for fish, amphibians, and marine life.',
+        baseCost: 1000,
+        baseUpkeep: 15
     },
-    large: {
-        id: 'large',
-        name: 'Large Exhibit',
-        icon: '🦁',
-        description: 'Spacious habitat for large animals like lions, elephants, or giraffes.',
-        cost: 4000,
-        buildDays: 7,
-        size: 'large',
-        maxAnimals: 10,
-        upkeep: 30
-    },
-    // 🔥 NEW: Terrarium for reptiles
     terrarium: {
         id: 'terrarium',
         name: 'Terrarium',
         icon: '🦎',
-        description: 'Climate-controlled enclosure for reptiles, amphibians, and insects.',
-        cost: 1200,
-        buildDays: 3,
-        size: 'small',
-        maxAnimals: 5,
-        upkeep: 12
+        description: 'Glass enclosure for reptiles, insects, and small creatures.',
+        baseCost: 800,
+        baseUpkeep: 10
+    }
+};
+
+// 🔥 NEW: Exhibit Sizes (The physical dimensions)
+export const EXHIBIT_SIZES = {
+    small: {
+        id: 'small',
+        name: 'Small',
+        costMultiplier: 1,
+        upkeepMultiplier: 1,
+        buildDays: 2,
+        maxAnimals: 4
+    },
+    medium: {
+        id: 'medium',
+        name: 'Medium',
+        costMultiplier: 3,
+        upkeepMultiplier: 3,
+        buildDays: 4,
+        maxAnimals: 6
+    },
+    large: {
+        id: 'large',
+        name: 'Large',
+        costMultiplier: 8,
+        upkeepMultiplier: 8,
+        buildDays: 7,
+        maxAnimals: 10
     }
 };
 
@@ -85,8 +70,8 @@ export function getDietFoodType(diet) {
 }
 
 export function getLifeStage(ageDays) {
-    if (ageDays < 30) return { stage: 'baby', emoji: '🍼', label: 'Baby', canBreed: false };
-    if (ageDays < 90) return { stage: 'juvenile', emoji: '🐾', label: 'Juvenile', canBreed: false };
+    if (ageDays < 30) return { stage: 'baby', emoji: '', label: 'Baby', canBreed: false };
+    if (ageDays < 90) return { stage: 'juvenile', emoji: '', label: 'Juvenile', canBreed: false };
     if (ageDays < 365) return { stage: 'adult', emoji: '🦁', label: 'Adult', canBreed: true };
     return { stage: 'senior', emoji: '👴', label: 'Senior', canBreed: true };
 }
