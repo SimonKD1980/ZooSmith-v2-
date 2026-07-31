@@ -79,11 +79,11 @@ export function startResearch(researchId) {
 
     return true;
 }
-export function isUnlocked(itemId) {
-    // 🔥 1. Check if this item is gated by ANY research in the entire game
-    const isGatedByResearch = data.research.some(r => 
-        r.unlocks && r.unlocks.includes(itemId)
-    );
+export function isUnlocked(id) {
+    // 🔥 FIX: If the array doesn't exist yet, treat it as an empty list
+    const unlockedList = state.unlockedResearch || []; 
+    return unlockedList.some(item => item.id === id);
+}
 
     // 🔥 2. If it is NOT gated by research, it is unlocked by default!
     // (This covers starter animals like lions/zebras, and basic staff like keeper/janitor)
