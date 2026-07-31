@@ -4,31 +4,48 @@ import { eventBus } from '../engine/EventBus.js';
 import { data } from '../engine/data.js';
 
 export function renderShop() {
-    const shopEl = document.getElementById('shop'); // Ensure you have an element with id="shop"
+    const shopEl = document.getElementById('shop');
     if (!shopEl) return;
 
-    let html = `<div class="status-panel"><h3>🛒 Animal Shop</h3><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">`;
+    let html = `
+        <div class="status-panel">
+            <h3>🛒 Animal Shop</h3>
+            <p style="color: #9ca3af; margin-bottom: 15px;">Buy animals to populate your exhibits.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+    `;
 
-    data.animals.forEach(animal => {
-        const canAfford = state.money >= animal.cost;
-        html += `
-            <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;">
-                <div style="text-align: center; font-size: 2.5rem; margin-bottom: 5px;">${animal.icon}</div>
-                <h4 style="margin: 0 0 4px; color: #e5e7eb; text-align: center;">${animal.name}</h4>
-                <p style="color: #9ca3af; font-size: 0.8rem; text-align: center; margin-bottom: 10px;">
-                    ${animal.diet} • Needs ${animal.requiredExhibitSize} ${animal.requiredExhibitType}
-                </p>
-                <div style="font-size: 1.2rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
-                    💰 $${animal.cost.toLocaleString()}
+    if (!data.animals || data.animals.length === 0) {
+        html += '<p style="color: #9ca3af;">No animals found in data/animals.json</p>';
+    } else {
+        data.animals.forEach(animal => {
+            const canAfford = state.money >= animal.cost;
+            const reqType = animal.requiredExhibitType || 'standard_exhibit';
+            const reqSize = animal.requiredExhibitSize || 'small';
+            
+            // Capitalize for display
+            const displaySize = reqSize.charAt(0).toUpperCase() + reqSize.slice(1);
+            const displayName = reqType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            html += `
+                <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;">
+                    <div style="text-align: center; font-size: 2.5rem; margin-bottom: 5px;">${animal.icon || '🐾'}</div>
+                    <h4 style="margin: 0 0 4px; color: #e5e7eb; text-align: center; font-size: 1.1rem;">${animal.name}</h4>
+                    <p style="color: #9ca3af; font-size: 0.8rem; text-align: center; margin: 0 0 10px; flex-grow: 1;">
+                        Diet: ${animal.diet}<br>
+                        Requires: <strong style="color: #fbbf24;">${displaySize} ${displayName}</strong>
+                    </p>
+                    <div style="font-size: 1.2rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
+                        💰 $${animal.cost.toLocaleString()}
+                    </div>
+                    <button onclick="window.openBuyModal('${animal.id}')" 
+                        style="width: 100%; padding: 10px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-size: 0.95rem;"
+                        ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? '🛒 Buy' : '💸 Can\'t Afford'}
+                    </button>
                 </div>
-                <button onclick="window.openBuyModal('${animal.id}')" 
-                    style="width: 100%; padding: 10px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'};"
-                    ${!canAfford ? 'disabled' : ''}>
-                    ${canAfford ? '🛒 Buy' : '💸 Can\'t Afford'}
-                </button>
-            </div>
-        `;
-    });
+            `;
+        });
+    }
 
     html += `</div></div>`;
     shopEl.innerHTML = html;
@@ -46,22 +63,30 @@ export function openBuyModal(animalId) {
         return;
     }
 
-    // Find compatible exhibits
     const compatibleExhibits = [];
-    const sizeRank = { small: 1, medium: 2, large: 3 };
-    const requiredIndex = sizeRank[animalData.requiredExhibitSize];
+
+    // 🔥 FIXED MATH: Get size hierarchy dynamically from your new JSON
+    const firstTypeKey = Object.keys(data.exhibitTypes)[0];
+    const allSizes = Object.keys(data.exhibitTypes[firstTypeKey].sizes);
+    const sizeRank = {};
+    allSizes.forEach((size, index) => sizeRank[size] = index + 1);
+    const requiredIndex = sizeRank[animalData.requiredExhibitSize] || 1;
 
     for (const id in state.exhibits) {
         const exhibit = state.exhibits[id];
         if (exhibit.buildDaysRemaining > 0) continue;
         if (exhibit.type !== animalData.requiredExhibitType) continue;
 
+        // 🔥 FIXED MATH: Look up the specific size data inside the exhibit's type
         const typeData = data.exhibitTypes[exhibit.type];
+        if (!typeData || !typeData.sizes[exhibit.size]) continue;
+        
         const sizeData = typeData.sizes[exhibit.size];
-        if (!sizeData) continue;
-
-        const exhibitIndex = sizeRank[exhibit.size];
+        const exhibitIndex = sizeRank[exhibit.size] || 1;
+        
         if (exhibitIndex < requiredIndex) continue;
+        
+        //  FIXED MATH: Check against the maxAnimals from the JSON
         if (exhibit.animals.length >= sizeData.maxAnimals) continue;
 
         compatibleExhibits.push({
@@ -74,6 +99,7 @@ export function openBuyModal(animalId) {
         });
     }
 
+    // --- ORIGINAL VISUAL LAYOUT ---
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;';
 
@@ -128,7 +154,8 @@ export function confirmBuyAnimal(animalId, exhibitId) {
     }
 
     const customName = prompt(`Name your new ${animalData.name}:`, animalData.name);
-    if (!customName) return;
+    if (customName === null) return; 
+    const finalName = customName.trim() || animalData.name;
 
     state.money -= animalData.cost;
 
@@ -136,7 +163,7 @@ export function confirmBuyAnimal(animalId, exhibitId) {
     const newAnimal = {
         uid: 'animal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
         id: animalData.id,
-        name: customName,
+        name: finalName,
         gender: gender,
         ageDays: 365,
         health: 100,
@@ -154,16 +181,16 @@ export function confirmBuyAnimal(animalId, exhibitId) {
     const modal = document.querySelector('div[style*="position: fixed"]');
     if (modal) modal.remove();
 
-    eventBus.emit('ANIMAL_PURCHASED', { animal: customName, species: animalData.name, cost: animalData.cost });
+    eventBus.emit('ANIMAL_PURCHASED', { animal: finalName, species: animalData.name, cost: animalData.cost });
     eventBus.emit('MONEY_CHANGED');
     
-    // Re-render UI
+    // Re-render both tabs so the UI updates immediately
     renderShop();
-    if (document.getElementById('exhibits')) {
-        // Assuming ExhibitsUI is imported or accessible, trigger a re-render if needed
-        // import { renderExhibits } from './ExhibitsUI.js'; renderExhibits(); 
+    if (typeof window.renderExhibits === 'function') {
+        window.renderExhibits();
     }
 }
 
+// Expose to window for inline onclick handlers
 window.openBuyModal = openBuyModal;
 window.confirmBuyAnimal = confirmBuyAnimal;
