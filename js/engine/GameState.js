@@ -33,6 +33,7 @@ export const state = {
     researchCompleted: [],
     researchInProgress: null,
     researchDaysRemaining: 0,
+    unlockedResearch: [], 
 
     // Food Inventory
     food: {
