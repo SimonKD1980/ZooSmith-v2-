@@ -199,15 +199,18 @@
         
         /* Navigation */
         .nav {
-            display: flex;
-            position: sticky;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #1e293b;
-            border-radius: 10px;
-        }
+    display: flex;
+    position: sticky;
+    top: 120px; /* height of header */
+    z-index: 999;
+
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #1e293b;
+    border-radius: 10px;
+}
         .nav button {
             padding: 8px 16px;
             background: transparent;
