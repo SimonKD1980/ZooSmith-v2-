@@ -1,5 +1,5 @@
 [
-    {
+  {
     "id": "basic_staff",
     "name": "Basic Zoo Staff Training",
     "icon": "🎓",
@@ -7,10 +7,13 @@
     "cost": 500,
     "researchDays": 3,
     "category": "staff",
-    "unlocks": ["keeper_jr", "janitor"],
+    "unlocks": [
+      "keeper_jr",
+      "janitor"
+    ],
     "requires": []
   },
-    {
+  {
     "id": "petting_zoo",
     "name": "Basic Training | Petting Zoo",
     "icon": "🎓",
@@ -18,23 +21,38 @@
     "cost": 500,
     "researchDays": 3,
     "category": "animals",
-    "unlocks": ["alpaca", "babydoll_southdowns_sheep", "rabbit", "common_peafowl", "chicken","fallow_deer", ],
+    "unlocks": [
+      "alpaca",
+      "babydoll_southdowns_sheep",
+      "rabbit",
+      "common_peafowl",
+      "chicken",
+      "fallow_deer"
+    ],
     "requires": []
   },
   {
     "id": "basic_marketing",
     "name": "Basic Marketing",
+    "icon": "📢",
     "description": "Unlock local advertising and basic promotional campaigns to increase zoo visibility.",
     "cost": 1500,
-    "days": 10,
-    "unlocks": []
+    "researchDays": 10,
+    "category": "marketing",
+    "unlocks": [],
+    "requires": []
   },
   {
     "id": "advanced_marketing",
     "name": "Advanced Marketing",
+    "icon": "📱",
     "description": "Unlock national campaigns, social media blitzes, and influencer partnerships.",
     "cost": 5000,
-    "days": 20,
-    "unlocks": []
+    "researchDays": 20,
+    "category": "marketing",
+    "unlocks": [],
+    "requires": [
+      "basic_marketing"
+    ]
   }
 ]
