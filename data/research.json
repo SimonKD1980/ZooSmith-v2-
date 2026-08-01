@@ -10,71 +10,16 @@
     "unlocks": ["keeper_jr", "janitor"],
     "requires": []
   },
-  {
-    "id": "basic_exotic_mammals",
-    "name": "Basic Exotic Mammals",
-    "icon": "🐘",
-    "description": "Unlock exotic mammals",
-    "cost": 5000,
-    "researchDays": 3,
-    "category": "animals",
-    "unlocks": ["elephant", "giraffe", "rhino"],
-    "requires": []
-  },
-  {
-    "id": "big_cats",
-    "name": "Big Cat Conservation",
-    "icon": "🐅",
-    "description": "Unlock rare big cats",
-    "cost": 8000,
-    "researchDays": 5,
-    "category": "animals",
-    "unlocks": ["tiger", "cheetah", "leopard"],
-    "requires": ["basic_exotic_mammals"]
-  },
-  {
-    "id": "marine_life",
-    "name": "Marine Biology",
-    "icon": "🐬",
-    "description": "Unlock marine animals",
-    "cost": 10000,
-    "researchDays": 6,
-    "category": "animals",
-    "unlocks": ["dolphin", "seal", "penguin"],
-    "requires": ["basic_exotic_mammals"]
-  },
-  {
-    "id": "premium_amenities",
-    "name": "Premium Guest Services",
-    "icon": "🎢",
-    "description": "Unlock premium amenities",
-    "cost": 6000,
-    "researchDays": 4,
-    "category": "amenities",
-    "unlocks": ["vip_tour", "safari_ride", "petting_zoo"],
-    "requires": []
-  },
-  {
-    "id": "advanced_staff",
-    "name": "Advanced Staff Training",
+    {
+    "id": "petting_zoo",
+    "name": "Basic Training | Petting Zoo",
     "icon": "🎓",
-    "description": "Unlock senior staff",
-    "cost": 4000,
+    "description": "Unlock Petting Zoo Animals",
+    "cost": 500,
     "researchDays": 3,
-    "category": "staff",
-    "unlocks": ["senior_keeper", "head_janitor", "veterinarian"],
-    "requires": []
-  },
-  {
-    "id": "conservation_program",
-    "name": "Conservation Program",
-    "icon": "🌍",
-    "description": "Unlock endangered species",
-    "cost": 15000,
-    "researchDays": 8,
     "category": "animals",
-    "unlocks": ["panda", "snow_leopard", "orangutan"],
-    "requires": ["big_cats", "marine_life"]
+    "unlocks": ["alpaca", "babydoll_southdowns_sheep", "rabbit", "common_peafowl", "chicken","fallow_deer", ],
+    "requires": []
   },
   {
     "id": "basic_marketing",
