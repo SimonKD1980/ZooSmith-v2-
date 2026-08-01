@@ -15,7 +15,7 @@ export function renderExhibits() {
 
     let html = '';
 
-    // 1. Dynamic Zone Filter Bar
+    // 1. Dynamic Zone Filter Bar (Always at the top)
     const uniqueZones = getUniqueZones();
     html += `
         <div class="status-panel" style="padding: 15px;">
@@ -35,44 +35,7 @@ export function renderExhibits() {
         </div>
     `;
 
-    // 2. Build New Exhibit Section (Nested Loop: Type -> Sizes)
-    html += `
-        <div class="status-panel">
-            <h3>🏗️ Build New Exhibit</h3>
-            <p style="color: #9ca3af; margin-bottom: 15px;">Choose a habitat type and size.</p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
-    `;
-
-    for (const typeKey in data.exhibitTypes) {
-        const typeData = data.exhibitTypes[typeKey];
-        
-        for (const sizeKey in typeData.sizes) {
-            const sizeData = typeData.sizes[sizeKey];
-            const canAfford = state.money >= sizeData.cost;
-
-            html += `
-                <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;">
-                    <div style="text-align: center; font-size: 2rem; margin-bottom: 5px;">${typeData.icon}</div>
-                    <h4 style="margin: 0 0 4px; color: #e5e7eb; text-align: center; font-size: 1rem;">${sizeKey.charAt(0).toUpperCase() + sizeKey.slice(1)} ${typeData.name}</h4>
-                    <p style="color: #9ca3af; font-size: 0.75rem; margin: 0 0 10px; text-align: center; flex-grow: 1;">${typeData.description}</p>
-                    <div style="font-size: 0.8rem; color: #9ca3af; text-align: center; margin-bottom: 4px;">
-                        🐾 Max ${sizeData.maxAnimals} • 📅 ${sizeData.buildDays} days
-                    </div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
-                        💰 $${sizeData.cost.toLocaleString()}
-                    </div>
-                    <button onclick="window.buildExhibit('${sizeKey}', '${typeKey}')" 
-                        style="width: 100%; padding: 8px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-size: 0.9rem;"
-                        ${!canAfford ? 'disabled' : ''}>
-                        ${canAfford ? '🏗️ Build' : '💸 Can\'t Afford'}
-                    </button>
-                </div>
-            `;
-        }
-    }
-    html += `</div></div>`;
-
-    // 3. Current Exhibits Section
+    // 2. Current Exhibits Section (MOVED TO THE TOP)
     html += `<div class="status-panel"><h3>🏞️ Your Exhibits</h3>`;
 
     const filteredExhibitIds = Object.keys(state.exhibits).filter(id => {
@@ -81,12 +44,12 @@ export function renderExhibits() {
     });
 
     if (filteredExhibitIds.length === 0) {
-        html += '<p style="color: #9ca3af;">No exhibits found for this filter.</p>';
+        html += '<p style="color: #9ca3af; padding: 20px; text-align: center;">No exhibits found for this filter. Build one below to get started!</p>';
     } else {
         filteredExhibitIds.forEach(id => {
             const exhibit = state.exhibits[id];
             
-            // 🔥 Look up data from the nested JSON
+            // Look up data from the nested JSON
             const typeData = data.exhibitTypes[exhibit.type] || { name: 'Unknown', icon: '❓', sizes: {} };
             const sizeData = typeData.sizes[exhibit.size] || { maxAnimals: 0, upkeep: 0, buildDays: 0 };
             
@@ -168,6 +131,44 @@ export function renderExhibits() {
         });
     }
     html += `</div>`;
+
+    // 3. Build New Exhibit Section (MOVED TO THE BOTTOM)
+    html += `
+        <div class="status-panel">
+            <h3>🏗️ Build New Exhibit</h3>
+            <p style="color: #9ca3af; margin-bottom: 15px;">Choose a habitat type and size.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
+    `;
+
+    for (const typeKey in data.exhibitTypes) {
+        const typeData = data.exhibitTypes[typeKey];
+        
+        for (const sizeKey in typeData.sizes) {
+            const sizeData = typeData.sizes[sizeKey];
+            const canAfford = state.money >= sizeData.cost;
+
+            html += `
+                <div style="background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 15px; display: flex; flex-direction: column;">
+                    <div style="text-align: center; font-size: 2rem; margin-bottom: 5px;">${typeData.icon}</div>
+                    <h4 style="margin: 0 0 4px; color: #e5e7eb; text-align: center; font-size: 1rem;">${sizeKey.charAt(0).toUpperCase() + sizeKey.slice(1)} ${typeData.name}</h4>
+                    <p style="color: #9ca3af; font-size: 0.75rem; margin: 0 0 10px; text-align: center; flex-grow: 1;">${typeData.description}</p>
+                    <div style="font-size: 0.8rem; color: #9ca3af; text-align: center; margin-bottom: 4px;">
+                        🐾 Max ${sizeData.maxAnimals} • 📅 ${sizeData.buildDays} days
+                    </div>
+                    <div style="font-size: 1.1rem; font-weight: 800; color: #22c55e; text-align: center; margin-bottom: 10px;">
+                        💰 $${sizeData.cost.toLocaleString()}
+                    </div>
+                    <button onclick="window.buildExhibit('${sizeKey}', '${typeKey}')" 
+                        style="width: 100%; padding: 8px; background: ${canAfford ? '#22c55e' : '#475569'}; color: ${canAfford ? '#000' : '#9ca3af'}; border: none; border-radius: 8px; font-weight: 700; cursor: ${canAfford ? 'pointer' : 'not-allowed'}; font-size: 0.9rem;"
+                        ${!canAfford ? 'disabled' : ''}>
+                        ${canAfford ? '🏗️ Build' : '💸 Can\'t Afford'}
+                    </button>
+                </div>
+            `;
+        }
+    }
+    html += `</div></div>`;
+
     exhibitsEl.innerHTML = html;
 }
 
