@@ -6,6 +6,7 @@ import { isUnlocked } from '../engine/systems/ResearchSystem.js';
 
 let currentCategory = 'all';
 let currentSearch = '';
+let showLockedAnimals = false; //  NEW: Hides locked animals by default
 
 export function renderShop() {
     const shop = document.getElementById("shop");
@@ -24,6 +25,9 @@ export function renderShop() {
         return;
     }
 
+    // Count unlocked vs locked for the UI
+    const unlockedCount = data.animals.filter(a => isUnlocked(a.id)).length;
+
     const categories = [...new Set(data.animals.map(a => a.category || 'Other'))].sort();
     
     shop.innerHTML = `
@@ -32,16 +36,29 @@ export function renderShop() {
                 style="width:100%; padding:12px 16px; font-size:1rem; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; margin-bottom:16px; outline:none; transition:border-color 0.2s;"
                 onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'" />
             
+            <!-- 🔥 NEW: Availability Toggle -->
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 16px;">
+                <button onclick="window.toggleLockedAnimals(false)" 
+                    style="padding:8px 16px; background:${!showLockedAnimals ? '#22c55e' : '#0f172a'}; color:${!showLockedAnimals ? '#000' : '#e5e7eb'}; border:1px solid ${!showLockedAnimals ? '#22c55e' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600;">
+                    ✅ Available (${unlockedCount})
+                </button>
+                <button onclick="window.toggleLockedAnimals(true)" 
+                    style="padding:8px 16px; background:${showLockedAnimals ? '#a855f7' : '#0f172a'}; color:${showLockedAnimals ? '#000' : '#e5e7eb'}; border:1px solid ${showLockedAnimals ? '#a855f7' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600;">
+                    🔒 All Species (${data.animals.length})
+                </button>
+            </div>
+
+            <!-- Category Filters -->
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 <button onclick="window.filterByCategory('all')" 
-                    style="padding:8px 16px; background:${currentCategory === 'all' ? '#22c55e' : '#0f172a'}; color:${currentCategory === 'all' ? '#000' : '#e5e7eb'}; border:1px solid ${currentCategory === 'all' ? '#22c55e' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+                    style="padding:8px 16px; background:${currentCategory === 'all' ? '#3b82f6' : '#0f172a'}; color:${currentCategory === 'all' ? '#000' : '#e5e7eb'}; border:1px solid ${currentCategory === 'all' ? '#3b82f6' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600;">
                     🌍 All (${data.animals.length})
                 </button>
                 ${categories.map(cat => {
                     const count = data.animals.filter(a => a.category === cat).length;
                     const isActive = currentCategory === cat;
                     return `<button onclick="window.filterByCategory('${cat}')" 
-                        style="padding:8px 16px; background:${isActive ? '#22c55e' : '#0f172a'}; color:${isActive ? '#000' : '#e5e7eb'}; border:1px solid ${isActive ? '#22c55e' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600; transition:all 0.2s;">
+                        style="padding:8px 16px; background:${isActive ? '#3b82f6' : '#0f172a'}; color:${isActive ? '#000' : '#e5e7eb'}; border:1px solid ${isActive ? '#3b82f6' : '#334155'}; border-radius:8px; cursor:pointer; font-weight:600;">
                         ${cat} (${count})
                     </button>`;
                 }).join('')}
@@ -86,26 +103,60 @@ function renderShopGrid() {
     grid.innerHTML = '';
     filtered.forEach((animal) => {
         const isLocked = animal.id && !isUnlocked(animal.id);
+        
+        // 🔥 NEW: If we are in "Available" mode, skip locked animals entirely!
+        if (!showLockedAnimals && isLocked) return; 
+
         const cost = animal.cost ?? animal.price ?? 0;
         
-        const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
-        const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' :
-            animal.conservationStatus === 'Vulnerable' ? '🟡' :
-            animal.conservationStatus === 'Critically Endangered' ? '⚫' : '';
+        // 🔥 DISCOVERY MODE: Hide spoilers if locked
+        const displayName = isLocked ? 'Unknown Species' : animal.name;
+        const displayIcon = isLocked ? '❓' : (animal.icon || '🐾');
+        const displayScienceName = isLocked ? '??? ???' : (animal.scienceName || '');
+        const displayCost = isLocked ? '???' : `$${cost.toLocaleString()}`;
+        const displayCategory = isLocked ? 'Undiscovered' : (animal.category || 'Other');
 
-        const requiredSize = animal.requiredExhibitSize || 'small';
-        const requiredType = animal.requiredExhibitType || 'terrestrial';
-        const sizeEmoji = requiredSize === 'large' ? '🏕️' : requiredSize === 'medium' ? '🏕️' : '🏠';
-        const typeEmoji = requiredType === 'aquatic' ? '🌊' : requiredType === 'vivarium' ? '🦎' : '🌍';
+        // Only calculate these if unlocked to save performance and hide stats
+        let requirementsHTML = '';
+        let infoText = animal.info || 'No description available.';
+        let badgesHTML = '';
         
-        const attractionValue = animal.attractionValue || 10;
-        const foodAmount = animal.foodAmount || 1;
-        const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
-        const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
+        if (!isLocked) {
+            const dietEmoji = animal.diet === 'Carnivore' ? '🥩' : animal.diet === 'Herbivore' ? '🌿' : '🍖';
+            const statusEmoji = animal.conservationStatus === 'Endangered' ? '🔴' : animal.conservationStatus === 'Vulnerable' ? '🟡' : animal.conservationStatus === 'Critically Endangered' ? '' : '';
+            const sizeEmoji = animal.requiredExhibitSize === 'large' ? '️' : animal.requiredExhibitSize === 'medium' ? '🏕️' : '';
+            const typeEmoji = animal.requiredExhibitType === 'aquarium' ? '🌊' : animal.requiredExhibitType === 'vivarium' ? '🦎' : '🌍';
+            const foodType = animal.diet === 'Carnivore' ? 'meat' : animal.diet === 'Herbivore' ? 'hay' : 'produce';
+            const foodTypeEmoji = foodType === 'meat' ? '🥩' : foodType === 'hay' ? '🌾' : '🥬';
+            const attractionValue = animal.attractionValue || 10;
+            const foodAmount = animal.foodAmount || 1;
 
-        // Image path logic
+            badgesHTML = `
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin:12px 0;">
+                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">${dietEmoji} ${animal.diet}</span>
+                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">🌍 ${animal.habitat}</span>
+                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">${statusEmoji} ${animal.conservationStatus}</span>
+                </div>
+            `;
+
+            requirementsHTML = `
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px; margin:12px 0;">
+                    <div style="color:#64748b; font-size:0.75rem; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Requirements</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem; color:#e5e7eb;">
+                        <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${sizeEmoji}</span> ${animal.requiredExhibitSize.charAt(0).toUpperCase() + animal.requiredExhibitSize.slice(1)} Exhibit</div>
+                        <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${typeEmoji}</span> ${animal.requiredExhibitType.charAt(0).toUpperCase() + animal.requiredExhibitType.slice(1)}</div>
+                        <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${foodTypeEmoji}</span> ${foodAmount} ${foodType}/day</div>
+                        <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">⭐</span> <span style="color:#fbbf24; font-weight:700;">+${attractionValue} visitors</span></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // 🔥 HINT SYSTEM: Tell them how to unlock it
+            infoText = "🔒 This species has not been discovered yet. Complete research in the Research tab to reveal its identity and unlock it for your zoo.";
+        }
+
         const imagePath = `./images/animals/${animal.id}.png`;
-        const fallbackImage = `https://placehold.co/400x200/0f172a/e5e7eb?text=${encodeURIComponent(animal.name)}`;
+        const fallbackImage = `https://placehold.co/400x200/0f172a/e5e7eb?text=${isLocked ? '???' : encodeURIComponent(animal.name)}`;
 
         const card = document.createElement("div");
         card.style.cssText = `
@@ -115,7 +166,7 @@ function renderShopGrid() {
             overflow: hidden; 
             position: relative; 
             transition: transform 0.2s, box-shadow 0.2s;
-            ${isLocked ? 'opacity: 0.7;' : 'cursor: pointer;'}
+            ${isLocked ? 'opacity: 0.8;' : 'cursor: pointer;'}
         `;
         if (!isLocked) {
             card.onmouseenter = () => { card.style.transform = 'translateY(-4px)'; card.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)'; };
@@ -123,46 +174,31 @@ function renderShopGrid() {
         }
         
         card.innerHTML = `
-            ${isLocked ? `<div style="position:absolute; top:12px; right:12px; background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.8rem; z-index:10;">🔒 LOCKED</div>` : ''}
+            ${isLocked ? `<div style="position:absolute; top:12px; right:12px; background:#ef4444; color:#fff; padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.8rem; z-index:10;"> LOCKED</div>` : ''}
             
             <div style="width:100%; height:200px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); display:flex; align-items:center; justify-content:center; overflow:hidden; border-bottom: 1px solid #334155;">
                 <img src="${imagePath}" 
-                    alt="${animal.name}" 
-                    style="width:100%; height:100%; object-fit:contain; ${isLocked ? 'filter:grayscale(100%);' : ''}"
+                    alt="${displayName}" 
+                    style="width:100%; height:100%; object-fit:contain; ${isLocked ? 'filter:grayscale(100%) blur(4px); opacity: 0.5;' : ''}"
                     onerror="this.onerror=null; this.src='${fallbackImage}';" />
             </div>
             
             <div style="padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
                     <div>
-                        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:#e5e7eb;">${animal.name}</h3>
-                        <p style="margin:4px 0 0; font-size:0.85rem; color:#9ca3af; font-style:italic;">${animal.scienceName || ''}</p>
+                        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:#e5e7eb;">${displayName}</h3>
+                        <p style="margin:4px 0 0; font-size:0.85rem; color:#9ca3af; font-style:italic;">${displayScienceName}</p>
                     </div>
-                    ${animal.category ? `<span style="background:#a855f7; color:#fff; padding:3px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">${animal.category}</span>` : ''}
+                    <span style="background:${isLocked ? '#475569' : '#a855f7'}; color:#fff; padding:3px 8px; border-radius:12px; font-size:0.75rem; font-weight:600;">${displayCategory}</span>
                 </div>
                 
-                <div style="display:flex; gap:6px; flex-wrap:wrap; margin:12px 0;">
-                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">${dietEmoji} ${animal.diet}</span>
-                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">🌍 ${animal.habitat}</span>
-                    <span style="background:#0f172a; color:#e5e7eb; padding:4px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #334155;">${statusEmoji} ${animal.conservationStatus}</span>
-                </div>
+                ${badgesHTML}
+                ${requirementsHTML}
                 
-                ${!isLocked ? `
-                    <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px; margin:12px 0;">
-                        <div style="color:#64748b; font-size:0.75rem; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Requirements</div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.85rem; color:#e5e7eb;">
-                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${sizeEmoji}</span> ${requiredSize.charAt(0).toUpperCase() + requiredSize.slice(1)} Exhibit</div>
-                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${typeEmoji}</span> ${requiredType.charAt(0).toUpperCase() + requiredType.slice(1)}</div>
-                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">${foodTypeEmoji}</span> ${foodAmount} ${foodType}/day</div>
-                            <div style="display:flex; align-items:center; gap:6px;"><span style="font-size:1.1rem;">⭐</span> <span style="color:#fbbf24; font-weight:700;">+${attractionValue} visitors</span></div>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                <p style="color:#9ca3af; font-size:0.9rem; margin:12px 0; line-height:1.4;">${isLocked ? '🔒 Research required to unlock this animal.' : (animal.info || 'No description available.')}</p>
+                <p style="color:#9ca3af; font-size:0.9rem; margin:12px 0; line-height:1.4;">${infoText}</p>
                 
                 <div style="font-size:1.3rem; font-weight:800; color:${isLocked ? '#64748b' : '#22c55e'}; text-align:center; background:${isLocked ? 'rgba(100,116,139,0.1)' : 'rgba(34,197,94,0.1)'}; padding:10px; border-radius:8px; border:1px solid ${isLocked ? 'rgba(100,116,139,0.2)' : 'rgba(34,197,94,0.2)'}; margin-bottom:12px;">
-                    💰 $${cost.toLocaleString()}
+                    💰 ${displayCost}
                 </div>
                 
                 <button class="buy-animal-btn" 
@@ -170,7 +206,7 @@ function renderShopGrid() {
                     ${isLocked ? 'disabled' : ''}
                     onmouseover="if(!${isLocked}) this.style.filter='brightness(1.1)'" 
                     onmouseout="if(!${isLocked}) this.style.filter='brightness(1)'">
-                    ${isLocked ? '🔒 Locked' : '🛒 Add to Zoo'}
+                    ${isLocked ? '🔒 Research Required' : '🛒 Add to Zoo'}
                 </button>
             </div>
         `;
@@ -187,7 +223,6 @@ function renderShopGrid() {
 }
 
 function openBuyModal(animal) {
-    // Create modal overlay dynamically
     let modalOverlay = document.getElementById("dynamicBuyModal");
     if (!modalOverlay) {
         modalOverlay = document.createElement("div");
@@ -195,7 +230,6 @@ function openBuyModal(animal) {
         modalOverlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(4px); z-index:1000; display:flex; justify-content:center; align-items:center; opacity:0; transition:opacity 0.2s;";
         document.body.appendChild(modalOverlay);
         
-        // Close on background click
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) closeBuyModal();
         });
@@ -203,37 +237,36 @@ function openBuyModal(animal) {
 
     const ids = Object.keys(state.exhibits);
     let compatibleExhibits = 0;
-    const requiredType = animal.requiredExhibitType || 'terrestrial';
+    const requiredType = animal.requiredExhibitType || 'standard_exhibit';
     let exhibitOptions = '';
+
+    // 🔥 FIXED MATH: Dynamically get size hierarchy from your new JSON
+    const firstTypeKey = Object.keys(data.exhibitTypes)[0];
+    const allSizes = Object.keys(data.exhibitTypes[firstTypeKey].sizes);
+    const SIZE_RANK = {};
+    allSizes.forEach((size, index) => SIZE_RANK[size] = index + 1);
+    const reqSize = animal.requiredExhibitSize || "small";
 
     for (const id of ids) {
         const exhibit = state.exhibits[id];
         if (exhibit.buildDaysRemaining > 0) continue;
         if (exhibit.type !== requiredType) continue;
         
-        // 🔥 FIXED MATH: Dynamically get size hierarchy from your new JSON
-        const firstTypeKey = Object.keys(data.exhibitTypes)[0];
-        const allSizes = Object.keys(data.exhibitTypes[firstTypeKey].sizes);
-        const SIZE_RANK = {};
-        allSizes.forEach((size, index) => SIZE_RANK[size] = index + 1);
-        
-        const reqSize = animal.requiredExhibitSize || "small";
         if (SIZE_RANK[exhibit.size] < SIZE_RANK[reqSize]) continue;
 
         // 🔥 FIXED MATH: Check against maxAnimals from the nested JSON
         const typeData = data.exhibitTypes[exhibit.type];
         const sizeData = typeData?.sizes[exhibit.size];
         if (!sizeData) continue;
-        
         if (exhibit.animals.length >= sizeData.maxAnimals) continue;
 
-        const exhibitType = data.exhibitTypes?.[exhibit.type] || { icon: '🏞️', emoji: '🏞️', name: 'Exhibit' };
+        const exhibitType = data.exhibitTypes?.[exhibit.type] || { icon: '🏞️', emoji: '️', name: 'Exhibit' };
         exhibitOptions += `<option value="${id}">${exhibitType.icon || exhibitType.emoji} ${exhibit.name} (${exhibit.size})</option>`;
         compatibleExhibits++;
     }
 
     if (compatibleExhibits === 0) {
-        alert(`No compatible exhibits available!\n\nRequired: ${requiredType} exhibit, ${animal.requiredExhibitSize || 'small'} size or larger.`);
+        alert(`No compatible exhibits available!\n\nRequired: ${requiredType} exhibit, ${reqSize} size or larger.`);
         return;
     }
 
@@ -275,13 +308,13 @@ function openBuyModal(animal) {
                     </select>
                 </div>
                 <div>
-                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;"> Life Stage</label>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#e5e7eb; font-size:0.9rem;">📅 Life Stage</label>
                     <select id="dynamicAgeSelect" style="width:100%; padding:10px; background:#0f172a; color:#e5e7eb; border:2px solid #334155; border-radius:8px; font-size:1rem; outline:none;"
                         onfocus="this.style.borderColor='#22c55e'" onblur="this.style.borderColor='#334155'">
                         <option value="baby">🍼 Baby</option>
-                        <option value="juvenile"> Juvenile</option>
+                        <option value="juvenile">🐾 Juvenile</option>
                         <option value="adult" selected>🦁 Adult</option>
-                        <option value="senior">👴 Senior</option>
+                        <option value="senior"> Senior</option>
                     </select>
                 </div>
             </div>
@@ -299,13 +332,11 @@ function openBuyModal(animal) {
     state.pendingAnimal = animal;
     document.body.appendChild(modalOverlay);
     
-    // Trigger animation
     requestAnimationFrame(() => {
         modalOverlay.style.opacity = '1';
         document.getElementById('modalContent').style.transform = 'scale(1)';
     });
     
-    // Focus name input
     setTimeout(() => document.getElementById('dynamicAnimalNameInput')?.focus(), 100);
 }
 
@@ -323,7 +354,6 @@ export function closeBuyModal() {
 }
 
 function confirmBuyAnimal() {
-    // Updated IDs to match the dynamic modal
     const exhibitId = document.getElementById("dynamicExhibitSelect").value;
     const gender = document.getElementById("dynamicGenderSelect").value;
     const ageStage = document.getElementById("dynamicAgeSelect").value;
@@ -418,7 +448,6 @@ function generateRandomAnimalName(speciesName) {
 }
 
 function randomizeAnimalName(speciesName) {
-    // Updated ID to match the dynamic modal
     const input = document.getElementById('dynamicAnimalNameInput');
     if (input) {
         input.value = generateRandomAnimalName(speciesName);
@@ -429,6 +458,10 @@ function randomizeAnimalName(speciesName) {
 window.randomizeAnimalName = randomizeAnimalName;
 window.filterByCategory = (category) => {
     currentCategory = category;
+    renderShop();
+};
+window.toggleLockedAnimals = (showLocked) => {
+    showLockedAnimals = showLocked;
     renderShop();
 };
 window.closeBuyModal = closeBuyModal;
