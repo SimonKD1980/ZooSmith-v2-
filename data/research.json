@@ -31,6 +31,24 @@
     ],
     "requires": []
   },
+    {
+    "id": "small_zoo",
+    "name": "Basic Accreditation | Small Zoo",
+    "icon": "🎓",
+    "description": "Unlock Small Zoo Animals",
+    "cost": 1000,
+    "researchDays": 3,
+    "category": "animals",
+    "unlocks": [
+      "meerkat",
+      "capybara",
+      "emu",
+      "common_peafowl",
+      "chicken",
+      "fallow_deer"
+    ],
+    "requires": []
+  },
   {
     "id": "basic_marketing",
     "name": "Basic Marketing",
